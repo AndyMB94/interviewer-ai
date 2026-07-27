@@ -3,15 +3,15 @@
 ## Vista general
 
 ```
-Cliente (React)        WS Gateway (Node)              Backend (Django)
-┌────────────────┐ WS ┌───────────────────┐  REST  ┌──────────────────────────┐   APIs externas
-│ Captura audio   │───▶│ Express + Socket.io│──────▶│ Encola tarea Celery       │
-│ Reproduce audio │◀───│  (recibe/emite     │        │        │                  │
-└────────────────┘     │   audio por WS)    │        │        ▼                  │
-                        │        ▲           │        │ Celery workers (Redis)   │
-                        └────────│───────────┘        │        │                  │
-                                 │  Redis pub/sub      │        ▼                  │
-                                 └──────────────────── │ Capa de servicios (POO)  │──▶ STT / LLM / TTS
+Cliente (React)            WS Gateway (Node)                  Backend (Django)
+┌─────────────────┐ WS  ┌────────────────────┐    REST  ┌──────────────────────────┐   APIs externas
+│ Captura audio   │───▶│ Express + Socket.io │────────▶│ Encola tarea Celery      │
+│ Reproduce audio │◀───│  (recibe/emite      │         │        │                  │
+└─────────────────┘     │   audio por WS)    │          │        ▼                 │
+                        │        ▲           │          │ Celery workers (Redis)   │
+                        └────────│───────────┘          │        │                 │
+                                 │   Redis pub/sub      │        ▼                 │
+                                 └───────────────────── │ Capa de servicios (POO)  │──▶ STT / LLM / TTS
                                                         │ Interfaces STT, LLM y    │
                                                         │ TTS con adapters         │
                                                         └──────────────────────────┘
