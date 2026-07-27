@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+db.sqlite3
+
+# Node
+node_modules/
+dist/
+build/
+
+# Env secrets (cada servicio commitea su .env.example, nunca su .env)
+.env
+
+# OS / editor
+.DS_Store
