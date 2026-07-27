@@ -6,9 +6,9 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 **Fase 0 — Setup base**
 - [x] 0.1 Crear proyecto Django, correr el servidor vacío.
-- [ ] 0.2 Crear la app `interviews`, registrarla en settings.
-- [ ] 0.3 Endpoint REST `/api/health/` que devuelve `{"status": "ok"}`.
-- [ ] 0.4 Instalar pytest + pytest-django, configurar `pytest.ini` (o sección en `pyproject.toml`) apuntando a `config.settings`. Escribir el primer test: que un GET a `/api/health/` devuelva 200 y `{"status": "ok"}`.
+- [x] 0.2 Crear la app `interviews`, registrarla en settings.
+- [x] 0.3 Endpoint REST `/api/health/` que devuelve `{"status": "ok"}`.
+- [x] 0.4 Instalar pytest + pytest-django, configurar `pytest.ini` (o sección en `pyproject.toml`) apuntando a `config.settings`. Escribir el primer test: que un GET a `/api/health/` devuelva 200 y `{"status": "ok"}`.
 
 **Fase 1 — LLM síncrono, sin audio, sin Celery**
 - [ ] 1.1 Instalar el SDK del LLM elegido y probar una llamada simple hardcodeada (un script suelto, sin vista todavía).
