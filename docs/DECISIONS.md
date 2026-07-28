@@ -95,8 +95,19 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-07-28 DeepSeek como proveedor de LLM inicial
+
+**Contexto:** para Backend Fase 1 hace falta un proveedor de LLM. Se evaluaron Claude, GPT, Kimi y DeepSeek — el usuario no tenía cuenta creada en ninguno y quería empezar con algo barato para aprender la integración sin preocuparse por el costo.
+
+**Decisión:** DeepSeek (modelo `deepseek-v4-flash` para desarrollo, el más económico de sus dos tiers) vía su API compatible con el SDK de OpenAI (`base_url: https://api.deepseek.com`). Documentación de referencia copiada en `docs/AI/DeepSeek/`.
+
+**Alternativas consideradas:** Claude y GPT — mejor documentados y más reconocibles en un portafolio, pero se pospone por ahora a favor del costo mínimo de DeepSeek mientras se aprende la integración. Kimi — descartado por soporte/documentación en inglés más limitado para un primer uso.
+
+**Nota:** no es una decisión cerrada — el usuario anticipa que más adelante podría migrarse a Claude o GPT. Gracias al patrón Strategy/Adapter ya planeado para `LLMProvider` (ver ARCHITECTURE.md, Fase 7 del roadmap), ese cambio futuro no debería requerir tocar el resto del sistema.
+
+---
+
 ## Pendientes por decidir
 
 - Proveedor de STT: Deepgram vs Whisper API (streaming vs. no, costo, latencia).
 - Proveedor de TTS: ElevenLabs vs alternativas (costo, naturalidad de voz, latencia).
-- Proveedor de LLM: Claude vs GPT (costo, calidad de evaluación de respuestas técnicas).
