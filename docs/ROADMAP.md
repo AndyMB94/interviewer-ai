@@ -34,7 +34,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 **Fase 6 — Persistencia**
 - [x] 6.1 Modelo `Interview` básico (usuario, fecha, estado).
-- [ ] 6.2 Modelos `Question` / `Answer` relacionados a la entrevista.
+- [x] 6.2 Modelos `Question` / `Answer` relacionados a la entrevista.
 - [ ] 6.3 Guardar cada intercambio (pregunta, transcripción, evaluación) en la base de datos.
 
 **Fase 7 — Patrones (refactor, sin funcionalidad nueva)**

@@ -23,3 +23,21 @@ class Interview(models.Model):
 
     def __str__(self):
         return f"Interview #{self.pk} ({self.status})"
+
+
+class Question(models.Model):
+    interview = models.ForeignKey(Interview, on_delete=models.CASCADE, related_name="questions")
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Question #{self.pk} (interview {self.interview_id})"
+
+
+class Answer(models.Model):
+    question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name="answer")
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Answer #{self.pk} (question {self.question_id})"
