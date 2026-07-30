@@ -13,7 +13,7 @@ Entrevistador técnico con IA por voz: el usuario responde preguntas de programa
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 
-> Estado: Pipeline completo funcionando de punta a punta para preguntas de texto — Frontend (React) → Gateway (Node/Socket.io) → Backend (Django/Celery) → DeepSeek, con la respuesta mostrada en el navegador en tiempo real. Falta: captura de audio real (STT/TTS conectados al flujo de UI), reemplazar el polling por Redis pub/sub, persistencia y despliegue. Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle.
+> Estado: **El círculo completo de voz funciona de punta a punta.** Hablás por el micrófono en el navegador → Frontend (React) → Gateway (Node/Socket.io) → Backend (Django/Celery) → Deepgram (STT) → DeepSeek (LLM) → ElevenLabs (TTS) → la respuesta se reproduce sola, con voz, en el navegador. Todo vía Redis pub/sub (sin polling). Falta: pulir la UI de entrevista, persistencia, patrones Strategy/Adapter, y despliegue. Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle.
 
 ## Por qué este proyecto
 
@@ -50,9 +50,9 @@ interviewer_ai/
 │   ├── ARCHITECTURE.md   # arquitectura, diagrama, patrones de diseño
 │   ├── ROADMAP.md        # fases de desarrollo, backend, gateway y frontend
 │   └── DECISIONS.md      # decisiones técnicas y por qué (ADRs cortos)
-├── backend/               # Django + Celery — Fases 0-4 completas (LLM, STT, TTS vía Celery)
-├── ws-gateway/            # Node + Express + Socket.io — Fases 0-1 completas (puente hacia Django, con polling)
-└── frontend/              # React + TypeScript — Fases 0-1 completas (input de texto conectado al pipeline)
+├── backend/               # Django + Celery — Fases 0-5 completas (LLM, STT, TTS vía Celery + Redis pub/sub)
+├── ws-gateway/            # Node + Express + Socket.io — Fases 0-3 completas (puente hacia Django vía Redis pub/sub, audio real)
+└── frontend/              # React + TypeScript — Fases 0-3 completas (captura y reproducción de audio real)
 ```
 
 ## Requisitos
@@ -99,7 +99,7 @@ pnpm install
 pnpm run dev
 ```
 
-Con todo esto corriendo, abrí `http://localhost:5173` en el navegador: podés escribir una pregunta, mandarla, y ver la respuesta del LLM llegar de punta a punta por todo el pipeline (React → Socket.io → Django → Celery → DeepSeek).
+Con todo esto corriendo, abrí `http://localhost:5173` en el navegador: podés escribir una pregunta de texto (respuesta del LLM en pantalla), o darle permiso al micrófono, grabar una pregunta hablada y detener — unos segundos después vas a escuchar la respuesta del entrevistador de IA, generada con voz real, de punta a punta (React → Socket.io → Django → Celery → Deepgram → DeepSeek → ElevenLabs → Redis pub/sub → de vuelta al navegador).
 
 ## Documentación
 
