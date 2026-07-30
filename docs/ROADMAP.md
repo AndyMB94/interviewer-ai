@@ -71,7 +71,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 - [x] 1.1 Input de texto + botón "enviar": manda el texto por socket y muestra la respuesta (contra Gateway Fase 1).
 
 **Fase 2 — Captura de audio**
-- [ ] 2.1 Pedir permiso de micrófono (`getUserMedia`).
+- [x] 2.1 Pedir permiso de micrófono (`getUserMedia`).
 - [ ] 2.2 Grabar audio con `MediaRecorder`, botón "grabar / detener".
 - [ ] 2.3 Enviar el audio grabado completo por socket al terminar de grabar (sin streaming en vivo todavía).
 
