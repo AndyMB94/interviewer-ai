@@ -107,7 +107,18 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-07-30 Deepgram como proveedor de STT
+
+**Contexto:** para Backend Fase 3 hace falta transcribir audio a texto. Se evaluaron Deepgram y Whisper API — según el roadmap actual (Frontend 2.3, Gateway 3.1, Backend 3.2), el audio siempre se graba completo y se manda entero, sin streaming en vivo.
+
+**Decisión:** Deepgram (modelo `nova-3`, vía su SDK propio `deepgram-sdk`). Documentación de referencia en `docs/AI/Deepgram/STT.md`.
+
+**Alternativas consideradas:** Whisper API — más simple y alcanza para el modelo actual "grabar completo y mandar" del roadmap, pero se prefirió Deepgram porque tiene soporte nativo de streaming en tiempo real, dejando la puerta abierta a agregar transcripción en vivo como mejora futura de portafolio (coherente con el objetivo del proyecto de mostrar WebSockets/tiempo real). Gracias al patrón Strategy/Adapter planeado (`STTProvider`, Fase 7), cambiar de proveedor más adelante no requeriría tocar el resto del sistema.
+
+**Nota técnica:** el parámetro `language` es obligatorio pasarlo explícito (`language="es"` en este proyecto) — sin especificarlo, Deepgram asume inglés por defecto y la transcripción de audio en español falla silenciosamente (devuelve `transcript: ""` con `confidence: 0.0`, sin error).
+
+---
+
 ## Pendientes por decidir
 
-- Proveedor de STT: Deepgram vs Whisper API (streaming vs. no, costo, latencia).
 - Proveedor de TTS: ElevenLabs vs alternativas (costo, naturalidad de voz, latencia).
