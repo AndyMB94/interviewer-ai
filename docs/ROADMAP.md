@@ -86,7 +86,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 ## Infra / Deploy (Docker)
 
 **Fase 0 — Infra mínima para desarrollo (desde el inicio)**
-- [ ] 0.1 `docker-compose.yml` que solo levante Postgres y Redis (el resto del código corre nativo: venv, pnpm).
+- [x] 0.1 `docker-compose.yml` que solo levante Postgres y Redis (el resto del código corre nativo: venv, pnpm).
 
 **Fase 1 — Dockerizar cada servicio (cuando ya funcionen)**
 - [ ] 1.1 `Dockerfile` para `backend/` (Django + Celery worker).
