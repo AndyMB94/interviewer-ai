@@ -13,7 +13,7 @@ def test_health_returns_ok():
 
 
 @pytest.mark.django_db
-@patch("apps.interviews.views.OpenAI")
+@patch("apps.interviews.services.llm_service.OpenAI")
 def test_ask_returns_llm_answer(mock_openai_class):
     mock_client = MagicMock()
     mock_openai_class.return_value = mock_client
