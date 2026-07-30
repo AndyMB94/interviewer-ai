@@ -1,5 +1,9 @@
+import { useSocket } from "./hooks/useSocket";
+
 function App() {
-  return <h1>Interviewer AI</h1>
+  useSocket();
+
+  return <h1>Interviewer AI</h1>;
 }
 
-export default App
+export default App;

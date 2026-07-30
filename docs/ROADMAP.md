@@ -65,7 +65,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 **Fase 0 — Setup base**
 - [x] 0.1 Proyecto React corriendo, pantalla en blanco con un texto.
-- [ ] 0.2 Instalar `socket.io-client`, conectar al gateway y mostrar "conectado" en consola.
+- [x] 0.2 Instalar `socket.io-client`, conectar al gateway y mostrar "conectado" en consola.
 
 **Fase 1 — Texto primero, sin audio**
 - [ ] 1.1 Input de texto + botón "enviar": manda el texto por socket y muestra la respuesta (contra Gateway Fase 1).
