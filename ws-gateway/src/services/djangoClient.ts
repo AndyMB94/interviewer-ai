@@ -2,17 +2,25 @@ import { subscribeToTask } from "./redisSubscriber.js";
 
 const DJANGO_URL = "http://localhost:8000";
 
-export async function askQuestion(question: string): Promise<string> {
+export async function askQuestion(
+  question: string,
+  interviewId?: number,
+): Promise<{ answer: string; interviewId: number }> {
+  const body: Record<string, unknown> = { question };
+  if (interviewId) {
+    body.interview_id = interviewId;
+  }
+
   const askResponse = await fetch(`${DJANGO_URL}/api/ask/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify(body),
   });
-  const { task_id } = await askResponse.json();
+  const { task_id, interview_id } = await askResponse.json();
 
   return new Promise((resolve) => {
     subscribeToTask(task_id, (answer) => {
-      resolve(answer);
+      resolve({ answer, interviewId: interview_id });
     });
   });
 }

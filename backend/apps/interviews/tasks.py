@@ -43,12 +43,16 @@ def ask_llm_task(self, question_id):
     return answer_text
 
 
-@shared_task
-def transcribe_audio_task(audio_base64):
+@shared_task(bind=True)
+def transcribe_audio_task(self, audio_base64):
     audio_bytes = base64.b64decode(audio_base64)
-    return transcribe_audio(audio_bytes)
+    transcript = transcribe_audio(audio_bytes)
+    publish_result(self.request.id, transcript)
+    return transcript
 
 
-@shared_task
-def synthesize_speech_task(text):
-    return synthesize_speech(text)
+@shared_task(bind=True)
+def synthesize_speech_task(self, text):
+    audio_url = synthesize_speech(text)
+    publish_result(self.request.id, audio_url)
+    return audio_url

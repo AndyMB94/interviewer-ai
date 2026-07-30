@@ -62,7 +62,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 - [x] 3.2 Recibir el archivo/URL de audio de respuesta (TTS) y emitirlo al cliente.
 
 **Fase 4 — Memoria de conversación** _(agregada 2026-07-30, no estaba prevista cuando se escribieron las fases anteriores — surge de Backend Fase 6, persistencia)_
-- [ ] 4.1 Rastrear el `interview_id` por conexión de socket (guardarlo la primera vez que `/api/ask/` lo devuelve) y mandarlo en cada pregunta/audio siguiente de esa misma conexión, para que el LLM tenga memoria continua durante toda la sesión de voz.
+- [x] 4.1 Rastrear el `interview_id` por conexión de socket (guardarlo la primera vez que `/api/ask/` lo devuelve) y mandarlo en cada pregunta/audio siguiente de esa misma conexión, para que el LLM tenga memoria continua durante toda la sesión de voz.
 
 ## Frontend (React + TypeScript)
 
