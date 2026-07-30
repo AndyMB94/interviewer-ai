@@ -47,7 +47,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 **Fase 0 — Setup base**
 - [x] 0.1 Proyecto Node + Express corriendo, ruta `/health`.
 - [x] 0.2 Instalar Socket.io; evento de conexión que solo loguea "cliente conectado".
-- [ ] 0.3 Evento de eco: el cliente manda texto, el servidor lo regresa igual.
+- [x] 0.3 Evento de eco: el cliente manda texto, el servidor lo regresa igual.
 
 **Fase 1 — Puente hacia Django (todavía con texto, no audio)**
 - [ ] 1.1 El gateway recibe un evento con texto y hace un POST al endpoint `/api/ask/` de Django (Backend Fase 1.2), devuelve la respuesta por el socket.

@@ -14,6 +14,11 @@ app.get("/health", (req, res) => {
 
 io.on("connection", (socket) => {
   console.log("cliente conectado:", socket.id);
+
+  socket.on("echo", (message) => {
+    console.log("mensaje recibido:", message);
+    socket.emit("echo", message);
+  });
 });
 
 httpServer.listen(PORT, () => {
