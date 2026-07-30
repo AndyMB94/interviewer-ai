@@ -32,3 +32,32 @@ def test_ask_requires_question():
     response = client.post("/api/ask/", {}, format="json")
 
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.AsyncResult")
+def test_ask_result_pending(mock_async_result_class):
+    mock_result = MagicMock()
+    mock_result.ready.return_value = False
+    mock_async_result_class.return_value = mock_result
+
+    client = APIClient()
+    response = client.get("/api/ask/some-task-id/")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "pending"}
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.AsyncResult")
+def test_ask_result_done(mock_async_result_class):
+    mock_result = MagicMock()
+    mock_result.ready.return_value = True
+    mock_result.result = "una respuesta"
+    mock_async_result_class.return_value = mock_result
+
+    client = APIClient()
+    response = client.get("/api/ask/some-task-id/")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "done", "answer": "una respuesta"}

@@ -1,3 +1,4 @@
+from celery.result import AsyncResult
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -17,3 +18,13 @@ def ask(request):
 
     task = ask_llm_task.delay(question)
     return Response({"task_id": task.id}, status=202)
+
+
+@api_view(["GET"])
+def ask_result(request, task_id):
+    result = AsyncResult(task_id)
+
+    if not result.ready():
+        return Response({"status": "pending"})
+
+    return Response({"status": "done", "answer": result.result})
