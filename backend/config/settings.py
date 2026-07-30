@@ -127,3 +127,6 @@ STATIC_URL = 'static/'
 
 CELERY_BROKER_URL = os.environ.get("REDIS_URL")
 CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL")
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"

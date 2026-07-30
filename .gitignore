@@ -17,5 +17,8 @@ build/
 *.mp3
 *.m4a
 
+# Audio generado en runtime (TTS)
+backend/media/
+
 # OS / editor
 .DS_Store

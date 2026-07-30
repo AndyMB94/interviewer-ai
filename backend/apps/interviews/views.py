@@ -4,7 +4,7 @@ from celery.result import AsyncResult
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from apps.interviews.tasks import ask_llm_task, transcribe_audio_task
+from apps.interviews.tasks import ask_llm_task, synthesize_speech_task, transcribe_audio_task
 
 
 @api_view(["GET"])
@@ -51,3 +51,23 @@ def transcribe_result(request, task_id):
         return Response({"status": "pending"})
 
     return Response({"status": "done", "transcript": result.result})
+
+
+@api_view(["POST"])
+def speak(request):
+    text = request.data.get("text")
+    if not text:
+        return Response({"error": "text is required"}, status=400)
+
+    task = synthesize_speech_task.delay(text)
+    return Response({"task_id": task.id}, status=202)
+
+
+@api_view(["GET"])
+def speak_result(request, task_id):
+    result = AsyncResult(task_id)
+
+    if not result.ready():
+        return Response({"status": "pending"})
+
+    return Response({"status": "done", "audio_url": result.result})

@@ -8,4 +8,6 @@ urlpatterns = [
     path("ask/<str:task_id>/", views.ask_result, name="ask_result"),
     path("transcribe/", views.transcribe, name="transcribe"),
     path("transcribe/<str:task_id>/", views.transcribe_result, name="transcribe_result"),
+    path("speak/", views.speak, name="speak"),
+    path("speak/<str:task_id>/", views.speak_result, name="speak_result"),
 ]

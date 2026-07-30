@@ -101,3 +101,40 @@ def test_transcribe_result_done(mock_async_result_class):
 
     assert response.status_code == 200
     assert response.json() == {"status": "done", "transcript": "hola mundo"}
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.synthesize_speech_task.delay")
+def test_speak_returns_task_id(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
+
+    client = APIClient()
+    response = client.post("/api/speak/", {"text": "hola"}, format="json")
+
+    assert response.status_code == 202
+    assert response.json() == {"task_id": "fake-task-id"}
+
+
+@pytest.mark.django_db
+def test_speak_requires_text():
+    client = APIClient()
+    response = client.post("/api/speak/", {}, format="json")
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.AsyncResult")
+def test_speak_result_done(mock_async_result_class):
+    mock_result = MagicMock()
+    mock_result.ready.return_value = True
+    mock_result.result = "/media/abc123.mp3"
+    mock_async_result_class.return_value = mock_result
+
+    client = APIClient()
+    response = client.get("/api/speak/some-task-id/")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "done", "audio_url": "/media/abc123.mp3"}
