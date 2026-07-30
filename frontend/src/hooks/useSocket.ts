@@ -7,6 +7,7 @@ export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
   const [answer, setAnswer] = useState<string | null>(null);
   const [audioResponseUrl, setAudioResponseUrl] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState<string | null>(null);
 
   useEffect(() => {
     const socket = io(GATEWAY_URL);
@@ -24,6 +25,10 @@ export function useSocket() {
       setAudioResponseUrl(url);
     });
 
+    socket.on("transcript", (text: string) => {
+      setTranscript(text);
+    });
+
     return () => {
       socket.disconnect();
     };
@@ -38,5 +43,5 @@ export function useSocket() {
     socketRef.current?.emit("audio", buffer);
   }, []);
 
-  return { askQuestion, answer, sendAudio, audioResponseUrl };
+  return { askQuestion, answer, sendAudio, audioResponseUrl, transcript };
 }

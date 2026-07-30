@@ -33,6 +33,7 @@ export function registerInterviewSocket(io: Server) {
         const result = await askQuestion(transcript, interviewId);
         interviewId = result.interviewId;
         console.log("respuesta del LLM:", result.answer, "| interview_id:", interviewId);
+        socket.emit("ask", result.answer);
 
         const audioUrl = await synthesizeSpeech(result.answer);
         console.log("audio de respuesta:", audioUrl);
