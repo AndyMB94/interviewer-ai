@@ -64,7 +64,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 ## Frontend (React + TypeScript)
 
 **Fase 0 — Setup base**
-- [ ] 0.1 Proyecto React corriendo, pantalla en blanco con un texto.
+- [x] 0.1 Proyecto React corriendo, pantalla en blanco con un texto.
 - [ ] 0.2 Instalar `socket.io-client`, conectar al gateway y mostrar "conectado" en consola.
 
 **Fase 1 — Texto primero, sin audio**
