@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from apps.interviews.services.llm_service import ask_llm
+from apps.interviews.tasks import ask_llm_task
 
 
 @api_view(["GET"])
@@ -15,5 +15,5 @@ def ask(request):
     if not question:
         return Response({"error": "question is required"}, status=400)
 
-    answer = ask_llm(question)
-    return Response({"answer": answer})
+    task = ask_llm_task.delay(question)
+    return Response({"task_id": task.id}, status=202)

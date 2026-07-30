@@ -13,19 +13,17 @@ def test_health_returns_ok():
 
 
 @pytest.mark.django_db
-@patch("apps.interviews.services.llm_service.OpenAI")
-def test_ask_returns_llm_answer(mock_openai_class):
-    mock_client = MagicMock()
-    mock_openai_class.return_value = mock_client
-    mock_client.chat.completions.create.return_value.choices = [
-        MagicMock(message=MagicMock(content="mocked answer"))
-    ]
+@patch("apps.interviews.views.ask_llm_task.delay")
+def test_ask_returns_task_id(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
 
     client = APIClient()
     response = client.post("/api/ask/", {"question": "hello"}, format="json")
 
-    assert response.status_code == 200
-    assert response.json() == {"answer": "mocked answer"}
+    assert response.status_code == 202
+    assert response.json() == {"task_id": "fake-task-id"}
 
 
 @pytest.mark.django_db
