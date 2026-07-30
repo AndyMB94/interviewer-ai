@@ -30,7 +30,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 **Fase 5 — Puente hacia el gateway (Redis pub/sub)**
 - [x] 5.1 Publicar un mensaje de prueba a un canal Redis desde un script Python, y consumirlo con otro script (validar el mecanismo antes de tocar Node).
-- [ ] 5.2 Cuando una tarea Celery (LLM/STT/TTS) termina, publicar el resultado al canal Redis de esa sesión.
+- [x] 5.2 Cuando una tarea Celery (LLM/STT/TTS) termina, publicar el resultado al canal Redis de esa sesión.
 
 **Fase 6 — Persistencia**
 - [ ] 6.1 Modelo `Interview` básico (usuario, fecha, estado).
