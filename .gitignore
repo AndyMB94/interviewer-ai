@@ -12,5 +12,10 @@ build/
 # Env secrets (cada servicio commitea su .env.example, nunca su .env)
 .env
 
+# Audio de prueba (grabaciones personales, no se comparten)
+*.wav
+*.mp3
+*.m4a
+
 # OS / editor
 .DS_Store

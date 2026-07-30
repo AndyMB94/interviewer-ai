@@ -9,6 +9,7 @@ click==8.4.2
 click-didyoumean==0.3.1
 click-plugins==1.1.1.2
 click-repl==0.3.0
+deepgram-sdk==7.6.0
 distro==1.9.0
 Django==6.0.7
 djangorestframework==3.17.1
@@ -42,3 +43,4 @@ tzdata==2026.3
 tzlocal==5.4.4
 vine==5.1.0
 wcwidth==0.8.2
+websockets==17.0
