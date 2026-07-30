@@ -13,7 +13,7 @@ Entrevistador técnico con IA por voz: el usuario responde preguntas de programa
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 
-> Estado: Backend (Django + Celery) con Fases 0-4 completas — LLM, Speech-to-Text y Text-to-Speech integrados end-to-end vía tareas asíncronas. Gateway (Node) y Frontend (React) todavía no empezaron. Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle.
+> Estado: Pipeline completo funcionando de punta a punta para preguntas de texto — Frontend (React) → Gateway (Node/Socket.io) → Backend (Django/Celery) → DeepSeek, con la respuesta mostrada en el navegador en tiempo real. Falta: captura de audio real (STT/TTS conectados al flujo de UI), reemplazar el polling por Redis pub/sub, persistencia y despliegue. Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle.
 
 ## Por qué este proyecto
 
@@ -51,8 +51,8 @@ interviewer_ai/
 │   ├── ROADMAP.md        # fases de desarrollo, backend, gateway y frontend
 │   └── DECISIONS.md      # decisiones técnicas y por qué (ADRs cortos)
 ├── backend/               # Django + Celery — Fases 0-4 completas (LLM, STT, TTS vía Celery)
-├── ws-gateway/            # Node + Express + Socket.io (pendiente de crear)
-└── frontend/              # React (pendiente de crear)
+├── ws-gateway/            # Node + Express + Socket.io — Fases 0-1 completas (puente hacia Django, con polling)
+└── frontend/              # React + TypeScript — Fases 0-1 completas (input de texto conectado al pipeline)
 ```
 
 ## Requisitos
@@ -63,8 +63,6 @@ interviewer_ai/
 - Docker + Docker Compose
 
 ## Cómo correrlo
-
-Por ahora solo el backend está funcional (`ws-gateway/` y `frontend/` todavía no existen).
 
 Cada servicio tiene su propio `.env` (secretos, no se commitea) y un `.env.example` (plantilla, sí se commitea) — al clonar el repo hay que copiar `backend/.env.example` a `backend/.env` y completar los valores (API keys de DeepSeek/Deepgram/ElevenLabs, credenciales de Postgres que coincidan con `docker-compose.yml`).
 
@@ -88,6 +86,20 @@ celery -A config worker --loglevel=info
 ```
 
 Con esto disponibles: `/api/health/`, y los endpoints asíncronos `/api/ask/` (LLM), `/api/transcribe/` (STT), `/api/speak/` (TTS) — cada uno con el patrón `POST` (dispara la tarea, devuelve un `task_id`) + `GET .../<task_id>/` (consulta el resultado).
+
+**4. Gateway** (en otra terminal, desde `ws-gateway/`):
+```bash
+pnpm install
+pnpm run dev
+```
+
+**5. Frontend** (en otra terminal, desde `frontend/`):
+```bash
+pnpm install
+pnpm run dev
+```
+
+Con todo esto corriendo, abrí `http://localhost:5173` en el navegador: podés escribir una pregunta, mandarla, y ver la respuesta del LLM llegar de punta a punta por todo el pipeline (React → Socket.io → Django → Celery → DeepSeek).
 
 ## Documentación
 
