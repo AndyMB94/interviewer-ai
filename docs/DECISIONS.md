@@ -119,6 +119,18 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-07-30 ElevenLabs como proveedor de TTS
+
+**Contexto:** para Backend Fase 4 hace falta sintetizar voz a partir de texto. ElevenLabs era la opción de referencia desde el inicio del proyecto (ver README.md).
+
+**Decisión:** ElevenLabs (SDK propio `elevenlabs`, modelo `eleven_v3`, voz de ejemplo `"George"`). Documentación de referencia en `docs/AI/ElevenLabs/TTS.md`.
+
+**Alternativas consideradas:** no se evaluaron alternativas en profundidad — ElevenLabs es reconocido como el estándar de facto en naturalidad de voz, y el plan gratuito alcanzó sin problema para validar la integración.
+
+**Nota técnica:** `text_to_speech.convert()` devuelve el audio en **streaming** (por chunks), no de una vez — hay que iterarlo y escribirlo a un archivo (`for chunk in audio: f.write(chunk)`), no asumir que devuelve los bytes completos directamente.
+
+---
+
 ## Pendientes por decidir
 
-- Proveedor de TTS: ElevenLabs vs alternativas (costo, naturalidad de voz, latencia).
+_Ninguno por ahora — quedan proveedores de LLM, STT y TTS decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
