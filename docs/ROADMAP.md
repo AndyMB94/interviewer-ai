@@ -68,7 +68,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 - [x] 0.2 Instalar `socket.io-client`, conectar al gateway y mostrar "conectado" en consola.
 
 **Fase 1 — Texto primero, sin audio**
-- [ ] 1.1 Input de texto + botón "enviar": manda el texto por socket y muestra la respuesta (contra Gateway Fase 1).
+- [x] 1.1 Input de texto + botón "enviar": manda el texto por socket y muestra la respuesta (contra Gateway Fase 1).
 
 **Fase 2 — Captura de audio**
 - [ ] 2.1 Pedir permiso de micrófono (`getUserMedia`).
