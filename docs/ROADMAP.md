@@ -72,7 +72,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 **Fase 2 — Captura de audio**
 - [x] 2.1 Pedir permiso de micrófono (`getUserMedia`).
-- [ ] 2.2 Grabar audio con `MediaRecorder`, botón "grabar / detener".
+- [x] 2.2 Grabar audio con `MediaRecorder`, botón "grabar / detener".
 - [ ] 2.3 Enviar el audio grabado completo por socket al terminar de grabar (sin streaming en vivo todavía).
 
 **Fase 3 — Reproducción**

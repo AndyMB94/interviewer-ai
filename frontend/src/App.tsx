@@ -5,7 +5,15 @@ import { useMicrophone } from "./hooks/useMicrophone";
 function App() {
   const { askQuestion, answer } = useSocket();
   const [question, setQuestion] = useState("");
-  const { stream, error, requestPermission } = useMicrophone();
+  const {
+    stream,
+    error,
+    requestPermission,
+    isRecording,
+    audioBlob,
+    startRecording,
+    stopRecording,
+  } = useMicrophone();
 
   const handleSubmit = () => {
     askQuestion(question);
@@ -27,6 +35,14 @@ function App() {
       <button onClick={requestPermission}>Permitir micrófono</button>
       {stream && <p>Micrófono habilitado ✅</p>}
       {error && <p>{error}</p>}
+
+      {stream && (
+        <button onClick={isRecording ? stopRecording : startRecording}>
+          {isRecording ? "Detener" : "Grabar"}
+        </button>
+      )}
+
+      {audioBlob && <audio controls src={URL.createObjectURL(audioBlob)} />}
     </div>
   );
 }
