@@ -1,3 +1,5 @@
+import { subscribeToTask } from "./redisSubscriber.js";
+
 const DJANGO_URL = "http://localhost:8000";
 
 export async function askQuestion(question: string): Promise<string> {
@@ -8,18 +10,9 @@ export async function askQuestion(question: string): Promise<string> {
   });
   const { task_id } = await askResponse.json();
 
-  return pollResult(task_id);
-}
-
-async function pollResult(taskId: string): Promise<string> {
-  while (true) {
-    const response = await fetch(`${DJANGO_URL}/api/ask/${taskId}/`);
-    const data = await response.json();
-
-    if (data.status === "done") {
-      return data.answer;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
+  return new Promise((resolve) => {
+    subscribeToTask(task_id, (answer) => {
+      resolve(answer);
+    });
+  });
 }
