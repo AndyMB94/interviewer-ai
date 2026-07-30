@@ -33,7 +33,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 - [x] 5.2 Cuando una tarea Celery (LLM/STT/TTS) termina, publicar el resultado al canal Redis de esa sesión.
 
 **Fase 6 — Persistencia**
-- [ ] 6.1 Modelo `Interview` básico (usuario, fecha, estado).
+- [x] 6.1 Modelo `Interview` básico (usuario, fecha, estado).
 - [ ] 6.2 Modelos `Question` / `Answer` relacionados a la entrevista.
 - [ ] 6.3 Guardar cada intercambio (pregunta, transcripción, evaluación) en la base de datos.
 
