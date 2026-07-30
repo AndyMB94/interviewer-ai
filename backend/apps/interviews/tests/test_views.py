@@ -1,6 +1,7 @@
 import pytest
 from rest_framework.test import APIClient
 from unittest.mock import MagicMock, patch
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 
 @pytest.mark.django_db
@@ -61,3 +62,42 @@ def test_ask_result_done(mock_async_result_class):
 
     assert response.status_code == 200
     assert response.json() == {"status": "done", "answer": "una respuesta"}
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.transcribe_audio_task.delay")
+def test_transcribe_returns_task_id(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
+
+    audio_file = SimpleUploadedFile("audio.wav", b"fake-audio-bytes", content_type="audio/wav")
+
+    client = APIClient()
+    response = client.post("/api/transcribe/", {"audio": audio_file}, format="multipart")
+
+    assert response.status_code == 202
+    assert response.json() == {"task_id": "fake-task-id"}
+
+
+@pytest.mark.django_db
+def test_transcribe_requires_audio_file():
+    client = APIClient()
+    response = client.post("/api/transcribe/", {}, format="multipart")
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.AsyncResult")
+def test_transcribe_result_done(mock_async_result_class):
+    mock_result = MagicMock()
+    mock_result.ready.return_value = True
+    mock_result.result = "hola mundo"
+    mock_async_result_class.return_value = mock_result
+
+    client = APIClient()
+    response = client.get("/api/transcribe/some-task-id/")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "done", "transcript": "hola mundo"}
