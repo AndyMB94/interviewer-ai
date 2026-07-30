@@ -82,7 +82,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 - [x] 3.1 Recibir el audio de respuesta (TTS) del gateway y reproducirlo con un elemento `<audio>`.
 
 **Fase 4 — UI de entrevista**
-- [ ] 4.1 Mostrar la pregunta actual.
+- [x] 4.1 Mostrar la pregunta actual.
 - [ ] 4.2 Mostrar transcripción en vivo cuando esté lista.
 - [ ] 4.3 Pantalla de feedback final.
 

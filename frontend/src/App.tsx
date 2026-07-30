@@ -28,34 +28,39 @@ function App() {
   return (
     <div>
       <h1>Interviewer AI</h1>
-      <input
-        type="text"
-        value={question}
-        onChange={(e) => setQuestion(e.target.value)}
-      />
-      <button onClick={handleSubmit}>Enviar</button>
-      {answer && <p>{answer}</p>}
+
+      <section>
+        <h2>Pregunta actual</h2>
+        {answer ? <p>{answer}</p> : <p>Todavía no hay ninguna pregunta.</p>}
+        {audioResponseUrl && <audio controls autoPlay src={audioResponseUrl} />}
+      </section>
 
       <hr />
 
-      <button onClick={requestPermission}>Permitir micrófono</button>
-      {stream && <p>Micrófono habilitado ✅</p>}
-      {error && <p>{error}</p>}
+      <section>
+        <h3>Responder por texto</h3>
+        <input
+          type="text"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+        />
+        <button onClick={handleSubmit}>Enviar</button>
+      </section>
 
-      {stream && (
-        <button onClick={isRecording ? stopRecording : startRecording}>
-          {isRecording ? "Detener" : "Grabar"}
-        </button>
-      )}
+      <section>
+        <h3>Responder por voz</h3>
+        <button onClick={requestPermission}>Permitir micrófono</button>
+        {stream && <p>Micrófono habilitado ✅</p>}
+        {error && <p>{error}</p>}
 
-      {audioBlob && <audio controls src={URL.createObjectURL(audioBlob)} />}
+        {stream && (
+          <button onClick={isRecording ? stopRecording : startRecording}>
+            {isRecording ? "Detener" : "Grabar"}
+          </button>
+        )}
 
-      {audioResponseUrl && (
-        <>
-          <p>Respuesta del entrevistador:</p>
-          <audio controls autoPlay src={audioResponseUrl} />
-        </>
-      )}
+        {audioBlob && <audio controls src={URL.createObjectURL(audioBlob)} />}
+      </section>
     </div>
   );
 }
