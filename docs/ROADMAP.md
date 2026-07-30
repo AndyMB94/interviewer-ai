@@ -12,7 +12,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 **Fase 1 — LLM síncrono, sin audio, sin Celery**
 - [x] 1.1 Instalar el SDK del LLM elegido y probar una llamada simple hardcodeada (un script suelto, sin vista todavía).
-- [ ] 1.2 Endpoint `/api/ask/` que recibe texto plano y devuelve la respuesta del LLM (todo síncrono, directo en la vista).
+- [x] 1.2 Endpoint `/api/ask/` que recibe texto plano y devuelve la respuesta del LLM (todo síncrono, directo en la vista).
 - [ ] 1.3 Mover esa llamada a una función en `services/llm_service.py` (primer paso de orden, sin patrones todavía).
 
 **Fase 2 — Async real con Celery**
