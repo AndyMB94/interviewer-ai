@@ -1,6 +1,6 @@
 import type { Server } from "socket.io";
 
-import { askQuestion } from "../services/djangoClient.js";
+import { askQuestion, transcribeAudio } from "../services/djangoClient.js";
 
 export function registerInterviewSocket(io: Server) {
   io.on("connection", (socket) => {
@@ -17,8 +17,11 @@ export function registerInterviewSocket(io: Server) {
       socket.emit("ask", answer);
     });
 
-    socket.on("audio", (buffer: ArrayBuffer) => {
+    socket.on("audio", async (buffer: ArrayBuffer) => {
       console.log("audio recibido:", buffer.byteLength, "bytes");
+      const transcript = await transcribeAudio(buffer);
+      console.log("transcripción:", transcript);
+      socket.emit("transcript", transcript);
     });
   });
 }
