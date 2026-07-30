@@ -2,6 +2,8 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
+import { registerInterviewSocket } from "./sockets/interviewSocket.js";
+
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
@@ -12,14 +14,7 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-io.on("connection", (socket) => {
-  console.log("cliente conectado:", socket.id);
-
-  socket.on("echo", (message) => {
-    console.log("mensaje recibido:", message);
-    socket.emit("echo", message);
-  });
-});
+registerInterviewSocket(io);
 
 httpServer.listen(PORT, () => {
   console.log(`ws-gateway escuchando en el puerto ${PORT}`);
