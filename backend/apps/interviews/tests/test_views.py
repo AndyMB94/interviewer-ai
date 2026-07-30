@@ -24,7 +24,9 @@ def test_ask_returns_task_id(mock_delay):
     response = client.post("/api/ask/", {"question": "hello"}, format="json")
 
     assert response.status_code == 202
-    assert response.json() == {"task_id": "fake-task-id"}
+    data = response.json()
+    assert data["task_id"] == "fake-task-id"
+    assert "interview_id" in data
 
 
 @pytest.mark.django_db

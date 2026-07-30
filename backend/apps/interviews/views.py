@@ -4,6 +4,7 @@ from celery.result import AsyncResult
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from apps.interviews.models import Interview, Question
 from apps.interviews.tasks import ask_llm_task, synthesize_speech_task, transcribe_audio_task
 
 
@@ -14,12 +15,22 @@ def health(request):
 
 @api_view(["POST"])
 def ask(request):
-    question = request.data.get("question")
-    if not question:
+    question_text = request.data.get("question")
+    if not question_text:
         return Response({"error": "question is required"}, status=400)
 
-    task = ask_llm_task.delay(question)
-    return Response({"task_id": task.id}, status=202)
+    interview_id = request.data.get("interview_id")
+    if interview_id:
+        interview = Interview.objects.filter(pk=interview_id).first()
+        if interview is None:
+            return Response({"error": "interview not found"}, status=404)
+    else:
+        interview = Interview.objects.create()
+
+    question = Question.objects.create(interview=interview, text=question_text)
+
+    task = ask_llm_task.delay(question.id)
+    return Response({"task_id": task.id, "interview_id": interview.id}, status=202)
 
 
 @api_view(["GET"])
