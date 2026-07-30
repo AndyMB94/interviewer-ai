@@ -13,7 +13,7 @@ Entrevistador técnico con IA por voz: el usuario responde preguntas de programa
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 
-> Estado: en fase de diseño / arranque. Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el progreso.
+> Estado: Backend (Django + Celery) con Fases 0-4 completas — LLM, Speech-to-Text y Text-to-Speech integrados end-to-end vía tareas asíncronas. Gateway (Node) y Frontend (React) todavía no empezaron. Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle.
 
 ## Por qué este proyecto
 
@@ -36,10 +36,10 @@ Proyecto de portafolio pensado para demostrar WebSockets bidireccionales con dat
 - React + TypeScript (cliente: captura de audio del micrófono, conexión WebSocket al gateway Node, reproducción de audio de respuesta)
 - Gestor de paquetes: pnpm
 
-**IA / APIs externas** (proveedor exacto por definir, ver [docs/DECISIONS.md](docs/DECISIONS.md))
-- Speech-to-Text (ej. Deepgram / Whisper API)
-- LLM (ej. Claude / GPT) para generar y evaluar preguntas
-- Text-to-Speech (ej. ElevenLabs)
+**IA / APIs externas** (ver [docs/DECISIONS.md](docs/DECISIONS.md) para el porqué de cada elección)
+- LLM: DeepSeek — genera y evalúa las respuestas
+- Speech-to-Text: Deepgram — transcribe el audio del usuario
+- Text-to-Speech: ElevenLabs — sintetiza la voz de las respuestas
 
 ## Estructura del repo
 
@@ -50,7 +50,7 @@ interviewer_ai/
 │   ├── ARCHITECTURE.md   # arquitectura, diagrama, patrones de diseño
 │   ├── ROADMAP.md        # fases de desarrollo, backend, gateway y frontend
 │   └── DECISIONS.md      # decisiones técnicas y por qué (ADRs cortos)
-├── backend/               # Django + Celery (pendiente de crear)
+├── backend/               # Django + Celery — Fases 0-4 completas (LLM, STT, TTS vía Celery)
 ├── ws-gateway/            # Node + Express + Socket.io (pendiente de crear)
 └── frontend/              # React (pendiente de crear)
 ```
@@ -64,9 +64,30 @@ interviewer_ai/
 
 ## Cómo correrlo
 
-_Pendiente — se documenta cuando exista el primer setup funcional (ver Fase 0 en el roadmap)._
+Por ahora solo el backend está funcional (`ws-gateway/` y `frontend/` todavía no existen).
 
-Cada servicio (`backend/`, `ws-gateway/`, `frontend/`) tiene su propio `.env` (secretos, no se commitea) y un `.env.example` (plantilla, sí se commitea) — al clonar el repo hay que copiar cada `.env.example` a `.env` y llenar los valores.
+Cada servicio tiene su propio `.env` (secretos, no se commitea) y un `.env.example` (plantilla, sí se commitea) — al clonar el repo hay que copiar `backend/.env.example` a `backend/.env` y completar los valores (API keys de DeepSeek/Deepgram/ElevenLabs, credenciales de Postgres que coincidan con `docker-compose.yml`).
+
+**1. Levantar Postgres y Redis** (desde la raíz del repo):
+```bash
+docker compose up -d
+```
+
+**2. Backend** (desde `backend/`):
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+**3. Worker de Celery** (en otra terminal, mismo venv):
+```bash
+celery -A config worker --loglevel=info
+```
+
+Con esto disponibles: `/api/health/`, y los endpoints asíncronos `/api/ask/` (LLM), `/api/transcribe/` (STT), `/api/speak/` (TTS) — cada uno con el patrón `POST` (dispara la tarea, devuelve un `task_id`) + `GET .../<task_id>/` (consulta el resultado).
 
 ## Documentación
 
