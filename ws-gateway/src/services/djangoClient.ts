@@ -33,3 +33,18 @@ export async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string>
     });
   });
 }
+
+export async function synthesizeSpeech(text: string): Promise<string> {
+  const speakResponse = await fetch(`${DJANGO_URL}/api/speak/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  const { task_id } = await speakResponse.json();
+
+  return new Promise((resolve) => {
+    subscribeToTask(task_id, (audioUrl) => {
+      resolve(audioUrl);
+    });
+  });
+}

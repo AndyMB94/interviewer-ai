@@ -1,6 +1,8 @@
 import type { Server } from "socket.io";
 
-import { askQuestion, transcribeAudio } from "../services/djangoClient.js";
+import { askQuestion, synthesizeSpeech, transcribeAudio } from "../services/djangoClient.js";
+
+const DJANGO_URL = "http://localhost:8000";
 
 export function registerInterviewSocket(io: Server) {
   io.on("connection", (socket) => {
@@ -19,9 +21,17 @@ export function registerInterviewSocket(io: Server) {
 
     socket.on("audio", async (buffer: ArrayBuffer) => {
       console.log("audio recibido:", buffer.byteLength, "bytes");
+
       const transcript = await transcribeAudio(buffer);
       console.log("transcripción:", transcript);
       socket.emit("transcript", transcript);
+
+      const answer = await askQuestion(transcript);
+      console.log("respuesta del LLM:", answer);
+
+      const audioUrl = await synthesizeSpeech(answer);
+      console.log("audio de respuesta:", audioUrl);
+      socket.emit("audio-response", `${DJANGO_URL}${audioUrl}`);
     });
   });
 }

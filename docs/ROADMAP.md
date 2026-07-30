@@ -59,7 +59,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 **Fase 3 — Audio real**
 - [x] 3.1 Recibir audio binario del cliente por socket y reenviarlo como archivo al endpoint de Django (Backend Fase 3.2).
-- [ ] 3.2 Recibir el archivo/URL de audio de respuesta (TTS) y emitirlo al cliente.
+- [x] 3.2 Recibir el archivo/URL de audio de respuesta (TTS) y emitirlo al cliente.
 
 ## Frontend (React + TypeScript)
 
