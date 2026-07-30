@@ -101,8 +101,13 @@ backend/
 │   └── ai_providers/          # adapters de proveedores externos (Fase 7, Strategy/Adapter)
 │       ├── base.py            # interfaces abstractas (STTProvider, LLMProvider, TTSProvider...)
 │       ├── deepgram_stt.py
-│       ├── anthropic_llm.py
+│       ├── deepseek_llm.py
 │       └── elevenlabs_tts.py
+├── scripts/                    # scripts sueltos de validación, fuera de Django (uno por fase: "probar X en un script suelto")
+│   ├── test_llm.py
+│   ├── test_celery.py
+│   ├── test_stt.py
+│   └── test_tts.py
 ├── requirements.txt            # generado con `pip freeze` a medida que se instala
 ├── .env                        # secretos reales (SECRET_KEY, DB, Redis, API keys), gitignored
 ├── .env.example                # plantilla sin valores, sí se commitea
