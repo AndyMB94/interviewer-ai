@@ -3,7 +3,7 @@ import { useSocket } from "./hooks/useSocket";
 import { useMicrophone } from "./hooks/useMicrophone";
 
 function App() {
-  const { askQuestion, answer, sendAudio } = useSocket();
+  const { askQuestion, answer, sendAudio, audioResponseUrl } = useSocket();
   const [question, setQuestion] = useState("");
   const {
     stream,
@@ -49,6 +49,13 @@ function App() {
       )}
 
       {audioBlob && <audio controls src={URL.createObjectURL(audioBlob)} />}
+
+      {audioResponseUrl && (
+        <>
+          <p>Respuesta del entrevistador:</p>
+          <audio controls autoPlay src={audioResponseUrl} />
+        </>
+      )}
     </div>
   );
 }

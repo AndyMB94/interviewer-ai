@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
 const GATEWAY_URL = "http://localhost:3000";
@@ -6,6 +6,7 @@ const GATEWAY_URL = "http://localhost:3000";
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
   const [answer, setAnswer] = useState<string | null>(null);
+  const [audioResponseUrl, setAudioResponseUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const socket = io(GATEWAY_URL);
@@ -19,19 +20,23 @@ export function useSocket() {
       setAnswer(response);
     });
 
+    socket.on("audio-response", (url: string) => {
+      setAudioResponseUrl(url);
+    });
+
     return () => {
       socket.disconnect();
     };
   }, []);
 
-  const askQuestion = (question: string) => {
+  const askQuestion = useCallback((question: string) => {
     socketRef.current?.emit("ask", question);
-  };
+  }, []);
 
-  const sendAudio = async (blob: Blob) => {
+  const sendAudio = useCallback(async (blob: Blob) => {
     const buffer = await blob.arrayBuffer();
     socketRef.current?.emit("audio", buffer);
-  };
+  }, []);
 
-  return { askQuestion, answer, sendAudio };
+  return { askQuestion, answer, sendAudio, audioResponseUrl };
 }
