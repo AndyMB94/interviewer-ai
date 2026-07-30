@@ -73,7 +73,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 **Fase 2 — Captura de audio**
 - [x] 2.1 Pedir permiso de micrófono (`getUserMedia`).
 - [x] 2.2 Grabar audio con `MediaRecorder`, botón "grabar / detener".
-- [ ] 2.3 Enviar el audio grabado completo por socket al terminar de grabar (sin streaming en vivo todavía).
+- [x] 2.3 Enviar el audio grabado completo por socket al terminar de grabar (sin streaming en vivo todavía).
 
 **Fase 3 — Reproducción**
 - [ ] 3.1 Recibir el audio de respuesta (TTS) del gateway y reproducirlo con un elemento `<audio>`.

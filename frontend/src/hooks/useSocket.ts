@@ -28,5 +28,10 @@ export function useSocket() {
     socketRef.current?.emit("ask", question);
   };
 
-  return { askQuestion, answer };
+  const sendAudio = async (blob: Blob) => {
+    const buffer = await blob.arrayBuffer();
+    socketRef.current?.emit("audio", buffer);
+  };
+
+  return { askQuestion, answer, sendAudio };
 }

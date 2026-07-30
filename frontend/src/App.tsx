@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSocket } from "./hooks/useSocket";
 import { useMicrophone } from "./hooks/useMicrophone";
 
 function App() {
-  const { askQuestion, answer } = useSocket();
+  const { askQuestion, answer, sendAudio } = useSocket();
   const [question, setQuestion] = useState("");
   const {
     stream,
@@ -18,6 +18,12 @@ function App() {
   const handleSubmit = () => {
     askQuestion(question);
   };
+
+  useEffect(() => {
+    if (audioBlob) {
+      sendAudio(audioBlob);
+    }
+  }, [audioBlob, sendAudio]);
 
   return (
     <div>

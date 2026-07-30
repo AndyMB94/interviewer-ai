@@ -16,5 +16,9 @@ export function registerInterviewSocket(io: Server) {
       const answer = await askQuestion(question);
       socket.emit("ask", answer);
     });
+
+    socket.on("audio", (buffer: ArrayBuffer) => {
+      console.log("audio recibido:", buffer.byteLength, "bytes");
+    });
   });
 }
