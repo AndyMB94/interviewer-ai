@@ -45,7 +45,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 ## WS Gateway (Node + TypeScript + Express + Socket.io)
 
 **Fase 0 — Setup base**
-- [ ] 0.1 Proyecto Node + Express corriendo, ruta `/health`.
+- [x] 0.1 Proyecto Node + Express corriendo, ruta `/health`.
 - [ ] 0.2 Instalar Socket.io; evento de conexión que solo loguea "cliente conectado".
 - [ ] 0.3 Evento de eco: el cliente manda texto, el servidor lo regresa igual.
 
