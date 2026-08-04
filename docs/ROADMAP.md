@@ -93,7 +93,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 **Fase 1 — Dockerizar cada servicio (cuando ya funcionen)**
 - [x] 1.1 `Dockerfile` para `backend/` (Django + Celery worker).
-- [ ] 1.2 `Dockerfile` para `ws-gateway/` (Node).
+- [x] 1.2 `Dockerfile` para `ws-gateway/` (Node).
 - [ ] 1.3 `Dockerfile` para `frontend/` (build de producción).
 - [ ] 1.4 Expandir `docker-compose.yml` para incluir los seis servicios (Postgres, Redis, backend, celery worker, ws-gateway, frontend) y probar que todo el flujo funciona igual que en nativo.
 
