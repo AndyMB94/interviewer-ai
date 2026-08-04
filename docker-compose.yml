@@ -15,5 +15,53 @@ services:
     ports:
       - "6379:6379"
 
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - media_data:/app/media
+    depends_on:
+      - postgres
+      - redis
+
+  celery-worker:
+    build: ./backend
+    command: celery -A config worker --loglevel=info
+    env_file:
+      - ./backend/.env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - media_data:/app/media
+    depends_on:
+      - postgres
+      - redis
+
+  ws-gateway:
+    build: ./ws-gateway
+    environment:
+      DJANGO_URL: http://backend:8000
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+      - redis
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - ws-gateway
+
 volumes:
   postgres_data:
+  media_data:

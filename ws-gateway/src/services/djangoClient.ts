@@ -1,6 +1,6 @@
 import { subscribeToTask } from "./redisSubscriber.js";
 
-const DJANGO_URL = "http://localhost:8000";
+const DJANGO_URL = process.env.DJANGO_URL || "http://localhost:8000";
 
 export async function askQuestion(
   question: string,
