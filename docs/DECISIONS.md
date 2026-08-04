@@ -151,6 +151,16 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-04 InterviewSession como máquina de estados independiente, sin conectar a las tareas Celery reales (Backend Fase 7.3)
+
+**Contexto:** el roadmap pedía modelar `InterviewSession` con los estados `esperando_respuesta → transcribiendo → evaluando → generando_audio → esperando_respuesta`, validando transiciones. Hoy, `transcribe_audio_task`, `ask_llm_task` y `synthesize_speech_task` son 3 tareas Celery independientes, disparadas por 3 llamadas REST separadas que hace el gateway en secuencia — no hay un solo punto en Django que orqueste las tres y pueda usar esta máquina de estados sin persistir el estado entre requests.
+
+**Decisión:** `InterviewSession` (en `core/interview_session.py`) se construyó y testeó como clase standalone, sin conectarla a las tareas reales — demuestra el patrón State/Command (ver ARCHITECTURE.md) sin cambiar el comportamiento del sistema, en línea con el encabezado de la Fase 7 ("refactor, sin funcionalidad nueva").
+
+**Alternativas consideradas:** conectarla de verdad al flujo real (ej. agregar un campo de estado fino a `Interview` y validar en cada tarea) — se descartó para este paso porque implica persistir estado entre 3 requests HTTP independientes y decidir qué responder ante una transición inválida, que es funcionalidad nueva, no refactor. Queda como candidato natural para cuando se construya `interview_orchestrator.py` (ya previsto en ARCHITECTURE.md) si en el futuro se decide mover la orquestación de las 3 llamadas al lado de Django en vez del gateway.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT y TTS decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._

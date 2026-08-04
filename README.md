@@ -13,7 +13,7 @@ Entrevistador técnico con IA por voz: el usuario responde preguntas de programa
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 
-> Estado: **El círculo completo de voz funciona de punta a punta, con memoria de conversación real y persistencia — y ahora también corre completo en Docker.** Hablás por el micrófono en el navegador → Frontend (React) → Gateway (Node/Socket.io) → Backend (Django/Celery) → Deepgram (STT) → DeepSeek (LLM, con el historial de la entrevista) → ElevenLabs (TTS) → la respuesta se reproduce sola, con voz, en el navegador. Todo vía Redis pub/sub (sin polling). Cada entrevista se guarda en Postgres, y hay una pantalla de feedback final. Los seis servicios (Postgres, Redis, backend, celery worker, gateway, frontend) están dockerizados y se levantan con un solo `docker compose up`. Falta: patrones Strategy/Adapter (Backend Fase 7) y despliegue en un servidor real (Infra Fase 2). Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle.
+> Estado: **El círculo completo de voz funciona de punta a punta, con memoria de conversación real y persistencia, corre completo en Docker, y el código de IA ya está organizado con Strategy/Adapter.** Hablás por el micrófono en el navegador → Frontend (React) → Gateway (Node/Socket.io) → Backend (Django/Celery) → Deepgram (STT) → DeepSeek (LLM, con el historial de la entrevista) → ElevenLabs (TTS) → la respuesta se reproduce sola, con voz, en el navegador. Todo vía Redis pub/sub (sin polling). Cada entrevista se guarda en Postgres, y hay una pantalla de feedback final. Los seis servicios (Postgres, Redis, backend, celery worker, gateway, frontend) están dockerizados y se levantan con un solo `docker compose up`. Falta solo: despliegue en un servidor real (Infra Fase 2). Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle.
 
 ## Por qué este proyecto
 
@@ -51,7 +51,7 @@ interviewer_ai/
 │   ├── ARCHITECTURE.md   # arquitectura, diagrama, patrones de diseño
 │   ├── ROADMAP.md        # fases de desarrollo, backend, gateway y frontend
 │   └── DECISIONS.md      # decisiones técnicas y por qué (ADRs cortos)
-├── backend/               # Django + Celery + Dockerfile — Fases 0-6 completas (LLM, STT, TTS, persistencia y memoria de conversación)
+├── backend/               # Django + Celery + Dockerfile — Fases 0-7 completas (LLM, STT, TTS, persistencia, memoria de conversación y patrones Strategy/Adapter)
 ├── ws-gateway/            # Node + Express + Socket.io + Dockerfile — Fases 0-4 completas (puente hacia Django, memoria de conversación por sesión)
 └── frontend/              # React + TypeScript + Dockerfile — Fases 0-4 completas (entrevista completa: texto, voz y feedback final)
 ```

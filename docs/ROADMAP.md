@@ -40,7 +40,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 **Fase 7 — Patrones (refactor, sin funcionalidad nueva)**
 - [x] 7.1 Extraer interfaces `STTProvider`, `LLMProvider`, `TTSProvider` (Strategy) sin cambiar el comportamiento actual.
 - [x] 7.2 Convertir cada llamada directa en un Adapter concreto de esas interfaces.
-- [ ] 7.3 Modelar `InterviewSession` como máquina de estados, validando transiciones.
+- [x] 7.3 Modelar `InterviewSession` como máquina de estados, validando transiciones.
 
 ## WS Gateway (Node + TypeScript + Express + Socket.io)
 
