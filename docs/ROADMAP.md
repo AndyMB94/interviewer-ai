@@ -92,7 +92,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 - [x] 0.1 `docker-compose.yml` que solo levante Postgres y Redis (el resto del código corre nativo: venv, pnpm).
 
 **Fase 1 — Dockerizar cada servicio (cuando ya funcionen)**
-- [ ] 1.1 `Dockerfile` para `backend/` (Django + Celery worker).
+- [x] 1.1 `Dockerfile` para `backend/` (Django + Celery worker).
 - [ ] 1.2 `Dockerfile` para `ws-gateway/` (Node).
 - [ ] 1.3 `Dockerfile` para `frontend/` (build de producción).
 - [ ] 1.4 Expandir `docker-compose.yml` para incluir los seis servicios (Postgres, Redis, backend, celery worker, ws-gateway, frontend) y probar que todo el flujo funciona igual que en nativo.
