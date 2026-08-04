@@ -7,10 +7,10 @@ from apps.interviews.tasks import ask_llm_task
 
 
 @pytest.mark.django_db
-@patch("apps.interviews.tasks.ask_llm")
+@patch("apps.interviews.tasks.DeepSeekLLM")
 @patch("apps.interviews.tasks.publish_result")
-def test_ask_llm_task_saves_answer(mock_publish, mock_ask_llm):
-    mock_ask_llm.return_value = "respuesta simulada"
+def test_ask_llm_task_saves_answer(mock_publish, mock_llm_class):
+    mock_llm_class.return_value.ask.return_value = "respuesta simulada"
 
     interview = Interview.objects.create()
     question = Question.objects.create(interview=interview, text="Hola")
@@ -23,10 +23,10 @@ def test_ask_llm_task_saves_answer(mock_publish, mock_ask_llm):
 
 
 @pytest.mark.django_db
-@patch("apps.interviews.tasks.ask_llm")
+@patch("apps.interviews.tasks.DeepSeekLLM")
 @patch("apps.interviews.tasks.publish_result")
-def test_ask_llm_task_includes_conversation_history(mock_publish, mock_ask_llm):
-    mock_ask_llm.return_value = "segunda respuesta"
+def test_ask_llm_task_includes_conversation_history(mock_publish, mock_llm_class):
+    mock_llm_class.return_value.ask.return_value = "segunda respuesta"
 
     interview = Interview.objects.create()
     first_question = Question.objects.create(interview=interview, text="Me llamo Andy")
@@ -36,7 +36,7 @@ def test_ask_llm_task_includes_conversation_history(mock_publish, mock_ask_llm):
 
     ask_llm_task(second_question.id)
 
-    _, kwargs = mock_ask_llm.call_args
+    _, kwargs = mock_llm_class.return_value.ask.call_args
     assert kwargs["history"] == [
         {"role": "user", "content": "Me llamo Andy"},
         {"role": "assistant", "content": "Encantado, Andy"},

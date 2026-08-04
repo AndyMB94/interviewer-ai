@@ -5,9 +5,9 @@ from celery import shared_task
 from django.conf import settings
 
 from apps.interviews.models import Answer, Question
-from apps.interviews.services.llm_service import ask_llm
-from apps.interviews.services.stt_service import transcribe_audio
-from apps.interviews.services.tts_service import synthesize_speech
+from core.ai_providers.deepgram_stt import DeepgramSTT
+from core.ai_providers.deepseek_llm import DeepSeekLLM
+from core.ai_providers.elevenlabs_tts import ElevenLabsTTS
 
 redis_client = redis.from_url(settings.CELERY_BROKER_URL)
 
@@ -36,7 +36,7 @@ def ask_llm_task(self, question_id):
         if hasattr(previous_question, "answer"):
             history.append({"role": "assistant", "content": previous_question.answer.text})
 
-    answer_text = ask_llm(question.text, history=history)
+    answer_text = DeepSeekLLM().ask(question.text, history=history)
     Answer.objects.create(question=question, text=answer_text)
 
     publish_result(self.request.id, answer_text)
@@ -46,13 +46,13 @@ def ask_llm_task(self, question_id):
 @shared_task(bind=True)
 def transcribe_audio_task(self, audio_base64):
     audio_bytes = base64.b64decode(audio_base64)
-    transcript = transcribe_audio(audio_bytes)
+    transcript = DeepgramSTT().transcribe(audio_bytes)
     publish_result(self.request.id, transcript)
     return transcript
 
 
 @shared_task(bind=True)
 def synthesize_speech_task(self, text):
-    audio_url = synthesize_speech(text)
+    audio_url = ElevenLabsTTS().synthesize(text)
     publish_result(self.request.id, audio_url)
     return audio_url
