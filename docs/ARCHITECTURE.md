@@ -159,4 +159,12 @@ Estas estructuras son el objetivo a mediano plazo, no lo que se crea en la Fase 
 
 ## Modelo de datos
 
-_Pendiente — se documenta cuando se llegue a la fase de persistencia (ver ROADMAP.md, Backend Fase 6)._
+Tres modelos en `apps/interviews/models.py`:
+
+- **`Interview`**: una sesión de entrevista. `user` (`ForeignKey` nullable a `settings.AUTH_USER_MODEL` — no hay autenticación todavía, así que por ahora siempre es `None`), `created_at`, `status` (`in_progress` / `finished`, vía `models.TextChoices`).
+- **`Question`**: cada mensaje del usuario (escrito o transcripto) dentro de una entrevista. `ForeignKey` a `Interview` (`related_name="questions"`), `text`, `created_at`.
+- **`Answer`**: la respuesta del LLM a una pregunta puntual. `OneToOneField` a `Question` (`related_name="answer"`) — cada pregunta tiene exactamente una respuesta, nunca varias.
+
+Ambas relaciones usan `on_delete=models.CASCADE`: borrar una `Interview` borra sus preguntas, borrar una `Question` borra su respuesta.
+
+La memoria de conversación (Backend Fase 6.3) se arma consultando todas las `Question`/`Answer` anteriores de la misma `Interview` (ordenadas por `created_at`), y pasándoselas al LLM como historial antes de la pregunta nueva — así el entrevistador "recuerda" lo que ya se dijo en esa sesión.

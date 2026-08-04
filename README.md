@@ -13,7 +13,7 @@ Entrevistador técnico con IA por voz: el usuario responde preguntas de programa
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 
-> Estado: **El círculo completo de voz funciona de punta a punta.** Hablás por el micrófono en el navegador → Frontend (React) → Gateway (Node/Socket.io) → Backend (Django/Celery) → Deepgram (STT) → DeepSeek (LLM) → ElevenLabs (TTS) → la respuesta se reproduce sola, con voz, en el navegador. Todo vía Redis pub/sub (sin polling). Falta: pulir la UI de entrevista, persistencia, patrones Strategy/Adapter, y despliegue. Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle.
+> Estado: **El círculo completo de voz funciona de punta a punta, con memoria de conversación real y persistencia.** Hablás por el micrófono en el navegador → Frontend (React) → Gateway (Node/Socket.io) → Backend (Django/Celery) → Deepgram (STT) → DeepSeek (LLM, con el historial de la entrevista) → ElevenLabs (TTS) → la respuesta se reproduce sola, con voz, en el navegador. Todo vía Redis pub/sub (sin polling). Cada entrevista se guarda en Postgres, y hay una pantalla de feedback final. Falta: patrones Strategy/Adapter (Backend Fase 7) y despliegue (Infra). Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle.
 
 ## Por qué este proyecto
 
@@ -50,9 +50,9 @@ interviewer_ai/
 │   ├── ARCHITECTURE.md   # arquitectura, diagrama, patrones de diseño
 │   ├── ROADMAP.md        # fases de desarrollo, backend, gateway y frontend
 │   └── DECISIONS.md      # decisiones técnicas y por qué (ADRs cortos)
-├── backend/               # Django + Celery — Fases 0-5 completas (LLM, STT, TTS vía Celery + Redis pub/sub)
-├── ws-gateway/            # Node + Express + Socket.io — Fases 0-3 completas (puente hacia Django vía Redis pub/sub, audio real)
-└── frontend/              # React + TypeScript — Fases 0-3 completas (captura y reproducción de audio real)
+├── backend/               # Django + Celery — Fases 0-6 completas (LLM, STT, TTS, persistencia y memoria de conversación)
+├── ws-gateway/            # Node + Express + Socket.io — Fases 0-4 completas (puente hacia Django, memoria de conversación por sesión)
+└── frontend/              # React + TypeScript — Fases 0-4 completas (entrevista completa: texto, voz y feedback final)
 ```
 
 ## Requisitos
