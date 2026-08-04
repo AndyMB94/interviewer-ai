@@ -5,6 +5,7 @@ import { useMicrophone } from "./hooks/useMicrophone";
 function App() {
   const { askQuestion, answer, sendAudio, audioResponseUrl, transcript } = useSocket();
   const [question, setQuestion] = useState("");
+  const [isFinished, setIsFinished] = useState(false);
   const {
     stream,
     error,
@@ -19,6 +20,13 @@ function App() {
     askQuestion(question);
   };
 
+  const handleFinish = () => {
+    setIsFinished(true);
+    askQuestion(
+      "Por favor, dame un resumen breve de mi desempeño en esta entrevista y una evaluación general de cómo me fue.",
+    );
+  };
+
   useEffect(() => {
     if (audioBlob) {
       sendAudio(audioBlob);
@@ -30,10 +38,12 @@ function App() {
       <h1>Interviewer AI</h1>
 
       <section>
-        <h2>Pregunta actual</h2>
+        <h2>{isFinished ? "Feedback final" : "Pregunta actual"}</h2>
         {answer ? <p>{answer}</p> : <p>Todavía no hay ninguna pregunta.</p>}
         {audioResponseUrl && <audio controls autoPlay src={audioResponseUrl} />}
       </section>
+
+      <button onClick={handleFinish}>Finalizar entrevista</button>
 
       <hr />
 

@@ -84,7 +84,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 **Fase 4 — UI de entrevista**
 - [x] 4.1 Mostrar la pregunta actual.
 - [x] 4.2 Mostrar transcripción en vivo cuando esté lista.
-- [ ] 4.3 Pantalla de feedback final.
+- [x] 4.3 Pantalla de feedback final.
 
 ## Infra / Deploy (Docker)
 
