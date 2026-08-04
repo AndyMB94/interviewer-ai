@@ -131,6 +131,26 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-04 URLs de servicios configurables por variable de entorno (Infra Fase 1.4)
+
+**Contexto:** al integrar los seis servicios en un solo `docker-compose.yml`, el gateway (`ws-gateway`) tenía hardcodeados `http://localhost:8000` (Django) y `redis://localhost:6379` (Redis) desde las fases nativas. Dentro de la red de Docker Compose, cada contenedor debe resolver a otros por nombre de servicio (`backend`, `redis`), no por `localhost`.
+
+**Decisión:** `DJANGO_URL` y `REDIS_URL` en `ws-gateway` ahora se leen de `process.env`, con el valor hardcodeado original como fallback (`process.env.DJANGO_URL || "http://localhost:8000"`), para que el mismo código sirva tanto en desarrollo nativo (sin esas variables seteadas) como en Docker Compose (donde se inyectan vía `environment:` apuntando a los nombres de servicio). La URL usada para construir el link de audio que consume el **navegador** (en `interviewSocket.ts`) se dejó fija en `http://localhost:8000`, porque el navegador corre fuera de la red de Docker y necesita el puerto mapeado al host, no el nombre interno del servicio.
+
+**Alternativas consideradas:** ninguna — es el patrón estándar para que el mismo código corra nativo y dockerizado sin ramas de código distintas.
+
+---
+
+## 2026-08-04 Volumen compartido para archivos de media entre backend y celery-worker
+
+**Contexto:** al dockerizar cada servicio por separado, `backend` y `celery-worker` pasaron a ser contenedores distintos con filesystems aislados (aunque comparten la misma imagen). La tarea de TTS corre en `celery-worker` y guarda el audio en `MEDIA_ROOT`, pero es `backend` (Django) quien lo sirve al navegador — sin compartir ese directorio, el archivo generado por uno no existía para el otro (`404 Not Found`).
+
+**Decisión:** volumen nombrado `media_data`, montado en `/app/media` en ambos servicios dentro de `docker-compose.yml`.
+
+**Alternativas consideradas:** ninguna evaluada en profundidad — es el mecanismo estándar de Docker Compose para compartir archivos entre contenedores.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT y TTS decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._

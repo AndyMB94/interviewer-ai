@@ -157,6 +157,17 @@ frontend/
 
 Estas estructuras son el objetivo a mediano plazo, no lo que se crea en la Fase 0 de cada track — al inicio cada carpeta va a estar casi vacía y se va llenando fase a fase (ver ROADMAP.md).
 
+## Infraestructura (Docker)
+
+Cada servicio propio (`backend/`, `ws-gateway/`, `frontend/`) tiene su propio `Dockerfile`. Un único `docker-compose.yml` en la raíz orquesta los seis servicios (`postgres`, `redis`, `backend`, `celery-worker`, `ws-gateway`, `frontend`) en una misma red de Compose:
+
+- `backend` y `celery-worker` comparten la misma imagen (`build: ./backend`); solo cambia el `command:` de cada uno.
+- Dentro de la red de Compose, los contenedores se resuelven por **nombre de servicio** (`postgres`, `redis`, `backend`), no por `localhost` — eso solo funciona para el navegador, que corre fuera de la red de Docker y accede por los puertos publicados al host.
+- Volumen `postgres_data`: persiste los datos de Postgres entre reinicios de los contenedores.
+- Volumen `media_data`, montado en `/app/media` tanto en `backend` como en `celery-worker`: sin él, el archivo de audio que genera la tarea de TTS (corrida por `celery-worker`) no sería visible para Django (`backend`), que es quien lo sirve al navegador — son contenedores con filesystems aislados aunque compartan imagen.
+
+Ver [docs/DECISIONS.md](DECISIONS.md) para el detalle de estas decisiones (Infra Fase 1.4).
+
 ## Modelo de datos
 
 Tres modelos en `apps/interviews/models.py`:
