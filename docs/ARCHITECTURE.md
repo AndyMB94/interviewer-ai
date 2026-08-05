@@ -168,6 +168,16 @@ Cada servicio propio (`backend/`, `ws-gateway/`, `frontend/`) tiene su propio `D
 
 Ver [docs/DECISIONS.md](DECISIONS.md) para el detalle de estas decisiones (Infra Fase 1.4).
 
+### Despliegue (Infra Fase 2)
+
+En producción (VPS de Contabo), **Nginx corre nativo en el host** (no dockerizado) como único punto de entrada público, en el puerto 443 con HTTPS (certificado de Let's Encrypt vía Certbot, renovación automática). Los seis contenedores de Compose publican sus puertos solo en `127.0.0.1` (no expuestos directo a internet); Nginx reenvía cada tipo de tráfico según el `location`:
+
+- `/` → `frontend` (puerto 8080)
+- `/socket.io/` → `ws-gateway` (puerto 3000, con headers de upgrade para WebSocket)
+- `/media/` → `backend` (puerto 8000, archivos de audio de TTS)
+
+El dominio (`interviewer.andymallcco.dev`) es obligatorio para el certificado real (Let's Encrypt no emite para una IP pelada) y para que el navegador permita `getUserMedia` (el micrófono no funciona fuera de un contexto seguro/HTTPS). Por esto, `VITE_GATEWAY_URL` (frontend), `PUBLIC_DJANGO_URL` y `CORS_ORIGINS` (gateway) apuntan todos al mismo origen HTTPS del dominio en producción, en vez de a IPs/puertos sueltos — evita mezclar HTTP y HTTPS (mixed content), que el navegador bloquea. Ver [docs/DECISIONS.md](DECISIONS.md) (Infra Fase 2.3).
+
 ## Modelo de datos
 
 Tres modelos en `apps/interviews/models.py`:

@@ -173,6 +173,18 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-05 Dominio `.dev` (Porkbun) + Nginx como proxy único delante de los 6 contenedores
+
+**Contexto:** para HTTPS real (necesario porque el navegador bloquea `getUserMedia` fuera de un contexto seguro) hace falta un dominio — Let's Encrypt no emite certificados para una IP pelada. También había que decidir cómo exponer los 3 puntos de entrada del stack (frontend, WebSocket del gateway, media de Django) sin mezclar HTTP y HTTPS (mixed content).
+
+**Decisión:** dominio `andymallcco.dev` (Porkbun, ~$8.75 primer año), con el subdominio `interviewer.andymallcco.dev` para este proyecto (dejando el dominio raíz libre para un portafolio futuro). Nginx corre directo en el VPS (no dockerizado) como único punto de entrada en el puerto 443, con Certbot (`certbot --nginx`) manejando el certificado y su renovación automática. Nginx reenvía por `location`: `/` al frontend (puerto 8080), `/socket.io/` al gateway (puerto 3000, con headers de upgrade para WebSocket), y `/media/` a Django (puerto 8000) — todos publicados en `127.0.0.1` por docker-compose, nunca expuestos directo a internet salvo a través de Nginx.
+
+**Alternativas consideradas:** TLD `.com`/`.org` — se prefirió `.dev` porque Google exige HTTPS en toda esa extensión (encaja con el objetivo) y Porkbun regala el certificado de Let's Encrypt con el registro. Certificado autofirmado (sin comprar dominio) — descartado por mostrar advertencias de "sitio no seguro" en el navegador, poco profesional para un portafolio. Dockerizar Nginx también — se dejó nativo en el host por simplicidad, ya que solo necesita hablarle a los puertos publicados de los otros contenedores vía `127.0.0.1`.
+
+**Nota operativa:** tras activar HTTPS, `VITE_GATEWAY_URL` (frontend, build-time), `PUBLIC_DJANGO_URL` y `CORS_ORIGINS` (gateway, runtime) se actualizaron de `http://<IP>:<puerto>` a `https://interviewer.andymallcco.dev` (mismo origen para todo, sin puertos) — necesario porque una página servida por HTTPS no puede hablarle a recursos en HTTP plano (mixed content, bloqueado por el navegador).
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT y TTS decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
