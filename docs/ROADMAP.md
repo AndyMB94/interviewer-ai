@@ -106,7 +106,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 ## Mejoras post-lanzamiento (agregado 2026-08-05, no estaba previsto en el roadmap original)
 
 - [x] P.1 Reescribir el system prompt del LLM en español neutro (sin voseo rioplatense).
-- [ ] P.2 Evaluar si el acento de la voz de ElevenLabs sigue sonando marcado después de P.1; si es así, probar otra voz de su librería.
+- [x] P.2 Evaluar si el acento de la voz de ElevenLabs sigue sonando marcado después de P.1; si es así, probar otra voz de su librería. _(Nota: no hizo falta — el acento marcado venía del texto en voseo, no de la voz; con P.1 ya suena neutro, confirmado en producción.)_
 - [ ] P.3 Rediseño visual del frontend (tipografía, layout tipo chat, estados de carga/grabación más claros).
 
 ## Notas
