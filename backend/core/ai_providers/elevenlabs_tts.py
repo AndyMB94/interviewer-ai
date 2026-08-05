@@ -13,7 +13,7 @@ class ElevenLabsTTS(TTSProvider):
 
         audio = elevenlabs.text_to_speech.convert(
             text=text,
-            voice_id="JBFqnCBsd6RMkjVDRZzb",
+            voice_id="p5EUznrYaWnafKvUkNiR",
             model_id="eleven_v3",
             output_format="mp3_44100_128",
         )
