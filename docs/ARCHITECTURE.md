@@ -141,14 +141,19 @@ ws-gateway/
 frontend/
 ├── src/
 │   ├── components/
-│   │   ├── InterviewRoom.tsx
-│   │   ├── AudioRecorder.tsx
-│   │   └── AudioPlayer.tsx
+│   │   ├── ui/                 # componentes de shadcn/ui (Button, Card...), generados, no se editan a mano
+│   │   ├── Header.tsx
+│   │   ├── QuestionDisplay.tsx
+│   │   ├── VoiceRecorder.tsx
+│   │   └── TextAnswerForm.tsx
 │   ├── hooks/
-│   │   └── useSocket.ts       # conexión socket.io-client reutilizable
+│   │   ├── useSocket.ts        # conexión socket.io-client reutilizable
+│   │   └── useMicrophone.ts    # permiso/grabación de audio del navegador
 │   ├── App.tsx
 │   └── main.tsx
 ├── public/
+├── components.json              # config de shadcn/ui
+├── tailwind.config.js
 ├── package.json
 ├── tsconfig.json
 ├── .env                        # solo config pública (nunca secretos: se expone en el bundle)
@@ -156,6 +161,8 @@ frontend/
 ```
 
 Estas estructuras son el objetivo a mediano plazo, no lo que se crea en la Fase 0 de cada track — al inicio cada carpeta va a estar casi vacía y se va llenando fase a fase (ver ROADMAP.md).
+
+Cuando exista una segunda pantalla real (ej. login, Backend Fase de autenticación futura), la estructura se extiende agregando `pages/` (`Login.tsx`, `Dashboard.tsx`, `Interview.tsx`) + `react-router`, sin tocar lo que ya existe en `components/`/`hooks/` — no se crean esas carpetas de antemano porque hoy estarían vacías (la app es de una sola pantalla).
 
 ## Infraestructura (Docker)
 

@@ -185,6 +185,18 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-05 Tailwind CSS + shadcn/ui para el rediseño del frontend (Frontend P.3), sin Redux
+
+**Contexto:** el frontend hasta ahora es un único `App.tsx` con CSS plano mínimo (Frontend Fase 0-4, foco en funcionalidad, no en diseño). Para el rediseño visual se evaluaron alternativas de estilos/componentes (Tailwind + shadcn/ui, PrimeReact, Material UI) y de manejo de estado (Redux).
+
+**Decisión:** Tailwind CSS (utilidades de estilo) + shadcn/ui (componentes base copiados al proyecto, construidos sobre Radix UI) para el diseño visual. Sin librería de manejo de estado global (Redux, Zustand, etc.) — el estado actual (conexión de socket, respuesta, transcripción, permiso de micrófono) sigue viviendo en los hooks `useSocket`/`useMicrophone` con `useState`, sin necesidad real de un store global.
+
+**Alternativas consideradas:** PrimeReact / Material UI — librerías de componentes completos y pre-diseñados (tablas, calendarios, formularios complejos); se descartaron por ser sobreingeniería para una app de una sola pantalla con pocos elementos de UI, y porque Tailwind+shadcn da más control real sobre el diseño (shadcn copia el código fuente del componente al proyecto, no queda atado a la API/versión de una dependencia externa). Redux — descartado porque el estado actual es chico y ya está bien organizado en hooks; agregar un store global sería boilerplate sin beneficio real a este tamaño de app.
+
+**Nota de escalabilidad:** la estructura de `components/`/`hooks/` está pensada para extenderse con `pages/` + `react-router` el día que exista una fase de autenticación (login, dashboard) — no se crean esas carpetas de antemano por estar vacías hoy. Ver [docs/ARCHITECTURE.md](ARCHITECTURE.md).
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT y TTS decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
