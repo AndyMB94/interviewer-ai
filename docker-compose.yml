@@ -49,6 +49,8 @@ services:
     environment:
       DJANGO_URL: http://backend:8000
       REDIS_URL: redis://redis:6379
+      PUBLIC_DJANGO_URL: ${PUBLIC_DJANGO_URL:-http://localhost:8000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
     ports:
       - "3000:3000"
     depends_on:
