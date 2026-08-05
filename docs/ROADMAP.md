@@ -109,7 +109,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 - [x] P.2 Evaluar si el acento de la voz de ElevenLabs sigue sonando marcado después de P.1; si es así, probar otra voz de su librería. _(Nota: el acento ya sonaba neutro solo con P.1 — el cambio de voz que se hizo después fue por preferencia de género (voz femenina, "Gaby - Natura & Casual"), no por acento.)_
 - [ ] P.3 Rediseño visual del frontend (tipografía, layout tipo chat, estados de carga/grabación más claros), con Tailwind CSS + shadcn/ui (ver DECISIONS.md).
   - [x] P.3.1 Instalar y configurar Tailwind CSS (solo setup, confirmar que compila sin cambiar el diseño todavía).
-  - [ ] P.3.2 Instalar shadcn/ui, agregar un componente de prueba (Button) para confirmar que funciona.
+  - [x] P.3.2 Instalar shadcn/ui, agregar un componente de prueba (Button) para confirmar que funciona.
   - [ ] P.3.3 Separar `App.tsx` en componentes (`Header`, `QuestionDisplay`, `VoiceRecorder`, `TextAnswerForm`) con Tailwind, sin cambiar el diseño todavía (solo estructura).
   - [ ] P.3.4 Aplicar el diseño real (layout tipo chat, colores, espaciado) usando shadcn/ui donde corresponda.
 
