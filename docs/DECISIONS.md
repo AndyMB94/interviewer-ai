@@ -161,6 +161,18 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-04 Contabo Cloud VPS 4 (Core) como servidor de despliegue
+
+**Contexto:** para Infra Fase 2 hace falta un VPS real. Se evaluaron Contabo y Hostinger, y dentro de Contabo sus tres líneas: Core (recursos compartidos, más barato), Performance (CPUs AMD EPYC, para cargas más pesadas) y Max Performance/VDS (CPU y RAM dedicados, sin "vecinos ruidosos").
+
+**Decisión:** Contabo **Core VPS 4** (4 vCPU, 8GB RAM, 100GB SSD, ~$5.50/mes, plan mensual sin permanencia, imagen Ubuntu 24.04, sin Auto Backup). Suficiente de sobra para correr los 6 contenedores de este proyecto con tráfico de demo/portafolio.
+
+**Alternativas consideradas:** Hostinger — virtualización KVM más estable y mejor soporte para stacks web tipo WordPress, pero Contabo da más RAM/almacenamiento por el mismo precio, lo cual pesa más para este caso de uso. Performance/Max Performance de Contabo — descartados por sobreingeniería: son para cargas de producción con tráfico real, no para un portafolio de demo. Auto Backup (+€1.65/mes) — descartado porque todo el código ya está en GitHub; lo único que se perdería sin backup es la base de datos de Postgres con las entrevistas de prueba, aceptable para este alcance.
+
+**Nota operativa:** Contabo pide verificación de identidad (documento + comprobante de domicilio) en pedidos nuevos como medida antifraude — el aprovisionamiento del VPS quedó pausado unas horas hasta que se revisaron los documentos. Es una práctica conocida de este proveedor específico, no un error en la compra.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT y TTS decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
