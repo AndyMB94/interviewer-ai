@@ -103,6 +103,12 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 - [x] 2.3 Nginx como reverse proxy + certificado SSL (Let's Encrypt / Certbot) delante de todo.
 - [x] 2.4 Configurar logging de Django/Celery/Node a stdout (no a archivos), verificar que `docker compose logs <servicio>` muestre los mensajes correctamente.
 
+## Mejoras post-lanzamiento (agregado 2026-08-05, no estaba previsto en el roadmap original)
+
+- [ ] P.1 Reescribir el system prompt del LLM en español neutro (sin voseo rioplatense).
+- [ ] P.2 Evaluar si el acento de la voz de ElevenLabs sigue sonando marcado después de P.1; si es así, probar otra voz de su librería.
+- [ ] P.3 Rediseño visual del frontend (tipografía, layout tipo chat, estados de carga/grabación más claros).
+
 ## Notas
 
 - El orden entre tracks importa: cada paso del gateway/frontend depende de que exista el paso equivalente del backend (por eso las referencias cruzadas, ej. "Backend Fase 1.2").
