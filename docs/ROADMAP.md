@@ -99,7 +99,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 **Fase 2 — Despliegue**
 - [x] 2.1 Elegir VPS (Contabo / Hostinger), instalar Docker ahí.
-- [ ] 2.2 Copiar `docker-compose.yml` + `.env` de producción al servidor, `docker compose up -d`.
+- [x] 2.2 Copiar `docker-compose.yml` + `.env` de producción al servidor, `docker compose up -d`.
 - [ ] 2.3 Nginx como reverse proxy + certificado SSL (Let's Encrypt / Certbot) delante de todo.
 - [ ] 2.4 Configurar logging de Django/Celery/Node a stdout (no a archivos), verificar que `docker compose logs <servicio>` muestre los mensajes correctamente.
 
