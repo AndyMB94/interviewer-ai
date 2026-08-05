@@ -4,11 +4,14 @@ import { Server } from "socket.io";
 
 import { registerInterviewSocket } from "./sockets/interviewSocket.js";
 
+const DEFAULT_CORS_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8080"];
+const extraCorsOrigins = process.env.CORS_ORIGINS?.split(",").map((origin) => origin.trim()) ?? [];
+
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8080"],
+    origin: [...DEFAULT_CORS_ORIGINS, ...extraCorsOrigins],
   },
 });
 
