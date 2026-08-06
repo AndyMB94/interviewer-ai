@@ -113,6 +113,14 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
   - [x] P.3.3 Separar `App.tsx` en componentes (`Header`, `QuestionDisplay`, `VoiceRecorder`, `TextAnswerForm`) con Tailwind, sin cambiar el diseño todavía (solo estructura).
   - [x] P.3.4 Aplicar el diseño real (layout tipo chat, colores, espaciado) usando shadcn/ui donde corresponda.
 
+## Autenticación (agregado 2026-08-06, no estaba prevista en el roadmap original — hoy la app es completamente anónima)
+
+- [ ] A.1 Backend: modelo/mecanismo de autenticación (registro y login de candidatos), decidir JWT vs. sesión (ver DECISIONS.md cuando se resuelva).
+- [ ] A.2 Backend: conectar `Interview.user` al usuario autenticado, en vez de quedar siempre `None`.
+- [ ] A.3 Gateway: recibir el token del cliente y reenviarlo a Django en cada request, en vez de conexiones anónimas.
+- [ ] A.4 Frontend: instalar `react-router`, pantallas de login/registro (`pages/`, ver ARCHITECTURE.md).
+- [ ] A.5 Frontend: proteger la pantalla de entrevista (requiere estar logueado para empezar una).
+
 ## Notas
 
 - El orden entre tracks importa: cada paso del gateway/frontend depende de que exista el paso equivalente del backend (por eso las referencias cruzadas, ej. "Backend Fase 1.2").
