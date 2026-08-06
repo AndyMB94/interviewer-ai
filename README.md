@@ -118,6 +118,19 @@ pnpm run dev
 
 Con todo esto corriendo, abrí `http://localhost:5173` en el navegador: podés escribir una pregunta de texto (respuesta del LLM en pantalla), o darle permiso al micrófono, grabar una pregunta hablada y detener — unos segundos después vas a escuchar la respuesta del entrevistador de IA, generada con voz real, de punta a punta (React → Socket.io → Django → Celery → Deepgram → DeepSeek → ElevenLabs → Redis pub/sub → de vuelta al navegador).
 
+## Operación
+
+Los 6 servicios escriben sus logs a stdout/stderr (no a archivos), como corresponde en Docker — no hay ninguna carpeta de logs en el repo ni en el servidor. Para diagnosticar cualquier problema, tanto en local como en producción (conectado por SSH al VPS):
+
+```bash
+docker compose ps                                    # estado de los 6 servicios
+docker compose logs <servicio> --tail=50              # últimas líneas de un servicio
+docker compose logs <servicio> -f                      # seguir los logs en vivo
+docker compose up -d <servicio>                         # reiniciar un servicio puntual
+```
+
+Todos los servicios tienen `restart: unless-stopped` en `docker-compose.yml`, así que si un contenedor se cae por un error transitorio (ej. un corte breve de conexión a Redis), Docker lo reinicia solo — no debería hacer falta intervención manual salvo que el problema sea persistente.
+
 ## Documentación
 
 - [Arquitectura](docs/ARCHITECTURE.md)
