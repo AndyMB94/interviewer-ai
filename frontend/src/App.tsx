@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useSocket } from "./hooks/useSocket";
 import { useMicrophone } from "./hooks/useMicrophone";
+import { Header } from "./components/Header";
+import { QuestionDisplay } from "./components/QuestionDisplay";
+import { TextAnswerForm } from "./components/TextAnswerForm";
+import { VoiceRecorder } from "./components/VoiceRecorder";
 
 function App() {
   const { askQuestion, answer, sendAudio, audioResponseUrl, transcript } = useSocket();
@@ -35,43 +39,33 @@ function App() {
 
   return (
     <div>
-      <h1>Interviewer AI</h1>
+      <Header />
 
-      <section>
-        <h2>{isFinished ? "Feedback final" : "Pregunta actual"}</h2>
-        {answer ? <p>{answer}</p> : <p>Todavía no hay ninguna pregunta.</p>}
-        {audioResponseUrl && <audio controls autoPlay src={audioResponseUrl} />}
-      </section>
-
-      <button onClick={handleFinish}>Finalizar entrevista</button>
+      <QuestionDisplay
+        answer={answer}
+        audioResponseUrl={audioResponseUrl}
+        isFinished={isFinished}
+        onFinish={handleFinish}
+      />
 
       <hr />
 
-      <section>
-        <h3>Responder por texto</h3>
-        <input
-          type="text"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-        />
-        <button onClick={handleSubmit}>Enviar</button>
-      </section>
+      <TextAnswerForm
+        question={question}
+        onQuestionChange={setQuestion}
+        onSubmit={handleSubmit}
+      />
 
-      <section>
-        <h3>Responder por voz</h3>
-        <button onClick={requestPermission}>Permitir micrófono</button>
-        {stream && <p>Micrófono habilitado ✅</p>}
-        {error && <p>{error}</p>}
-
-        {stream && (
-          <button onClick={isRecording ? stopRecording : startRecording}>
-            {isRecording ? "Detener" : "Grabar"}
-          </button>
-        )}
-
-        {audioBlob && <audio controls src={URL.createObjectURL(audioBlob)} />}
-        {transcript && <p>Transcripción: "{transcript}"</p>}
-      </section>
+      <VoiceRecorder
+        stream={stream}
+        error={error}
+        requestPermission={requestPermission}
+        isRecording={isRecording}
+        audioBlob={audioBlob}
+        startRecording={startRecording}
+        stopRecording={stopRecording}
+        transcript={transcript}
+      />
     </div>
   );
 }
