@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 interface TextAnswerFormProps {
@@ -13,16 +14,23 @@ export function TextAnswerForm({
   onSubmit,
 }: TextAnswerFormProps) {
   return (
-    <section className="p-4 space-y-2">
-      <h3 className="text-lg font-medium">Responder por texto</h3>
-      <div className="flex gap-2">
-        <Input
-          type="text"
-          value={question}
-          onChange={(e) => onQuestionChange(e.target.value)}
-        />
-        <Button onClick={onSubmit}>Enviar</Button>
-      </div>
-    </section>
+    <Card>
+      <CardHeader>
+        <CardTitle>Responder por texto</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-2">
+          <Input
+            type="text"
+            value={question}
+            onChange={(e) => onQuestionChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onSubmit();
+            }}
+          />
+          <Button onClick={onSubmit}>Enviar</Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

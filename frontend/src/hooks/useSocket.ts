@@ -3,11 +3,16 @@ import { io, Socket } from "socket.io-client";
 
 const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || "http://localhost:3000";
 
+export interface ChatMessage {
+  role: "user" | "assistant";
+  text: string;
+  audioUrl?: string;
+}
+
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [audioResponseUrl, setAudioResponseUrl] = useState<string | null>(null);
-  const [transcript, setTranscript] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
 
   useEffect(() => {
     const socket = io(GATEWAY_URL);
@@ -18,15 +23,22 @@ export function useSocket() {
     });
 
     socket.on("ask", (response: string) => {
-      setAnswer(response);
+      setMessages((prev) => [...prev, { role: "assistant", text: response }]);
+      setIsWaitingForResponse(false);
     });
 
     socket.on("audio-response", (url: string) => {
-      setAudioResponseUrl(url);
+      setMessages((prev) => {
+        if (prev.length === 0) return prev;
+        const updated = [...prev];
+        updated[updated.length - 1] = { ...updated[updated.length - 1], audioUrl: url };
+        return updated;
+      });
     });
 
     socket.on("transcript", (text: string) => {
-      setTranscript(text);
+      setMessages((prev) => [...prev, { role: "user", text }]);
+      setIsWaitingForResponse(true);
     });
 
     return () => {
@@ -35,6 +47,8 @@ export function useSocket() {
   }, []);
 
   const askQuestion = useCallback((question: string) => {
+    setMessages((prev) => [...prev, { role: "user", text: question }]);
+    setIsWaitingForResponse(true);
     socketRef.current?.emit("ask", question);
   }, []);
 
@@ -43,5 +57,5 @@ export function useSocket() {
     socketRef.current?.emit("audio", buffer);
   }, []);
 
-  return { askQuestion, answer, sendAudio, audioResponseUrl, transcript };
+  return { askQuestion, messages, sendAudio, isWaitingForResponse };
 }

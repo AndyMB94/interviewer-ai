@@ -7,7 +7,7 @@ import { TextAnswerForm } from "./components/TextAnswerForm";
 import { VoiceRecorder } from "./components/VoiceRecorder";
 
 function App() {
-  const { askQuestion, answer, sendAudio, audioResponseUrl, transcript } = useSocket();
+  const { askQuestion, messages, sendAudio, isWaitingForResponse } = useSocket();
   const [question, setQuestion] = useState("");
   const [isFinished, setIsFinished] = useState(false);
   const {
@@ -21,7 +21,9 @@ function App() {
   } = useMicrophone();
 
   const handleSubmit = () => {
+    if (!question.trim()) return;
     askQuestion(question);
+    setQuestion("");
   };
 
   const handleFinish = () => {
@@ -38,34 +40,32 @@ function App() {
   }, [audioBlob, sendAudio]);
 
   return (
-    <div>
-      <Header />
+    <div className="min-h-screen">
+      <div className="mx-auto max-w-2xl space-y-6 p-4">
+        <Header />
 
-      <QuestionDisplay
-        answer={answer}
-        audioResponseUrl={audioResponseUrl}
-        isFinished={isFinished}
-        onFinish={handleFinish}
-      />
+        <QuestionDisplay
+          messages={messages}
+          isFinished={isFinished}
+          isWaitingForResponse={isWaitingForResponse}
+          onFinish={handleFinish}
+        />
 
-      <hr />
+        <TextAnswerForm
+          question={question}
+          onQuestionChange={setQuestion}
+          onSubmit={handleSubmit}
+        />
 
-      <TextAnswerForm
-        question={question}
-        onQuestionChange={setQuestion}
-        onSubmit={handleSubmit}
-      />
-
-      <VoiceRecorder
-        stream={stream}
-        error={error}
-        requestPermission={requestPermission}
-        isRecording={isRecording}
-        audioBlob={audioBlob}
-        startRecording={startRecording}
-        stopRecording={stopRecording}
-        transcript={transcript}
-      />
+        <VoiceRecorder
+          stream={stream}
+          error={error}
+          requestPermission={requestPermission}
+          isRecording={isRecording}
+          startRecording={startRecording}
+          stopRecording={stopRecording}
+        />
+      </div>
     </div>
   );
 }
