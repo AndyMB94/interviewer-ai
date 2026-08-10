@@ -13,7 +13,7 @@ Entrevistador técnico con IA por voz: el usuario responde preguntas de programa
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 
-> Estado: **Proyecto completo y desplegado — [interviewer.andymallcco.dev](https://interviewer.andymallcco.dev)**. El círculo completo de voz funciona de punta a punta, con memoria de conversación real y persistencia, el código de IA está organizado con Strategy/Adapter, y los seis servicios (Postgres, Redis, backend, celery worker, gateway, frontend) corren dockerizados detrás de Nginx + HTTPS (Let's Encrypt) en un VPS real. Hablás por el micrófono en el navegador → Frontend (React) → Gateway (Node/Socket.io) → Backend (Django/Celery) → Deepgram (STT) → DeepSeek (LLM, con el historial de la entrevista) → ElevenLabs (TTS) → la respuesta se reproduce sola, con voz, en el navegador. Todo vía Redis pub/sub (sin polling). Cada entrevista se guarda en Postgres, y hay una pantalla de feedback final. Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle.
+> Estado: **El círculo de entrevista por voz está completo y desplegado — [interviewer.andymallcco.dev](https://interviewer.andymallcco.dev)**. Hablás por el micrófono en el navegador → Frontend (React) → Gateway (Node/Socket.io) → Backend (Django/Celery) → Deepgram (STT) → DeepSeek (LLM, con el historial de la entrevista) → ElevenLabs (TTS) → la respuesta se reproduce sola, con voz, en el navegador. Todo vía Redis pub/sub (sin polling), dockerizado detrás de Nginx + HTTPS en un VPS real. **En construcción:** el proyecto está pivotando de herramienta de práctica a una plataforma de reclutamiento con IA (nombre nuevo: **Vacantia**, pendiente de aplicar) — puesto → postulación con CV → filtro con IA → entrevista → panel de reclutador. Autenticación con roles (JWT + cookie httpOnly, Django Groups) ya está lista; puestos y postulaciones en progreso. Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle completo.
 
 ## Por qué este proyecto
 
@@ -51,7 +51,7 @@ interviewer_ai/
 │   ├── ARCHITECTURE.md   # arquitectura, diagrama, patrones de diseño
 │   ├── ROADMAP.md        # fases de desarrollo, backend, gateway y frontend
 │   └── DECISIONS.md      # decisiones técnicas y por qué (ADRs cortos)
-├── backend/               # Django + Celery + Dockerfile — Fases 0-7 completas (LLM, STT, TTS, persistencia, memoria de conversación y patrones Strategy/Adapter)
+├── backend/               # Django + Celery + Dockerfile — Fases 0-7 completas (LLM, STT, TTS, persistencia, memoria de conversación y patrones Strategy/Adapter); Fase 8 (auth/roles) completa, Fase 9 (puestos/postulaciones) en progreso
 ├── ws-gateway/            # Node + Express + Socket.io + Dockerfile — Fases 0-4 completas (puente hacia Django, memoria de conversación por sesión)
 └── frontend/              # React + TypeScript + Dockerfile — Fases 0-4 completas (entrevista completa: texto, voz y feedback final)
 ```

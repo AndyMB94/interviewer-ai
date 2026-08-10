@@ -96,12 +96,21 @@ backend/
 │   │       ├── stt_service.py
 │   │       ├── tts_service.py
 │   │       └── interview_orchestrator.py
-│   └── accounts/             # autenticación y roles (Backend Fase 8)
+│   ├── accounts/             # autenticación y roles (Backend Fase 8)
 │       ├── models.py          # ApplicantProfile (perfil del postulante)
 │       ├── views.py           # login/refresh/logout (JWT híbrido, ver DECISIONS.md)
 │       ├── permissions.py     # IsAdministrador/IsReclutador/IsPostulante (por Django Group)
 │       ├── admin.py
 │       ├── migrations/        # incluye una migración de datos que crea los 3 Groups
+│       ├── services/
+│       │   └── ubigeo_service.py  # trae y cachea departamento/provincia/distrito (Fase 8.4)
+│       └── tests/
+│   └── recruiting/            # puestos y postulaciones (Backend Fase 9)
+│       ├── models.py          # Puesto (9.1); Postulacion se suma en 9.2
+│       ├── views.py           # PuestoViewSet (DRF ModelViewSet, CRUD completo)
+│       ├── permissions.py     # IsOwnerReclutadorOrReadOnly (permiso a nivel de objeto)
+│       ├── serializers.py
+│       ├── admin.py
 │       └── tests/
 ├── core/
 │   └── ai_providers/          # adapters de proveedores externos (Fase 7, Strategy/Adapter)
