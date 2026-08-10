@@ -174,5 +174,6 @@ JWT_AUTH_COOKIE_SECURE = not DEBUG
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8080",
+    "https://interviewer.andymallcco.dev",
 ]
 CORS_ALLOW_CREDENTIALS = True
