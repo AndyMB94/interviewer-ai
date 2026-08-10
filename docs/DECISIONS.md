@@ -197,6 +197,59 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-06 Pivote de producto: de práctica de entrevistas a plataforma de reclutamiento con IA
+
+**Contexto:** al planificar cómo agregar autenticación, surgió que el alcance real deseado es mayor — no una simple casilla de login sobre la herramienta de práctica existente, sino un embudo de reclutamiento completo (puesto → postulación con CV → filtro con IA → cuenta automática solo si aprueba → entrevista → panel de reclutador).
+
+**Decisión:** se adopta el pivote. El nombre del proyecto pasa a ser **Vacantia** (pendiente de aplicar en la documentación/dominio, no bloquea el desarrollo). El roadmap se reorganiza en Backend Fase 8-9, Gateway Fase 5 y Frontend Fase 5-6 (ver ROADMAP.md) para reflejarlo.
+
+**Alternativas consideradas:** mantener el alcance original (solo agregar login a la práctica de entrevistas) — descartada porque el usuario prefirió explícitamente el alcance mayor, con mejor visibilidad como pieza de portafolio.
+
+---
+
+## 2026-08-06 Autenticación híbrida (JWT en memoria + refresh token en cookie httpOnly), sin autoregistro
+
+**Contexto:** con el pivote a plataforma de reclutamiento, el sistema empieza a manejar datos sensibles (documento de identidad, nacionalidad, resultados de entrevistas) — el nivel de seguridad de la autenticación importa más que en la versión anterior, más simple.
+
+**Decisión:**
+- Autenticación híbrida: un JWT de acceso de vida corta (guardado en memoria del lado del cliente, nunca en `localStorage`) más un refresh token en una cookie `httpOnly` (inaccesible para JavaScript, mitiga robo por XSS). El JWT de acceso viaja como header `Authorization` a través de la cadena React → gateway Node → Django.
+- **Sin autoregistro de ningún tipo.** El Postulante nunca llena un formulario de "crear cuenta" — su cuenta nace automáticamente si su CV aprueba el filtro (Backend Fase 9.4). Reclutador/Administrador se crean a mano desde el admin de Django — nunca por un formulario público.
+- `AUTH_USER_MODEL` se queda en el `User` default de Django — Groups (`Administrador`/`Reclutador`/`Postulante`) más un modelo `ApplicantProfile` uno-a-uno cubren roles y datos extendidos sin el riesgo de una migración irreversible de cambiar el modelo de usuario.
+
+**Alternativas consideradas:** sesión pura de Django (cookie de sesión) — más simple de implementar, pero incómoda de propagar a través del gateway Node hacia Django sin plomería adicional. JWT puro guardado en `localStorage` — más simple todavía, pero vulnerable a robo del token vía XSS, un riesgo mayor ahora que se manejan datos sensibles. Un modelo de usuario custom (`AUTH_USER_MODEL` propio) — descartado por el riesgo de una migración irreversible sin necesidad real (Groups + perfil separado alcanza).
+
+---
+
+## 2026-08-06 Datos del postulante: qué se guarda y qué no, y por qué
+
+**Contexto:** al diseñar `ApplicantProfile`, surgió la duda de qué datos personales del postulante guardar (documento, nacionalidad, fecha de nacimiento, sexo) y si debían usarse como criterio de filtro.
+
+**Decisión:** se guardan tipo y número de documento (con tipo flexible: DNI / Carné de Extranjería / Pasaporte, para cubrir postulantes extranjeros), nacionalidad, fecha de nacimiento, sexo y teléfono — son datos habituales en un CV peruano y sirven para elegibilidad legal de trabajo y estadísticas agregadas. **Ninguno de estos se usa como criterio de descarte automático en el filtro de CVs** — el filtro con IA (Backend Fase 9.3) evalúa exclusivamente el fit técnico/profesional contra el puesto. Esto es una práctica de contratación deliberada: usar edad o sexo en la etapa de filtro es una fuente conocida de discriminación (consciente o no), por eso se excluyen de esa lógica aunque se almacenen.
+
+**Alternativas consideradas:** no guardar estos datos en absoluto — descartado porque nacionalidad/documento sí son necesarios para elegibilidad legal real, y son datos estándar en el mercado peruano (a diferencia de mercados donde se evita pedirlos). Guardar también DNI/nacionalidad extraídos automáticamente vía una consulta a RENIEC/SUNAT — descartado explícitamente: no aporta nada a evaluar si alguien programa bien, y es un dato sensible innecesario sin beneficio real para el producto.
+
+---
+
+## 2026-08-06 Ubigeos vía API externa cacheada, no tabla propia con datos semilla
+
+**Contexto:** para que el postulante seleccione su dirección (departamento/provincia/distrito) de una lista en vez de texto libre, se evaluó mantener una tabla propia con los ~1800 distritos del Perú (requiere conseguir e importar el dataset del INEI) vs. consumir una API externa.
+
+**Decisión:** se usa `free.e-api.net.pe/ubigeos.json` como fuente (devuelve el árbol completo departamento→provincia→distrito en una sola respuesta, apto para armar el dropdown en cascada) — pero **no se le pega en vivo en cada request**: el backend la trae una vez y la cachea (el dato prácticamente no cambia), exponiendo su propio endpoint (`/api/accounts/ubigeo/...`) para que el frontend nunca dependa directamente del proveedor externo ni sepa cuál es.
+
+**Alternativas consideradas:** tabla propia con datos semilla (fixture de Django) — técnicamente más robusta (sin dependencia externa), pero el usuario prefirió evitar el trabajo manual de conseguir/mantener ese dataset. `api.migo.pe` — descartada para este uso porque resuelve el caso inverso (dado un código de ubigeo ya conocido, devuelve su nombre), no sirve para poblar una lista de selección; además requiere token/registro.
+
+---
+
+## 2026-08-06 Filtro de CVs reutilizando el LLM existente, sin API paga de parseo
+
+**Contexto:** para evaluar si un CV encaja con un puesto (Backend Fase 9.3), se evaluó contratar una API de parseo de CVs tipo ATS (Affinda, Sovren) vs. reutilizar la integración de LLM que ya existe en el proyecto.
+
+**Decisión:** se extrae el texto plano del PDF con una librería simple (`pypdf`), y se le pasa ese texto + la descripción del puesto al LLM ya integrado (`LLMProvider`/`DeepSeekLLM`, patrón Strategy/Adapter existente desde Backend Fase 7) para que evalúe el fit — sin agregar ningún patrón de diseño nuevo, es un uso nuevo de algo que ya existe.
+
+**Alternativas consideradas:** API paga de parseo de CV tipo ATS — descartada por costo y porque el LLM que ya está integrado resuelve el mismo problema (entender el contenido de un CV) sin sumar un servicio nuevo ni gastar de más.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT y TTS decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._

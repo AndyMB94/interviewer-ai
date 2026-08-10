@@ -113,13 +113,43 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
   - [x] P.3.3 Separar `App.tsx` en componentes (`Header`, `QuestionDisplay`, `VoiceRecorder`, `TextAnswerForm`) con Tailwind, sin cambiar el diseño todavía (solo estructura).
   - [x] P.3.4 Aplicar el diseño real (layout tipo chat, colores, espaciado) usando shadcn/ui donde corresponda.
 
-## Autenticación (agregado 2026-08-06, no estaba prevista en el roadmap original — hoy la app es completamente anónima)
+## Pivote: plataforma de reclutamiento con IA (agregado 2026-08-06, reemplaza la sección "Autenticación" anterior)
 
-- [ ] A.1 Backend: modelo/mecanismo de autenticación (registro y login de candidatos), decidir JWT vs. sesión (ver DECISIONS.md cuando se resuelva).
-- [ ] A.2 Backend: conectar `Interview.user` al usuario autenticado, en vez de quedar siempre `None`.
-- [ ] A.3 Gateway: recibir el token del cliente y reenviarlo a Django en cada request, en vez de conexiones anónimas.
-- [ ] A.4 Frontend: instalar `react-router`, pantallas de login/registro (`pages/`, ver ARCHITECTURE.md).
-- [ ] A.5 Frontend: proteger la pantalla de entrevista (requiere estar logueado para empezar una).
+**Contexto:** el proyecto deja de ser solo una herramienta de práctica de entrevistas y pasa a ser un embudo de reclutamiento completo: una empresa publica un puesto, los candidatos postulan mandando su CV (sin cuenta todavía), un filtro con IA evalúa el fit contra el puesto, y **solo si aprueba** se le crea una cuenta automáticamente y se le mandan las credenciales por correo — recién ahí hace la entrevista de voz con la IA. Un reclutador tiene su propio panel para ver los postulantes de sus puestos y los resultados de sus entrevistas. Ver `docs/DECISIONS.md` para el detalle de cada decisión tomada acá.
+
+**Nombre del proyecto:** se decidió renombrar a **Vacantia** (pendiente de aplicar en README/docs/dominio — se hace cuando se llegue a esa parte, no bloquea el trabajo de backend).
+
+### Backend — Fase 8: Autenticación y roles (arranca ahora)
+
+- [ ] 8.1 Instalar `djangorestframework-simplejwt` + `django-cors-headers`; configurar autenticación híbrida (JWT de acceso en memoria del lado del cliente, refresh token en cookie `httpOnly`).
+- [ ] 8.2 Crear los 3 Groups de Django (`Administrador`, `Reclutador`, `Postulante`) vía migración de datos.
+- [ ] 8.3 Nueva app `apps/accounts`: modelo `ApplicantProfile` (uno a uno con el usuario — tipo y número de documento, nacionalidad, fecha de nacimiento, sexo, teléfono, departamento/provincia/distrito) + endpoints `login`/`refresh`/`logout`.
+- [ ] 8.4 Servicio de ubigeos (`departamento`/`provincia`/`distrito` seleccionables) consumiendo `free.e-api.net.pe/ubigeos.json` como fuente, cacheado del lado del backend (no se le pega en vivo por cada request) — el frontend consume un endpoint propio, no la API externa directo.
+
+### Backend — Fase 9: Puestos y postulaciones (futura)
+
+- [ ] 9.1 Modelo `Puesto` (título, descripción, requisitos, creado por un reclutador) + endpoints CRUD (solo Reclutador puede crear/editar).
+- [ ] 9.2 Modelo `Postulacion` (postulante + puesto + CV + estado: pendiente/rechazado/aprobado) + endpoint público para postular (sube CV, sin necesitar cuenta).
+- [ ] 9.3 Extraer texto del CV (`pypdf` u similar) + tarea Celery que le pasa ese texto + la descripción del puesto al LLM (reutilizando `LLMProvider`/`DeepSeekLLM`, sin patrón nuevo) para evaluar el fit. _(Nota: cubre CVs digitales normales, con texto seleccionable. Si en las pruebas aparecen CVs escaneados como imagen, sin texto embebido, ahí se evalúa sumar OCR — no se construye de entrada para un caso que puede no aparecer.)_
+- [ ] 9.4 Si aprueba: crear el usuario + perfil automáticamente, asignarlo al Group Postulante, mandar credenciales por email. Si rechaza: no se crea nada, termina ahí. _(Nota: falta decidir el proveedor de envío de email — se resuelve al llegar a este paso, no antes.)_
+- [ ] 9.5 Conectar `Interview` a la `Postulacion` aprobada (hoy `Interview.user` existe pero nunca se usa).
+
+### Gateway — Fase 5: Autenticación (futura)
+
+- [ ] 5.1 Recibir el JWT del cliente en el handshake de Socket.io y reenviarlo como header `Authorization` en cada llamada REST a Django.
+
+### Frontend — Fase 5: Postulación y acceso de postulante (futura)
+
+- [ ] 5.1 Instalar `react-router`, estructura de `pages/` (ver `docs/ARCHITECTURE.md`).
+- [ ] 5.2 Pantalla pública de postulación (elegir puesto, subir CV) — sin login.
+- [ ] 5.3 Pantalla de login para postulantes ya aprobados.
+- [ ] 5.4 Proteger la pantalla de entrevista (requiere estar logueado).
+
+### Frontend — Fase 6: Panel de reclutador (futura)
+
+- [ ] 6.1 Login de reclutador (mismo mecanismo, redirige a su propio dashboard).
+- [ ] 6.2 Dashboard: listar puestos propios y sus postulaciones con estado.
+- [ ] 6.3 Vista de detalle de una entrevista completada (transcripción + resultado del filtro de IA).
 
 ## Notas
 
