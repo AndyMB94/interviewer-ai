@@ -12,6 +12,11 @@ class ApplicantProfileInline(admin.StackedInline):
 
 class UserAdmin(BaseUserAdmin):
     inlines = [ApplicantProfileInline]
+    list_display = BaseUserAdmin.list_display + ("get_groups",)
+
+    @admin.display(description="Grupos")
+    def get_groups(self, user):
+        return ", ".join(group.name for group in user.groups.all())
 
 
 admin.site.unregister(User)
