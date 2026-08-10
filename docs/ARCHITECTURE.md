@@ -205,12 +205,22 @@ El dominio (`interviewer.andymallcco.dev`) es obligatorio para el certificado re
 
 ## Modelo de datos
 
-Tres modelos en `apps/interviews/models.py`:
+### `apps/interviews/models.py`
 
-- **`Interview`**: una sesión de entrevista. `user` (`ForeignKey` nullable a `settings.AUTH_USER_MODEL` — no hay autenticación todavía, así que por ahora siempre es `None`), `created_at`, `status` (`in_progress` / `finished`, vía `models.TextChoices`).
+- **`Interview`**: una sesión de entrevista. `user` (`ForeignKey` nullable a `settings.AUTH_USER_MODEL`), `created_at`, `status` (`in_progress` / `finished`, vía `models.TextChoices`). Queda `None` en todas las entrevistas anteriores a Backend Fase 8 (no existía autenticación) y va a seguir siendo `None` para cualquier entrevista que no venga de una `Postulacion` aprobada — Backend Fase 9.5 (futura) es la que lo completa, conectándolo a la `Postulacion` aprobada del candidato.
 - **`Question`**: cada mensaje del usuario (escrito o transcripto) dentro de una entrevista. `ForeignKey` a `Interview` (`related_name="questions"`), `text`, `created_at`.
 - **`Answer`**: la respuesta del LLM a una pregunta puntual. `OneToOneField` a `Question` (`related_name="answer"`) — cada pregunta tiene exactamente una respuesta, nunca varias.
 
 Ambas relaciones usan `on_delete=models.CASCADE`: borrar una `Interview` borra sus preguntas, borrar una `Question` borra su respuesta.
 
 La memoria de conversación (Backend Fase 6.3) se arma consultando todas las `Question`/`Answer` anteriores de la misma `Interview` (ordenadas por `created_at`), y pasándoselas al LLM como historial antes de la pregunta nueva — así el entrevistador "recuerda" lo que ya se dijo en esa sesión.
+
+### `apps/accounts/models.py`
+
+- **`ApplicantProfile`**: `OneToOneField` a `settings.AUTH_USER_MODEL`. Datos del postulante que no viven en el `User` default de Django: `tipo_documento`/`numero_documento` (DNI, Carné de Extranjería o Pasaporte — `UniqueConstraint` sobre el par, ignorando filas en blanco), `nacionalidad`, `fecha_nacimiento`, `sexo`, `telefono`, y `ubigeo_codigo`/`departamento`/`provincia`/`distrito` como `CharField` planos (no `ForeignKey` — no hay tabla `Ubigeo` local, se resuelven contra el servicio cacheado de `services/ubigeo_service.py`, ver DECISIONS.md). No se crea automáticamente vía señal `post_save`: cada flujo de alta de cuenta decide si corresponde un perfil (hoy, a mano desde el admin; a futuro, automático al aprobar una `Postulacion`, Backend Fase 9.4).
+- **Roles**: no hay un modelo propio — se usan los `Group` default de Django (`Administrador`/`Reclutador`/`Postulante`), creados por una migración de datos (`0002_create_groups.py`).
+
+### `apps/recruiting/models.py`
+
+- **`Puesto`**: `titulo`, `descripcion`, `requisitos`, `creado_por` (`ForeignKey` a `settings.AUTH_USER_MODEL`, siempre un usuario del Group `Reclutador`), `estado` (`abierto`/`cerrado`).
+- **`Postulacion`**: `puesto` (`ForeignKey`, `related_name="postulaciones"`), `nombre`/`email` (el candidato todavía no tiene cuenta al postular), `cv` (`FileField`, valida extensión `.pdf`), `estado` (`pendiente`/`rechazado`/`aprobado`), `resultado_filtro` (texto libre con la razón que da el LLM). Se crea sin autenticación (endpoint público); al guardarse dispara `screen_postulacion_task` (Celery), que extrae el texto del CV y le pide al LLM que decida el fit contra el `Puesto` (Backend Fase 9.3).

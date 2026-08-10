@@ -128,6 +128,8 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 ### Backend — Fase 9: Puestos y postulaciones (futura)
 
+_9.1-9.3 desplegadas y verificadas en producción el 2026-08-10 (rutas, `pypdf` instalando bien en el contenedor, volumen de `media/` compartido con `celery-worker`, y llamada real a DeepSeek desde el worker en producción, todo confirmado con una postulación de prueba end-to-end)._
+
 - [x] 9.1 Modelo `Puesto` (título, descripción, requisitos, creado por un reclutador) + endpoints CRUD (solo Reclutador puede crear/editar).
 - [x] 9.2 Modelo `Postulacion` (postulante + puesto + CV + estado: pendiente/rechazado/aprobado) + endpoint público para postular (sube CV, sin necesitar cuenta).
 - [x] 9.3 Extraer texto del CV (`pypdf` u similar) + tarea Celery que le pasa ese texto + la descripción del puesto al LLM (reutilizando `LLMProvider`/`DeepSeekLLM`, sin patrón nuevo) para evaluar el fit. _(Nota: cubre CVs digitales normales, con texto seleccionable. Si en las pruebas aparecen CVs escaneados como imagen, sin texto embebido, ahí se evalúa sumar OCR — no se construye de entrada para un caso que puede no aparecer.)_
