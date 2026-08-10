@@ -96,7 +96,13 @@ backend/
 │   │       ├── stt_service.py
 │   │       ├── tts_service.py
 │   │       └── interview_orchestrator.py
-│   └── accounts/             # auth (cuando se necesite)
+│   └── accounts/             # autenticación y roles (Backend Fase 8)
+│       ├── models.py          # ApplicantProfile (perfil del postulante)
+│       ├── views.py           # login/refresh/logout (JWT híbrido, ver DECISIONS.md)
+│       ├── permissions.py     # IsAdministrador/IsReclutador/IsPostulante (por Django Group)
+│       ├── admin.py
+│       ├── migrations/        # incluye una migración de datos que crea los 3 Groups
+│       └── tests/
 ├── core/
 │   └── ai_providers/          # adapters de proveedores externos (Fase 7, Strategy/Adapter)
 │       ├── base.py            # interfaces abstractas (STTProvider, LLMProvider, TTSProvider...)

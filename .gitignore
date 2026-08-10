@@ -22,3 +22,6 @@ backend/media/
 
 # OS / editor
 .DS_Store
+
+# Archivos de prueba manual con curl
+cookies.txt

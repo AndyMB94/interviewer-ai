@@ -121,9 +121,9 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 ### Backend — Fase 8: Autenticación y roles (arranca ahora)
 
-- [ ] 8.1 Instalar `djangorestframework-simplejwt` + `django-cors-headers`; configurar autenticación híbrida (JWT de acceso en memoria del lado del cliente, refresh token en cookie `httpOnly`).
-- [ ] 8.2 Crear los 3 Groups de Django (`Administrador`, `Reclutador`, `Postulante`) vía migración de datos.
-- [ ] 8.3 Nueva app `apps/accounts`: modelo `ApplicantProfile` (uno a uno con el usuario — tipo y número de documento, nacionalidad, fecha de nacimiento, sexo, teléfono, departamento/provincia/distrito) + endpoints `login`/`refresh`/`logout`.
+- [x] 8.1 Instalar `djangorestframework-simplejwt` + `django-cors-headers`; configurar autenticación híbrida (JWT de acceso en memoria del lado del cliente, refresh token en cookie `httpOnly`).
+- [x] 8.2 Crear los 3 Groups de Django (`Administrador`, `Reclutador`, `Postulante`) vía migración de datos.
+- [x] 8.3 Nueva app `apps/accounts`: modelo `ApplicantProfile` (uno a uno con el usuario — tipo y número de documento, nacionalidad, fecha de nacimiento, sexo, teléfono, departamento/provincia/distrito) + endpoints `login`/`refresh`/`logout`.
 - [ ] 8.4 Servicio de ubigeos (`departamento`/`provincia`/`distrito` seleccionables) consumiendo `free.e-api.net.pe/ubigeos.json` como fuente, cacheado del lado del backend (no se le pega en vivo por cada request) — el frontend consume un endpoint propio, no la API externa directo.
 
 ### Backend — Fase 9: Puestos y postulaciones (futura)
