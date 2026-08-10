@@ -135,6 +135,14 @@ STATIC_URL = 'static/'
 CELERY_BROKER_URL = os.environ.get("REDIS_URL")
 CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL")
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ.get("REDIS_URL"),
+        "KEY_PREFIX": "django_cache",
+    }
+}
+
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
