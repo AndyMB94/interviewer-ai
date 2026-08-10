@@ -106,10 +106,13 @@ backend/
 │       │   └── ubigeo_service.py  # trae y cachea departamento/provincia/distrito (Fase 8.4)
 │       └── tests/
 │   └── recruiting/            # puestos y postulaciones (Backend Fase 9)
-│       ├── models.py          # Puesto (9.1); Postulacion se suma en 9.2
-│       ├── views.py           # PuestoViewSet (DRF ModelViewSet, CRUD completo)
-│       ├── permissions.py     # IsOwnerReclutadorOrReadOnly (permiso a nivel de objeto)
+│       ├── models.py          # Puesto (9.1), Postulacion (9.2)
+│       ├── views.py           # PuestoViewSet, PostulacionViewSet (DRF ModelViewSet)
+│       ├── permissions.py     # permisos a nivel de objeto (dueño del puesto)
 │       ├── serializers.py
+│       ├── tasks.py           # screen_postulacion_task (9.3)
+│       ├── services/
+│       │   └── cv_screening_service.py  # extrae texto del CV y evalúa el fit con el LLM
 │       ├── admin.py
 │       └── tests/
 ├── core/

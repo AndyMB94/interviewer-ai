@@ -130,7 +130,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 
 - [x] 9.1 Modelo `Puesto` (título, descripción, requisitos, creado por un reclutador) + endpoints CRUD (solo Reclutador puede crear/editar).
 - [x] 9.2 Modelo `Postulacion` (postulante + puesto + CV + estado: pendiente/rechazado/aprobado) + endpoint público para postular (sube CV, sin necesitar cuenta).
-- [ ] 9.3 Extraer texto del CV (`pypdf` u similar) + tarea Celery que le pasa ese texto + la descripción del puesto al LLM (reutilizando `LLMProvider`/`DeepSeekLLM`, sin patrón nuevo) para evaluar el fit. _(Nota: cubre CVs digitales normales, con texto seleccionable. Si en las pruebas aparecen CVs escaneados como imagen, sin texto embebido, ahí se evalúa sumar OCR — no se construye de entrada para un caso que puede no aparecer.)_
+- [x] 9.3 Extraer texto del CV (`pypdf` u similar) + tarea Celery que le pasa ese texto + la descripción del puesto al LLM (reutilizando `LLMProvider`/`DeepSeekLLM`, sin patrón nuevo) para evaluar el fit. _(Nota: cubre CVs digitales normales, con texto seleccionable. Si en las pruebas aparecen CVs escaneados como imagen, sin texto embebido, ahí se evalúa sumar OCR — no se construye de entrada para un caso que puede no aparecer.)_
 - [ ] 9.4 Si aprueba: crear el usuario + perfil automáticamente, asignarlo al Group Postulante, mandar credenciales por email. Si rechaza: no se crea nada, termina ahí. _(Nota: falta decidir el proveedor de envío de email — se resuelve al llegar a este paso, no antes.)_
 - [ ] 9.5 Conectar `Interview` a la `Postulacion` aprobada (hoy `Interview.user` existe pero nunca se usa).
 

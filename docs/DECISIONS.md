@@ -250,6 +250,16 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-10 `LLMProvider.ask()` acepta un `system_prompt` opcional (Backend Fase 9.3)
+
+**Contexto:** el filtro de CVs (Fase 9.3) necesita usar el mismo LLM (DeepSeek) que la entrevista, pero para una tarea completamente distinta (evaluar un CV contra un puesto, no entrevistar) — con un system prompt propio. La interfaz `DeepSeekLLM.ask()` tenía el system prompt de la entrevistadora ("Gaby") hardcodeado adentro, sin forma de usar otro.
+
+**Decisión:** se agregó un parámetro opcional `system_prompt: str | None = None` a `LLMProvider.ask()` (interfaz) y `DeepSeekLLM.ask()` (implementación). Si no se pasa nada, usa el prompt de entrevista de siempre (`INTERVIEW_SYSTEM_PROMPT`, renombrado desde `SYSTEM_PROMPT` para dejar claro que es solo el de la entrevista) — así `apps/interviews/tasks.py` no necesitó ningún cambio. El filtro de CVs (`apps/recruiting/services/cv_screening_service.py`) pasa su propio `SCREENING_SYSTEM_PROMPT`, pidiéndole al LLM una respuesta en JSON estructurado (`{"decision": ..., "razon": ...}`) para poder parsearla de forma confiable.
+
+**Alternativas consideradas:** crear una clase `LLMProvider` nueva/paralela solo para screening — descartada, sería duplicar toda la lógica de llamar a la API de DeepSeek por una diferencia de una sola línea (el system prompt). Este enfoque es el ejemplo de libro de extender una interfaz sin romper a quien ya la usa (principio abierto/cerrado).
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT y TTS decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._

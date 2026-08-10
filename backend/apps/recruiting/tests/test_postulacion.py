@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -35,7 +37,8 @@ def _fake_pdf(nombre="cv.pdf"):
 
 
 @pytest.mark.django_db
-def test_anyone_can_postular_without_an_account(puesto):
+@patch("apps.recruiting.views.screen_postulacion_task.delay")
+def test_anyone_can_postular_without_an_account(mock_delay, puesto):
     client = APIClient()
     response = client.post(
         "/api/postulaciones/",
@@ -46,6 +49,7 @@ def test_anyone_can_postular_without_an_account(puesto):
     assert response.status_code == 201
     postulacion = Postulacion.objects.get(id=response.json()["id"])
     assert postulacion.estado == Postulacion.Estado.PENDIENTE
+    mock_delay.assert_called_once_with(postulacion.id)
 
 
 @pytest.mark.django_db

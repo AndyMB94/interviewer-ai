@@ -3,7 +3,12 @@ from abc import ABC, abstractmethod
 
 class LLMProvider(ABC):
     @abstractmethod
-    def ask(self, question: str, history: list[dict] | None = None) -> str: ...
+    def ask(
+        self,
+        question: str,
+        history: list[dict] | None = None,
+        system_prompt: str | None = None,
+    ) -> str: ...
 
 
 class STTProvider(ABC):

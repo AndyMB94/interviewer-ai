@@ -3,6 +3,7 @@ from rest_framework import viewsets
 from apps.recruiting.models import Postulacion, Puesto
 from apps.recruiting.permissions import CanManagePostulacion, IsOwnerReclutadorOrReadOnly
 from apps.recruiting.serializers import PostulacionSerializer, PuestoSerializer
+from apps.recruiting.tasks import screen_postulacion_task
 
 
 class PuestoViewSet(viewsets.ModelViewSet):
@@ -23,3 +24,7 @@ class PostulacionViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_authenticated:
             return Postulacion.objects.none()
         return Postulacion.objects.filter(puesto__creado_por=self.request.user)
+
+    def perform_create(self, serializer):
+        postulacion = serializer.save()
+        screen_postulacion_task.delay(postulacion.id)
