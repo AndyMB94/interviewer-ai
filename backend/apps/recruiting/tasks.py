@@ -1,5 +1,6 @@
 from celery import shared_task
 
+from apps.accounts.services.account_provisioning import procesar_aprobacion
 from apps.recruiting.models import Postulacion
 from apps.recruiting.services.cv_screening_service import extract_text_from_pdf, screen_candidate
 
@@ -25,5 +26,8 @@ def screen_postulacion_task(postulacion_id):
 
     postulacion.resultado_filtro = resultado.get("razon", "")
     postulacion.save(update_fields=["estado", "resultado_filtro"])
+
+    if postulacion.estado == Postulacion.Estado.APROBADO:
+        procesar_aprobacion(postulacion)
 
     return postulacion.estado

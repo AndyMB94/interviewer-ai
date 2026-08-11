@@ -103,7 +103,10 @@ backend/
 │       ├── admin.py
 │       ├── migrations/        # incluye una migración de datos que crea los 3 Groups
 │       ├── services/
-│       │   └── ubigeo_service.py  # trae y cachea departamento/provincia/distrito (Fase 8.4)
+│       │   ├── ubigeo_service.py  # trae y cachea departamento/provincia/distrito (Fase 8.4)
+│       │   └── account_provisioning.py  # crea/resetea la cuenta del postulante aprobado + email de credenciales (Fase 9.4)
+│       ├── templates/emails/
+│       │   └── credenciales_postulante.html
 │       └── tests/
 │   └── recruiting/            # puestos y postulaciones (Backend Fase 9)
 │       ├── models.py          # Puesto (9.1), Postulacion (9.2)
@@ -217,7 +220,7 @@ La memoria de conversación (Backend Fase 6.3) se arma consultando todas las `Qu
 
 ### `apps/accounts/models.py`
 
-- **`ApplicantProfile`**: `OneToOneField` a `settings.AUTH_USER_MODEL`. Datos del postulante que no viven en el `User` default de Django: `tipo_documento`/`numero_documento` (DNI, Carné de Extranjería o Pasaporte — `UniqueConstraint` sobre el par, ignorando filas en blanco), `nacionalidad`, `fecha_nacimiento`, `sexo`, `telefono`, y `ubigeo_codigo`/`departamento`/`provincia`/`distrito` como `CharField` planos (no `ForeignKey` — no hay tabla `Ubigeo` local, se resuelven contra el servicio cacheado de `services/ubigeo_service.py`, ver DECISIONS.md). No se crea automáticamente vía señal `post_save`: cada flujo de alta de cuenta decide si corresponde un perfil (hoy, a mano desde el admin; a futuro, automático al aprobar una `Postulacion`, Backend Fase 9.4).
+- **`ApplicantProfile`**: `OneToOneField` a `settings.AUTH_USER_MODEL`. Datos del postulante que no viven en el `User` default de Django: `tipo_documento`/`numero_documento` (DNI, Carné de Extranjería o Pasaporte — `UniqueConstraint` sobre el par, ignorando filas en blanco), `nacionalidad`, `fecha_nacimiento`, `sexo`, `telefono`, y `ubigeo_codigo`/`departamento`/`provincia`/`distrito` como `CharField` planos (no `ForeignKey` — no hay tabla `Ubigeo` local, se resuelven contra el servicio cacheado de `services/ubigeo_service.py`, ver DECISIONS.md). No se crea automáticamente vía señal `post_save`: cada flujo de alta de cuenta decide si corresponde un perfil (a mano desde el admin para Reclutador/Administrador; automático y vacío al aprobar una `Postulacion`, Backend Fase 9.4 — el postulante lo completa después, en un paso de frontend todavía no construido).
 - **Roles**: no hay un modelo propio — se usan los `Group` default de Django (`Administrador`/`Reclutador`/`Postulante`), creados por una migración de datos (`0002_create_groups.py`).
 
 ### `apps/recruiting/models.py`

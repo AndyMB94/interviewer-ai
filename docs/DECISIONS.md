@@ -260,6 +260,26 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-11 Resend (vía `django-anymail`) como proveedor de email transaccional
+
+**Contexto:** Backend Fase 9.4 necesita mandar las credenciales generadas al postulante aprobado. Se evaluó Resend, SendGrid y Amazon SES.
+
+**Decisión:** Resend, integrado con `django-anymail[resend]` — reemplaza el `EMAIL_BACKEND` de Django para que `django.core.mail.send_mail`/`EmailMessage` (la API estándar de Django) hablen con Resend, sin aprender un SDK nuevo. Referencia completa copiada en `docs/Email/Resend/`. Mientras no se verifique un dominio propio, se manda desde el dominio de test de Resend (`onboarding@resend.dev`), que solo entrega a la dirección con la que se creó la cuenta — suficiente para desarrollo, hay que verificar un dominio propio antes de producción real.
+
+**Alternativas consideradas:** SendGrid y Amazon SES — ambos con tier gratuito, pero Resend se eligió por API/SDK más simple y por integrarse directo con la API de envío de emails que Django ya trae (vía Anymail), sin sumar conceptos nuevos al proyecto.
+
+---
+
+## 2026-08-11 Creación automática de cuenta al aprobar: unificar alta y reseteo de contraseña (Backend Fase 9.4)
+
+**Contexto:** cuando una `Postulacion` se aprueba, hay que crear la cuenta del postulante. Pero el mismo email puede aprobar más de una vez (postula a un puesto, después a otro) — si ya existe una cuenta de una aprobación anterior, ¿qué pasa si el postulante no se acuerda de esa contraseña (pudieron pasar meses o años)?
+
+**Decisión:** `provision_applicant_account()` (`apps/accounts/services/account_provisioning.py`) no distingue "crear" de "resetear" — siempre genera una contraseña temporal nueva y la aplica (`user.set_password()`), sea que el `User` se acabe de crear o ya existiera (`get_or_create` por `username=email`, ya que `username` es único a nivel de base en el modelo default de Django, a diferencia de `email`). El email de credenciales se manda siempre con la contraseña vigente en ese momento. Esto evita construir un flujo de "recuperar contraseña" para este caso — cada aprobación *es*, en la práctica, un reset, y como estas cuentas solo sirven para hacer la entrevista (sin otro estado que perder), invalidar la contraseña anterior no tiene costo real.
+
+**Alternativas consideradas:** reusar la cuenta sin tocar la contraseña si ya existía — más simple, pero deja al postulante sin poder entrar si no recuerda la contraseña vieja, sin ninguna forma de recuperarla (no hay flujo de "olvidé mi contraseña" en el proyecto). Crear una cuenta nueva cada vez — descartado, generaría usernames duplicados (mismo email) y viola la unicidad de `username`.
+
+---
+
 ## Pendientes por decidir
 
-_Ninguno por ahora — quedan proveedores de LLM, STT y TTS decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
+_Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
