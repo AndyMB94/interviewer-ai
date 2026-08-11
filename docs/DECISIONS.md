@@ -310,6 +310,26 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-11 El postulante no ve feedback de la IA al finalizar la entrevista; el cierre es self-paced
+
+**Contexto:** al probar el flujo completo en producción, se encontró que "Finalizar entrevista" nunca estuvo del todo terminado — `Interview.status` tiene un choice `finished` desde la Fase 6 original que ningún código seteaba jamás, y el botón no bloqueaba el chat después de "terminar" (dead code parcial). Al arreglarlo surgieron dos preguntas de producto: ¿el candidato ve una evaluación al final?, ¿quién decide cuándo termina?
+
+**Decisión:**
+- **El postulante no ve evaluación de la IA.** El mensaje de cierre es neutro ("gracias, tus respuestas quedaron registradas"), sin resumen ni juicio de valor. Mismo criterio ya aplicado (sin haberlo declarado explícitamente hasta ahora) al filtro de CVs: `Postulacion.resultado_filtro` nunca se le muestra al candidato en el frontend, aunque el endpoint lo devuelva técnicamente. La evaluación completa (CV + entrevista) queda reservada para el panel de reclutador (Frontend Fase 6.3).
+- **El candidato decide cuándo termina** (botón, self-paced) — no hay cierre automático por IA ni por cantidad fija de preguntas.
+
+**Alternativas consideradas:** mostrarle al candidato un resumen/evaluación al finalizar (como hacía el prompt hardcodeado hasta ahora) — descartado por ser más realista de un ATS real que el candidato no vea el score/feedback crudo generado para el reclutador, y por consistencia con cómo ya se trata el resultado del filtro de CVs. Cierre automático decidido por la IA o por un número fijo de preguntas — descartado por ahora por ser trabajo bastante mayor (necesita una señal detectable del LLM o enganchar `core/interview_session.py`, hoy standalone sin conectar al flujo real, ver decisión del 2026-08-04) sin que resuelva un problema real todavía; queda como mejora futura posible.
+
+---
+
+## 2026-08-11 `TIME_ZONE = 'America/Lima'` en vez de `'UTC'`
+
+**Contexto:** `USE_TZ = True` ya estaba bien (la base guarda todo en UTC, buena práctica), pero `TIME_ZONE = 'UTC'` hacía que el admin de Django (y cualquier `localtime()`) **mostrara** las horas en UTC en vez de hora de Lima — 5 horas de diferencia, confuso para el uso diario del proyecto.
+
+**Decisión:** `TIME_ZONE = 'America/Lima'`. No cambia nada en cómo se guardan los datos (siguen en UTC en la base), solo cómo se muestran.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
