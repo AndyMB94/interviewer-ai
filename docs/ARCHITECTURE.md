@@ -171,7 +171,11 @@ frontend/
 │   │   ├── useSocket.ts        # conexión socket.io-client reutilizable
 │   │   └── useMicrophone.ts    # permiso/grabación de audio del navegador
 │   ├── pages/                  # una pantalla por archivo (Frontend Fase 5, react-router)
-│   │   └── InterviewPage.tsx   # la pantalla de entrevista original, sin cambios de comportamiento
+│   │   ├── InterviewPage.tsx   # la pantalla de entrevista original, sin cambios de comportamiento
+│   │   └── ApplyPage.tsx       # postulación pública (elegir puesto + subir CV), ruta /postular
+│   ├── lib/
+│   │   ├── utils.ts            # helper `cn()` de shadcn/ui
+│   │   └── api.ts              # llamadas REST a Django (puestos, postulaciones) — no pasan por el gateway
 │   ├── router.tsx              # definición de rutas (createBrowserRouter)
 │   └── main.tsx                # RouterProvider en vez de renderizar un solo componente
 ├── public/
