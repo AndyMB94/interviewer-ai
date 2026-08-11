@@ -134,7 +134,7 @@ _9.1-9.3 desplegadas y verificadas en producción el 2026-08-10 (rutas, `pypdf` 
 - [x] 9.2 Modelo `Postulacion` (postulante + puesto + CV + estado: pendiente/rechazado/aprobado) + endpoint público para postular (sube CV, sin necesitar cuenta).
 - [x] 9.3 Extraer texto del CV (`pypdf` u similar) + tarea Celery que le pasa ese texto + la descripción del puesto al LLM (reutilizando `LLMProvider`/`DeepSeekLLM`, sin patrón nuevo) para evaluar el fit. _(Nota: cubre CVs digitales normales, con texto seleccionable. Si en las pruebas aparecen CVs escaneados como imagen, sin texto embebido, ahí se evalúa sumar OCR — no se construye de entrada para un caso que puede no aparecer.)_
 - [x] 9.4 Si aprueba: crear el usuario + perfil automáticamente, asignarlo al Group Postulante, mandar credenciales por email (Resend vía `django-anymail`, ver `docs/Email/Resend/`). Si rechaza: no se crea nada, termina ahí. Si el email ya tenía cuenta de una aprobación anterior, no se duplica: se le resetea la contraseña y se manda un email nuevo (ver DECISIONS.md). _Desplegada y verificada en producción el 2026-08-11 — creación de cuenta y envío real por Resend confirmados con el key de `vacantia-prod`. Pendiente: verificar un dominio propio en Resend (hoy solo entrega al email de la cuenta de Resend, no a candidatos reales)._
-- [ ] 9.5 Conectar `Interview` a la `Postulacion` aprobada (hoy `Interview.user` existe pero nunca se usa).
+- [x] 9.5 Conectar `Interview` al usuario autenticado (`/api/ask/` usa `request.user` si viene un JWT válido, sigue funcionando anónimo si no — ver DECISIONS.md). El cierre real de acceso anónimo se hace en Frontend Fase 5.4, no acá.
 
 ### Gateway — Fase 5: Autenticación (futura)
 

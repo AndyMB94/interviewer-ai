@@ -25,7 +25,8 @@ def ask(request):
         if interview is None:
             return Response({"error": "interview not found"}, status=404)
     else:
-        interview = Interview.objects.create()
+        user = request.user if request.user.is_authenticated else None
+        interview = Interview.objects.create(user=user)
 
     question = Question.objects.create(interview=interview, text=question_text)
 

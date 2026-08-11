@@ -1,7 +1,10 @@
 import pytest
+from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from unittest.mock import MagicMock, patch
 from django.core.files.uploadedfile import SimpleUploadedFile
+
+from apps.interviews.models import Interview
 
 
 @pytest.mark.django_db
@@ -27,6 +30,36 @@ def test_ask_returns_task_id(mock_delay):
     data = response.json()
     assert data["task_id"] == "fake-task-id"
     assert "interview_id" in data
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.ask_llm_task.delay")
+def test_ask_without_authentication_creates_interview_without_user(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
+
+    client = APIClient()
+    response = client.post("/api/ask/", {"question": "hello"}, format="json")
+
+    interview = Interview.objects.get(id=response.json()["interview_id"])
+    assert interview.user is None
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.ask_llm_task.delay")
+def test_ask_authenticated_creates_interview_with_user(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
+    user = User.objects.create_user("postulante1", password="testpass123")
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post("/api/ask/", {"question": "hello"}, format="json")
+
+    interview = Interview.objects.get(id=response.json()["interview_id"])
+    assert interview.user == user
 
 
 @pytest.mark.django_db

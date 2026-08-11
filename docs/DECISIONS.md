@@ -280,6 +280,16 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-11 `Interview` se conecta al usuario autenticado sin cerrar el acceso anónimo todavía (Backend Fase 9.5)
+
+**Contexto:** con Fase 8 (auth) y 9.4 (cuentas automáticas) ya andando, correspondía que `Interview.user` dejara de ser siempre `None`. Pero la demo pública en producción (`interviewer.andymallcco.dev`) sigue activa y sin login — ni el gateway reenvía el JWT (Gateway Fase 5.1, pendiente) ni el frontend tiene pantalla de login (Frontend Fase 5, pendiente).
+
+**Decisión:** `/api/ask/` (`apps/interviews/views.py`) sigue siendo `AllowAny` — si llega un JWT válido, la `Interview` nueva se crea con `user=request.user`; si no, se crea con `user=None` como hasta ahora. No se exige autenticación todavía. El cierre real (bloquear el acceso anónimo) se hace recién en Frontend Fase 5.4, cuando el flujo completo de login ya esté listo del otro lado — así nunca queda la demo pública rota a mitad de camino.
+
+**Alternativas consideradas:** exigir `IsAuthenticated` ya mismo — más "correcto" en el papel, pero rompía la demo en producción de inmediato sin ninguna alternativa funcional hasta terminar Gateway 5.1 + Frontend 5, violando el criterio del proyecto de no dejar nada roto entre pasos.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
