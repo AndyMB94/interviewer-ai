@@ -30,7 +30,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md p-4 pt-24">
+    <div className="mx-auto max-w-md p-4 pt-8">
       <Card>
         <CardHeader>
           <CardTitle>Ingresar</CardTitle>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSocket } from "../hooks/useSocket";
 import { useMicrophone } from "../hooks/useMicrophone";
-import { Header } from "../components/Header";
 import { QuestionDisplay } from "../components/QuestionDisplay";
 import { TextAnswerForm } from "../components/TextAnswerForm";
 import { VoiceRecorder } from "../components/VoiceRecorder";
@@ -42,36 +41,32 @@ export function InterviewPage() {
   }, [audioBlob, sendAudio]);
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-2xl space-y-6 p-4">
-        <Header />
+    <div className="mx-auto max-w-2xl space-y-6 p-4">
+      <QuestionDisplay
+        messages={messages}
+        isFinished={isFinished}
+        isWaitingForResponse={isWaitingForResponse}
+        onFinish={handleFinish}
+      />
 
-        <QuestionDisplay
-          messages={messages}
-          isFinished={isFinished}
-          isWaitingForResponse={isWaitingForResponse}
-          onFinish={handleFinish}
-        />
+      {!isFinished && (
+        <>
+          <TextAnswerForm
+            question={question}
+            onQuestionChange={setQuestion}
+            onSubmit={handleSubmit}
+          />
 
-        {!isFinished && (
-          <>
-            <TextAnswerForm
-              question={question}
-              onQuestionChange={setQuestion}
-              onSubmit={handleSubmit}
-            />
-
-            <VoiceRecorder
-              stream={stream}
-              error={error}
-              requestPermission={requestPermission}
-              isRecording={isRecording}
-              startRecording={startRecording}
-              stopRecording={stopRecording}
-            />
-          </>
-        )}
-      </div>
+          <VoiceRecorder
+            stream={stream}
+            error={error}
+            requestPermission={requestPermission}
+            isRecording={isRecording}
+            startRecording={startRecording}
+            stopRecording={stopRecording}
+          />
+        </>
+      )}
     </div>
   );
 }

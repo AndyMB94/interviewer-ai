@@ -53,7 +53,7 @@ export function ApplyPage() {
 
   if (submitted && selectedPuesto) {
     return (
-      <div className="mx-auto max-w-md p-4 pt-16">
+      <div className="mx-auto max-w-md p-4 pt-8">
         <Card>
           <CardHeader>
             <CardTitle>¡Postulación enviada!</CardTitle>
@@ -78,7 +78,7 @@ export function ApplyPage() {
 
   if (selectedPuesto) {
     return (
-      <div className="mx-auto max-w-md space-y-4 p-4 pt-16">
+      <div className="mx-auto max-w-md space-y-4 p-4 pt-8">
         <Button variant="ghost" size="sm" onClick={() => setSelectedPuesto(null)}>
           ‹ Elegir otro puesto
         </Button>
@@ -135,7 +135,7 @@ export function ApplyPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-4 pt-16">
+    <div className="mx-auto max-w-4xl space-y-8 p-4 pt-8">
       <header className="space-y-2 text-center">
         <h1 className="text-3xl font-bold">Vacantes abiertas</h1>
         <p className="text-muted-foreground">

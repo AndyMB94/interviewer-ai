@@ -3,6 +3,7 @@ import { loginRequest, logoutRequest } from "@/lib/api";
 
 interface AuthContextValue {
   accessToken: string | null;
+  userEmail: string | null;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -12,19 +13,24 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const login = useCallback(async (username: string, password: string) => {
     const token = await loginRequest(username, password);
     setAccessToken(token);
+    setUserEmail(username);
   }, []);
 
   const logout = useCallback(async () => {
     await logoutRequest();
     setAccessToken(null);
+    setUserEmail(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ accessToken, isAuthenticated: !!accessToken, login, logout }}>
+    <AuthContext.Provider
+      value={{ accessToken, userEmail, isAuthenticated: !!accessToken, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
