@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PuestoCard } from "@/components/PuestoCard";
+import { PuestoCardSkeleton } from "@/components/PuestoCardSkeleton";
 import { fetchPuestosAbiertos, postularA, type Puesto } from "@/lib/api";
 
 export function ApplyPage() {
@@ -143,8 +144,6 @@ export function ApplyPage() {
         </p>
       </header>
 
-      {loadingPuestos && <p className="text-center text-muted-foreground">Cargando puestos...</p>}
-
       {loadError && <p className="text-center text-destructive">{loadError}</p>}
 
       {!loadingPuestos && !loadError && puestos.length === 0 && (
@@ -154,9 +153,11 @@ export function ApplyPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {puestos.map((puesto) => (
-          <PuestoCard key={puesto.id} puesto={puesto} onSelect={setSelectedPuesto} />
-        ))}
+        {loadingPuestos
+          ? Array.from({ length: 4 }).map((_, index) => <PuestoCardSkeleton key={index} />)
+          : puestos.map((puesto) => (
+              <PuestoCard key={puesto.id} puesto={puesto} onSelect={setSelectedPuesto} />
+            ))}
       </div>
     </div>
   );

@@ -124,7 +124,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
   - [x] P.5.3 Pasada de responsive — verificado en Chrome DevTools (device toolbar, iPhone SE) en las 3 pantallas, sin superposiciones ni cortes. No hizo falta tocar código: los contenedores ya usaban `mx-auto max-w-*` + flex/grid sin anchos fijos en px, mobile-friendly desde el vamos.
 - [ ] P.6 Más pulido visual (agregado 2026-08-11, tras revisar qué faltaba después de P.5). Alcance:
   - [x] P.6.1 Toggle de tema claro/oscuro manual en la navbar (`useTheme` hook + ícono sol/luna). Sigue `prefers-color-scheme` del sistema por default; al elegir manualmente, se guarda en `localStorage` y se aplica clase `.light`/`.dark` en `<html>` (agregado también el override `:not(.light)` en `index.css` para forzar claro incluso con el sistema en oscuro, y un script inline en `index.html` que aplica la clase antes de que React monte, para evitar flash del tema incorrecto). Probado: cambia en el momento y persiste después de refrescar (F5).
-  - [ ] P.6.2 Loading skeleton en `/postular` mientras cargan los puestos (`Skeleton` de shadcn, `pnpm dlx shadcn@latest add skeleton`) en vez del texto plano "Cargando puestos...".
+  - [x] P.6.2 Loading skeleton en `/postular` mientras cargan los puestos (`PuestoCardSkeleton`, 4 placeholders con la misma forma que `PuestoCard`) en vez del texto plano "Cargando puestos...". Probado visualmente.
   - [ ] P.6.3 Pulir visualmente `LoginPage` — hoy es un form austero, sin nada más allá de los campos. Definir el detalle concreto al implementar (ej. ícono, mejor jerarquía visual).
   - [ ] P.6.4 Favicon propio (hoy sigue el default de Vite) — pendiente definir el ícono/diseño.
 
