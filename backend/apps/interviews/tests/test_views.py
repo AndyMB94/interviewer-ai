@@ -173,3 +173,23 @@ def test_speak_result_done(mock_async_result_class):
 
     assert response.status_code == 200
     assert response.json() == {"status": "done", "audio_url": "/media/abc123.mp3"}
+
+
+@pytest.mark.django_db
+def test_finish_interview_marks_status_as_finished():
+    interview = Interview.objects.create()
+
+    client = APIClient()
+    response = client.post(f"/api/interviews/{interview.id}/finish/")
+
+    assert response.status_code == 200
+    interview.refresh_from_db()
+    assert interview.status == Interview.Status.FINISHED
+
+
+@pytest.mark.django_db
+def test_finish_interview_404_for_unknown_id():
+    client = APIClient()
+    response = client.post("/api/interviews/99999/finish/")
+
+    assert response.status_code == 404

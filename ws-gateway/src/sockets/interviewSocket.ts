@@ -1,6 +1,6 @@
 import type { Server } from "socket.io";
 
-import { askQuestion, synthesizeSpeech, transcribeAudio } from "../services/djangoClient.js";
+import { askQuestion, finishInterview, synthesizeSpeech, transcribeAudio } from "../services/djangoClient.js";
 
 // URL que usa el NAVEGADOR para descargar el audio de TTS -- distinta de DJANGO_URL en
 // djangoClient.ts (esa es para las llamadas del gateway a Django, entre contenedores).
@@ -47,6 +47,13 @@ export function registerInterviewSocket(io: Server) {
         socket.emit("audio-response", `${PUBLIC_DJANGO_URL}${audioUrl}`);
       } catch (error) {
         console.error("ERROR en el flujo de audio:", error);
+      }
+    });
+
+    socket.on("finish", async () => {
+      if (interviewId) {
+        console.log("finalizando entrevista:", interviewId);
+        await finishInterview(interviewId);
       }
     });
   });

@@ -9,7 +9,9 @@ import { useAuth } from "../context/AuthContext";
 
 export function InterviewPage() {
   const { accessToken } = useAuth();
-  const { askQuestion, messages, sendAudio, isWaitingForResponse } = useSocket(accessToken ?? undefined);
+  const { askQuestion, messages, sendAudio, isWaitingForResponse, finishInterview } = useSocket(
+    accessToken ?? undefined,
+  );
   const [question, setQuestion] = useState("");
   const [isFinished, setIsFinished] = useState(false);
   const {
@@ -30,9 +32,7 @@ export function InterviewPage() {
 
   const handleFinish = () => {
     setIsFinished(true);
-    askQuestion(
-      "Por favor, dame un resumen breve de mi desempeño en esta entrevista y una evaluación general de cómo me fue.",
-    );
+    finishInterview();
   };
 
   useEffect(() => {
@@ -53,20 +53,24 @@ export function InterviewPage() {
           onFinish={handleFinish}
         />
 
-        <TextAnswerForm
-          question={question}
-          onQuestionChange={setQuestion}
-          onSubmit={handleSubmit}
-        />
+        {!isFinished && (
+          <>
+            <TextAnswerForm
+              question={question}
+              onQuestionChange={setQuestion}
+              onSubmit={handleSubmit}
+            />
 
-        <VoiceRecorder
-          stream={stream}
-          error={error}
-          requestPermission={requestPermission}
-          isRecording={isRecording}
-          startRecording={startRecording}
-          stopRecording={stopRecording}
-        />
+            <VoiceRecorder
+              stream={stream}
+              error={error}
+              requestPermission={requestPermission}
+              isRecording={isRecording}
+              startRecording={startRecording}
+              stopRecording={stopRecording}
+            />
+          </>
+        )}
       </div>
     </div>
   );

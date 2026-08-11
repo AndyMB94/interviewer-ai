@@ -112,6 +112,12 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
   - [x] P.3.2 Instalar shadcn/ui, agregar un componente de prueba (Button) para confirmar que funciona.
   - [x] P.3.3 Separar `App.tsx` en componentes (`Header`, `QuestionDisplay`, `VoiceRecorder`, `TextAnswerForm`) con Tailwind, sin cambiar el diseño todavía (solo estructura).
   - [x] P.3.4 Aplicar el diseño real (layout tipo chat, colores, espaciado) usando shadcn/ui donde corresponda.
+- [x] P.4 Terminar de cablear "Finalizar entrevista" (hallazgo del 2026-08-11: `Interview.status` nunca se seteaba a `finished` — quedó como dead code desde la Fase 6 original, y el botón no bloqueaba el chat después de "terminar"). Decisiones tomadas:
+  - El postulante **no** ve una evaluación/feedback de la IA al finalizar — mismo criterio que el filtro de CVs (`resultado_filtro` de `Postulacion`, que tampoco se le muestra nunca al candidato). Cierre neutro para el candidato; la evaluación queda para el reclutador (Frontend Fase 6.3).
+  - Quién decide cuándo termina: el candidato, con el botón (self-paced) — no se implementa cierre automático por IA ni por cantidad fija de preguntas; queda anotado como mejora futura posible, enganchada a `core/interview_session.py` (Fase 7.3, hoy standalone sin conectar al flujo real).
+  - [x] P.4.1 Backend: `POST /api/interviews/<id>/finish/` marca `status=finished`.
+  - [x] P.4.2 Gateway: evento de socket `finish` que llama a ese endpoint (usa el `interview_id` que el gateway ya trackea por conexión, no hace falta mandarlo desde el navegador).
+  - [x] P.4.3 Frontend: al click en "Finalizar entrevista" — mensaje de cierre neutro (sin pedirle un resumen a la IA), dispara el evento `finish`, y bloquea el formulario de texto/voz y el propio botón. Probado end-to-end: chat se bloquea, `Interview.status` queda "Finalizada" en el admin.
 
 ## Pivote: plataforma de reclutamiento con IA (agregado 2026-08-06, reemplaza la sección "Autenticación" anterior)
 

@@ -48,6 +48,12 @@ export async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string>
   });
 }
 
+export async function finishInterview(interviewId: number): Promise<void> {
+  await fetch(`${DJANGO_URL}/api/interviews/${interviewId}/finish/`, {
+    method: "POST",
+  });
+}
+
 export async function synthesizeSpeech(text: string): Promise<string> {
   const speakResponse = await fetch(`${DJANGO_URL}/api/speak/`, {
     method: "POST",

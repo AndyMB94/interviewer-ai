@@ -1,6 +1,7 @@
 import base64
 
 from celery.result import AsyncResult
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -32,6 +33,14 @@ def ask(request):
 
     task = ask_llm_task.delay(question.id)
     return Response({"task_id": task.id, "interview_id": interview.id}, status=202)
+
+
+@api_view(["POST"])
+def finish_interview(request, interview_id):
+    interview = get_object_or_404(Interview, pk=interview_id)
+    interview.status = Interview.Status.FINISHED
+    interview.save(update_fields=["status"])
+    return Response({"status": interview.status})
 
 
 @api_view(["GET"])

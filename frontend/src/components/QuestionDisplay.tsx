@@ -65,9 +65,16 @@ export function QuestionDisplay({
           <div ref={bottomRef} />
         </div>
 
-        <Button className="mt-4" onClick={onFinish}>
-          Finalizar entrevista
-        </Button>
+        {isFinished ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Gracias por tu tiempo — tus respuestas quedaron registradas. Nos vamos a poner en
+            contacto por email con los siguientes pasos.
+          </p>
+        ) : (
+          <Button className="mt-4" onClick={onFinish}>
+            Finalizar entrevista
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

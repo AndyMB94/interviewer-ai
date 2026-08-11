@@ -57,5 +57,9 @@ export function useSocket(token?: string) {
     socketRef.current?.emit("audio", buffer);
   }, []);
 
-  return { askQuestion, messages, sendAudio, isWaitingForResponse };
+  const finishInterview = useCallback(() => {
+    socketRef.current?.emit("finish");
+  }, []);
+
+  return { askQuestion, messages, sendAudio, isWaitingForResponse, finishInterview };
 }
