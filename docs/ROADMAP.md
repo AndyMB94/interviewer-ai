@@ -136,16 +136,18 @@ _9.1-9.3 desplegadas y verificadas en producción el 2026-08-10 (rutas, `pypdf` 
 - [x] 9.4 Si aprueba: crear el usuario + perfil automáticamente, asignarlo al Group Postulante, mandar credenciales por email (Resend vía `django-anymail`, ver `docs/Email/Resend/`). Si rechaza: no se crea nada, termina ahí. Si el email ya tenía cuenta de una aprobación anterior, no se duplica: se le resetea la contraseña y se manda un email nuevo (ver DECISIONS.md). _Desplegada y verificada en producción el 2026-08-11 — creación de cuenta y envío real por Resend confirmados con el key de `vacantia-prod`. Dominio propio `mail.andymallcco.dev` verificado en Resend el mismo día (DKIM+SPF por Porkbun) — ya entrega a cualquier destinatario real, no solo al email de la cuenta de Resend._
 - [x] 9.5 Conectar `Interview` al usuario autenticado (`/api/ask/` usa `request.user` si viene un JWT válido, sigue funcionando anónimo si no — ver DECISIONS.md). El cierre real de acceso anónimo se hace en Frontend Fase 5.4, no acá.
 
-### Gateway — Fase 5: Autenticación (futura)
+### Gateway — Fase 5: Autenticación
 
 - [x] 5.1 Recibir el JWT del cliente en el handshake de Socket.io y reenviarlo como header `Authorization` en cada llamada REST a Django (solo en `/api/ask/`, que es la que usa `request.user` desde Backend Fase 9.5).
 
-### Frontend — Fase 5: Postulación y acceso de postulante (futura)
+### Frontend — Fase 5: Postulación y acceso de postulante
 
 - [x] 5.1 Instalar `react-router`, estructura de `pages/` (ver `docs/ARCHITECTURE.md`). La pantalla de entrevista existente se movió a `pages/InterviewPage.tsx` sin cambiar su comportamiento — confirmado visualmente, mismo diseño y funcionamiento.
 - [x] 5.2 Pantalla pública de postulación (`pages/ApplyPage.tsx`, ruta `/postular`) — sin login. Grilla de puestos abiertos (filtrados en el frontend por `estado === "abierto"`) con `PuestoCard`, click lleva al formulario (nombre/email/CV) contra `POST /api/postulaciones/`, con pantalla de confirmación al final. Probado end-to-end en el navegador.
 - [x] 5.3 Pantalla de login para postulantes ya aprobados (`pages/LoginPage.tsx`, ruta `/login`) — `AuthContext` guarda el access token en memoria (nunca `localStorage`, ver DECISIONS.md Fase 8). Redirige a `/` al loguear; probado end-to-end con una cuenta real.
 - [x] 5.4 Proteger la pantalla de entrevista (requiere estar logueado) — `RequireAuth` redirige a `/login` si no hay sesión. Probado end-to-end: login → chat funciona → `Interview` queda asociada al usuario en el admin.
+
+_Frontend 5.1-5.4 + Gateway 5.1 desplegados y verificados en producción el 2026-08-11 — incluyó agregar `location /api/` en el Nginx del servidor (antes solo `/`, `/socket.io/`, `/media/`), fix de fallback de SPA en el nginx del contenedor `frontend` (ver DECISIONS.md), y `VITE_API_URL` en el `.env` de producción. Confirmado end-to-end en `interviewer.andymallcco.dev`: postular → login → chat → `Interview` asociada al usuario en el admin._
 
 ### Frontend — Fase 6: Panel de reclutador (futura)
 
