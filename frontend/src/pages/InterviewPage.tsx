@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { useSocket } from "./hooks/useSocket";
-import { useMicrophone } from "./hooks/useMicrophone";
-import { Header } from "./components/Header";
-import { QuestionDisplay } from "./components/QuestionDisplay";
-import { TextAnswerForm } from "./components/TextAnswerForm";
-import { VoiceRecorder } from "./components/VoiceRecorder";
+import { useSocket } from "../hooks/useSocket";
+import { useMicrophone } from "../hooks/useMicrophone";
+import { Header } from "../components/Header";
+import { QuestionDisplay } from "../components/QuestionDisplay";
+import { TextAnswerForm } from "../components/TextAnswerForm";
+import { VoiceRecorder } from "../components/VoiceRecorder";
 
-function App() {
+export function InterviewPage() {
   const { askQuestion, messages, sendAudio, isWaitingForResponse } = useSocket();
   const [question, setQuestion] = useState("");
   const [isFinished, setIsFinished] = useState(false);
@@ -69,5 +69,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

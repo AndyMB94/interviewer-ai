@@ -170,8 +170,10 @@ frontend/
 │   ├── hooks/
 │   │   ├── useSocket.ts        # conexión socket.io-client reutilizable
 │   │   └── useMicrophone.ts    # permiso/grabación de audio del navegador
-│   ├── App.tsx
-│   └── main.tsx
+│   ├── pages/                  # una pantalla por archivo (Frontend Fase 5, react-router)
+│   │   └── InterviewPage.tsx   # la pantalla de entrevista original, sin cambios de comportamiento
+│   ├── router.tsx              # definición de rutas (createBrowserRouter)
+│   └── main.tsx                # RouterProvider en vez de renderizar un solo componente
 ├── public/
 ├── components.json              # config de shadcn/ui
 ├── tailwind.config.js
@@ -183,7 +185,7 @@ frontend/
 
 Estas estructuras son el objetivo a mediano plazo, no lo que se crea en la Fase 0 de cada track — al inicio cada carpeta va a estar casi vacía y se va llenando fase a fase (ver ROADMAP.md).
 
-Cuando exista una segunda pantalla real (ej. login, Backend Fase de autenticación futura), la estructura se extiende agregando `pages/` (`Login.tsx`, `Dashboard.tsx`, `Interview.tsx`) + `react-router`, sin tocar lo que ya existe en `components/`/`hooks/` — no se crean esas carpetas de antemano porque hoy estarían vacías (la app es de una sola pantalla).
+`pages/` + `react-router` ya están armados (Frontend Fase 5.1) — cada pantalla nueva (postulación, login, dashboard de reclutador) se agrega como un archivo en `pages/` más una entrada en `router.tsx`, sin tocar `components/`/`hooks/` (esos siguen siendo compartidos entre pantallas).
 
 ## Infraestructura (Docker)
 
