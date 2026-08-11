@@ -185,5 +185,5 @@ EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
 ANYMAIL = {
     "RESEND_API_KEY": os.environ.get("RESEND_API_KEY"),
 }
-# Dominio de test de Resend hasta que se verifique un dominio propio (docs/Email/Resend/add_a_domain.md)
-DEFAULT_FROM_EMAIL = "onboarding@resend.dev"
+# Dominio propio verificado en Resend (docs/Email/Resend/add_a_domain.md) — entrega a cualquier destinatario real
+DEFAULT_FROM_EMAIL = "Vacantia <no-reply@mail.andymallcco.dev>"

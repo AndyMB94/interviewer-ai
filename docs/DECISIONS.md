@@ -300,6 +300,16 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-11 Dominio propio verificado en Resend: `mail.andymallcco.dev`
+
+**Contexto:** con el dominio de test de Resend (`onboarding@resend.dev`) solo se podía entregar al email de la cuenta de Resend — un candidato real con otro email nunca hubiera recibido sus credenciales. Era el bloqueante real para que Fase 9.4 sirviera en producción de verdad.
+
+**Decisión:** se verificó `mail.andymallcco.dev` como subdominio dedicado a email (siguiendo la recomendación de Resend de no usar el dominio raíz, ver `docs/Email/Resend/add_a_domain.md`), agregando los registros DKIM (TXT) y SPF (MX + TXT) en Porkbun — verificación en Resend en menos de 15 minutos. `DEFAULT_FROM_EMAIL` (`backend/config/settings.py`) pasó de `onboarding@resend.dev` a `Vacantia <no-reply@mail.andymallcco.dev>`. Confirmado con un envío real a una casilla externa (no la cuenta de Resend), entregado sin marcarse como spam.
+
+**Alternativas consideradas:** ninguna — era un paso obligatorio ya decidido de antemano (ver decisión del 2026-08-06 sobre ubigeos/proveedor de email), solo pendiente de ejecutar.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
