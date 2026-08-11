@@ -7,6 +7,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from apps.accounts.serializers import CustomTokenObtainPairSerializer
 from apps.accounts.services import ubigeo_service
 
 
@@ -24,6 +25,8 @@ def _set_refresh_cookie(response, refresh_token: str) -> None:
 
 class CookieTokenObtainPairView(TokenObtainPairView):
     """Login: devuelve el access token en el body, y el refresh token en una cookie httpOnly."""
+
+    serializer_class = CustomTokenObtainPairSerializer
 
     def finalize_response(self, request, response, *args, **kwargs):
         if response.data.get("refresh"):

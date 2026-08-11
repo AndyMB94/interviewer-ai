@@ -1,6 +1,7 @@
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import AccessToken
 
 from django.conf import settings
 
@@ -23,6 +24,20 @@ def test_login_returns_access_and_sets_httponly_cookie(user):
 
     cookie = response.cookies[settings.JWT_AUTH_COOKIE]
     assert cookie["httponly"] is True
+
+
+@pytest.mark.django_db
+def test_login_includes_groups_claim_in_access_token():
+    user = User.objects.create_user("reclutador1", password="testpass123")
+    user.groups.add(Group.objects.get(name="Reclutador"))
+
+    client = APIClient()
+    response = client.post(
+        "/api/auth/login/", {"username": "reclutador1", "password": "testpass123"}, format="json"
+    )
+
+    access_token = AccessToken(response.data["access"])
+    assert access_token["groups"] == ["Reclutador"]
 
 
 @pytest.mark.django_db

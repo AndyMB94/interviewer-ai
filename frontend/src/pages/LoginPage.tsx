@@ -21,8 +21,8 @@ export function LoginPage() {
     setSubmitting(true);
     setError(null);
     try {
-      await login(email, password);
-      navigate("/entrevista");
+      const roles = await login(email, password);
+      navigate(roles.includes("Reclutador") ? "/dashboard" : "/entrevista");
     } catch {
       setError("Email o contraseña incorrectos.");
     } finally {
