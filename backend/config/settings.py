@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
+    'anymail',
     "apps.interviews",
     "apps.accounts",
     "apps.recruiting",
@@ -178,3 +179,11 @@ CORS_ALLOWED_ORIGINS = [
     "https://interviewer.andymallcco.dev",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+# Email transaccional: Resend, vía django-anymail (ver docs/Email/Resend/)
+EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
+ANYMAIL = {
+    "RESEND_API_KEY": os.environ.get("RESEND_API_KEY"),
+}
+# Dominio de test de Resend hasta que se verifique un dominio propio (docs/Email/Resend/add_a_domain.md)
+DEFAULT_FROM_EMAIL = "onboarding@resend.dev"
