@@ -1,10 +1,11 @@
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from rest_framework.test import APIClient
 from unittest.mock import MagicMock, patch
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.interviews.models import Interview
+from apps.recruiting.models import Postulacion, Puesto
 
 
 @pytest.mark.django_db
@@ -60,6 +61,35 @@ def test_ask_authenticated_creates_interview_with_user(mock_delay):
 
     interview = Interview.objects.get(id=response.json()["interview_id"])
     assert interview.user == user
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.ask_llm_task.delay")
+def test_ask_authenticated_links_the_approved_postulacion(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
+
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post("/api/ask/", {"question": "hello"}, format="json")
+
+    interview = Interview.objects.get(id=response.json()["interview_id"])
+    assert interview.postulacion == postulacion
 
 
 @pytest.mark.django_db

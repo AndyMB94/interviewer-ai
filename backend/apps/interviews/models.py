@@ -14,6 +14,13 @@ class Interview(models.Model):
         null=True,
         blank=True,
     )
+    postulacion = models.ForeignKey(
+        "recruiting.Postulacion",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="interviews",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
         max_length=20,

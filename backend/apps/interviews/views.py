@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from apps.interviews.models import Interview, Question
 from apps.interviews.tasks import ask_llm_task, synthesize_speech_task, transcribe_audio_task
+from apps.recruiting.services.postulacion_lookup import get_ultima_postulacion_aprobada
 
 
 @api_view(["GET"])
@@ -27,7 +28,8 @@ def ask(request):
             return Response({"error": "interview not found"}, status=404)
     else:
         user = request.user if request.user.is_authenticated else None
-        interview = Interview.objects.create(user=user)
+        postulacion = get_ultima_postulacion_aprobada(user.email) if user else None
+        interview = Interview.objects.create(user=user, postulacion=postulacion)
 
     question = Question.objects.create(interview=interview, text=question_text)
 

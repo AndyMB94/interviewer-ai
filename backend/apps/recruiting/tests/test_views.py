@@ -1,8 +1,9 @@
 import pytest
 from django.contrib.auth.models import Group, User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
-from apps.recruiting.models import Puesto
+from apps.recruiting.models import Postulacion, Puesto
 
 
 @pytest.fixture
@@ -112,3 +113,44 @@ def test_owner_reclutador_can_edit_their_own_puesto(puesto, reclutador):
     assert response.status_code == 200
     puesto.refresh_from_db()
     assert puesto.titulo == "Actualizado"
+
+
+@pytest.mark.django_db
+def test_mi_postulacion_requires_authentication():
+    client = APIClient()
+    response = client.get("/api/postulaciones/mia/")
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_mi_postulacion_404_without_a_matching_aprobada(postulante):
+    client = APIClient()
+    client.force_authenticate(user=postulante)
+    response = client.get("/api/postulaciones/mia/")
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_mi_postulacion_returns_nombre_and_puesto(puesto):
+    postulante = User.objects.create_user(
+        "andy@example.com", email="andy@example.com", password="testpass123"
+    )
+    postulante.groups.add(Group.objects.get(name="Postulante"))
+    Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy Mallcco",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=postulante)
+    response = client.get("/api/postulaciones/mia/")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["nombre"] == "Andy Mallcco"
+    assert data["puesto"]["titulo"] == puesto.titulo

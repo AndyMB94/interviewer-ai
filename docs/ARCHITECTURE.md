@@ -83,19 +83,13 @@ backend/
 │   └── celery.py
 ├── apps/
 │   ├── interviews/
-│   │   ├── models.py
-│   │   ├── views.py          # endpoints REST (ask, health, subir audio)
-│   │   ├── serializers.py
+│   │   ├── models.py          # Interview (con FK a Postulacion desde Fase 9.6), Question, Answer
+│   │   ├── views.py          # endpoints REST (ask, health, subir audio, finish_interview)
 │   │   ├── urls.py
-│   │   ├── tasks.py          # tareas Celery
+│   │   ├── tasks.py          # tareas Celery (ask_llm_task, transcribe_audio_task, synthesize_speech_task)
 │   │   ├── tests/            # pytest, colocado con la app que prueba
-│   │   │   ├── test_views.py
-│   │   │   └── test_services.py
 │   │   └── services/         # lógica de negocio, NO en las vistas
-│   │       ├── llm_service.py
-│   │       ├── stt_service.py
-│   │       ├── tts_service.py
-│   │       └── interview_orchestrator.py
+│   │       └── interview_prompt_service.py  # arma el system_prompt contextual con el puesto (Fase 9.6.3)
 │   ├── accounts/             # autenticación y roles (Backend Fase 8)
 │       ├── models.py          # ApplicantProfile (perfil del postulante)
 │       ├── views.py           # login/refresh/logout (JWT híbrido, ver DECISIONS.md)
@@ -110,12 +104,13 @@ backend/
 │       └── tests/
 │   └── recruiting/            # puestos y postulaciones (Backend Fase 9)
 │       ├── models.py          # Puesto (9.1), Postulacion (9.2)
-│       ├── views.py           # PuestoViewSet, PostulacionViewSet (DRF ModelViewSet)
+│       ├── views.py           # PuestoViewSet, PostulacionViewSet (DRF ModelViewSet) + mi_postulacion (9.6.4)
 │       ├── permissions.py     # permisos a nivel de objeto (dueño del puesto)
 │       ├── serializers.py
 │       ├── tasks.py           # screen_postulacion_task (9.3)
 │       ├── services/
-│       │   └── cv_screening_service.py  # extrae texto del CV y evalúa el fit con el LLM
+│       │   ├── cv_screening_service.py  # extrae texto del CV y evalúa el fit con el LLM
+│       │   └── postulacion_lookup.py    # busca la Postulacion aprobada más reciente por email (9.6.2, 9.6.4)
 │       ├── admin.py
 │       └── tests/
 ├── core/
@@ -225,7 +220,7 @@ El dominio (`interviewer.andymallcco.dev`) es obligatorio para el certificado re
 
 ### `apps/interviews/models.py`
 
-- **`Interview`**: una sesión de entrevista. `user` (`ForeignKey` nullable a `settings.AUTH_USER_MODEL`), `created_at`, `status` (`in_progress` / `finished`, vía `models.TextChoices`). Queda `None` en todas las entrevistas anteriores a Backend Fase 8 (no existía autenticación) y va a seguir siendo `None` para cualquier entrevista que no venga de una `Postulacion` aprobada — Backend Fase 9.5 (futura) es la que lo completa, conectándolo a la `Postulacion` aprobada del candidato.
+- **`Interview`**: una sesión de entrevista. `user` (`ForeignKey` nullable a `settings.AUTH_USER_MODEL` — `None` en las entrevistas anteriores a Backend Fase 8, o en la demo anónima que sigue funcionando), `postulacion` (`ForeignKey` nullable a `apps.recruiting.models.Postulacion`, agregado en Fase 9.6 — se conecta automáticamente a la `Postulacion` aprobada del usuario autenticado al crear la `Interview`, y es lo que le da a Gaby el contexto del puesto real para armar preguntas relevantes en vez de genéricas), `created_at`, `status` (`in_progress` / `finished`, vía `models.TextChoices`).
 - **`Question`**: cada mensaje del usuario (escrito o transcripto) dentro de una entrevista. `ForeignKey` a `Interview` (`related_name="questions"`), `text`, `created_at`.
 - **`Answer`**: la respuesta del LLM a una pregunta puntual. `OneToOneField` a `Question` (`related_name="answer"`) — cada pregunta tiene exactamente una respuesta, nunca varias.
 

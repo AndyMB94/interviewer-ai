@@ -5,6 +5,7 @@ from celery import shared_task
 from django.conf import settings
 
 from apps.interviews.models import Answer, Question
+from apps.interviews.services.interview_prompt_service import build_system_prompt_for_puesto
 from core.ai_providers.deepgram_stt import DeepgramSTT
 from core.ai_providers.deepseek_llm import DeepSeekLLM
 from core.ai_providers.elevenlabs_tts import ElevenLabsTTS
@@ -23,7 +24,7 @@ def add(x, y):
 
 @shared_task(bind=True)
 def ask_llm_task(self, question_id):
-    question = Question.objects.select_related("interview").get(pk=question_id)
+    question = Question.objects.select_related("interview__postulacion__puesto").get(pk=question_id)
 
     history = []
     previous_questions = (
@@ -36,7 +37,10 @@ def ask_llm_task(self, question_id):
         if hasattr(previous_question, "answer"):
             history.append({"role": "assistant", "content": previous_question.answer.text})
 
-    answer_text = DeepSeekLLM().ask(question.text, history=history)
+    postulacion = question.interview.postulacion
+    system_prompt = build_system_prompt_for_puesto(postulacion.puesto) if postulacion else None
+
+    answer_text = DeepSeekLLM().ask(question.text, history=history, system_prompt=system_prompt)
     Answer.objects.create(question=question, text=answer_text)
 
     publish_result(self.request.id, answer_text)
