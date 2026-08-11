@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useBlocker } from "react-router";
 import { useSocket } from "../hooks/useSocket";
 import { useMicrophone } from "../hooks/useMicrophone";
 import { QuestionDisplay } from "../components/QuestionDisplay";
@@ -51,6 +52,33 @@ export function InterviewPage() {
       .then(setMiPostulacion)
       .catch(() => setMiPostulacion(null));
   }, [accessToken]);
+
+  // Bloquea salir de una entrevista activa sin terminar (Frontend Fase 7.3) — evita perder el
+  // progreso por un click accidental en el logo u otro link, ya que salir desconecta el socket.
+  const entrevistaActivaSinTerminar = hasStarted && !isFinished;
+
+  const blocker = useBlocker(entrevistaActivaSinTerminar);
+
+  useEffect(() => {
+    if (blocker.state !== "blocked") return;
+    const confirmarSalida = window.confirm(
+      "¿Seguro que quiere salir? Va a perder el progreso de esta entrevista.",
+    );
+    if (confirmarSalida) {
+      blocker.proceed();
+    } else {
+      blocker.reset();
+    }
+  }, [blocker]);
+
+  useEffect(() => {
+    if (!entrevistaActivaSinTerminar) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [entrevistaActivaSinTerminar]);
 
   if (!hasStarted) {
     return (
