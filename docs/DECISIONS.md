@@ -330,6 +330,18 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-11 Skill de shadcn/ui instalado; sidebar solo en el panel de reclutador, no en las pantallas del candidato
+
+**Contexto:** con Frontend Fase 6 (dashboard de reclutador) por delante, se evaluó de nuevo si convenía sumar PrimeReact para tablas/dashboards (ver decisión del 2026-08-05, que ya lo había descartado para una app de una sola pantalla — el contexto cambió, ahora sí va a haber pantallas tipo dashboard).
+
+**Decisión:** se mantiene Tailwind + shadcn/ui (no se suma PrimeReact) — meter una segunda librería de componentes con su propia identidad visual haría que el dashboard se vea inconsistente con el resto de la app (`/`, `/postular`, `/login`, ya con la paleta e identidad propias). Se instaló el [Skill oficial de shadcn/ui para Claude Code](https://ui.shadcn.com/docs/skills) (`frontend/.agents/skills/shadcn`, symlink desde `frontend/.claude/skills/`, scope de proyecto, commiteado) — le da contexto real del `components.json` del proyecto para generar código correcto a la primera con componentes más complejos (`Table`, `Sidebar`, `DropdownMenu`, `Chart`).
+
+También se decidió explícitamente **dónde va sidebar y dónde no**: las pantallas del candidato (`/`, `/postular`, `/login`) no llevan sidebar — son de una sola tarea cada una, agregar navegación lateral ahí sería sobreingeniería (mismo criterio de siempre). El sidebar queda reservado para el panel de reclutador (Frontend Fase 6), que sí tiene varias vistas reales.
+
+**Alternativas consideradas:** PrimeReact — descartado, ver arriba. Copy-to-all-agents en vez de symlink al instalar el skill — se prefirió symlink (única fuente de verdad, se actualiza sola si el skill se actualiza).
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._

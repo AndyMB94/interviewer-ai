@@ -118,6 +118,10 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
   - [x] P.4.1 Backend: `POST /api/interviews/<id>/finish/` marca `status=finished`.
   - [x] P.4.2 Gateway: evento de socket `finish` que llama a ese endpoint (usa el `interview_id` que el gateway ya trackea por conexión, no hace falta mandarlo desde el navegador).
   - [x] P.4.3 Frontend: al click en "Finalizar entrevista" — mensaje de cierre neutro (sin pedirle un resumen a la IA), dispara el evento `finish`, y bloquea el formulario de texto/voz y el propio botón. Probado end-to-end: chat se bloquea, `Interview.status` queda "Finalizada" en el admin.
+- [ ] P.5 Rediseño de las pantallas del candidato (agregado 2026-08-11, con el skill de shadcn/ui ya instalado — ver DECISIONS.md). Alcance: `/`, `/postular`, `/login`. **Sin sidebar acá** (sería sobreingeniería para pantallas de una sola tarea — el sidebar queda reservado para Frontend Fase 6, que sí tiene varias vistas).
+  - [ ] P.5.1 Navbar simple compartida entre las 3 pantallas (logo/link a `/postular`), con `DropdownMenu` de cuenta (avatar/email + "Cerrar sesión") cuando hay sesión activa — usa el endpoint `/api/auth/logout/` que ya existe desde Fase 8, solo falta conectarlo a la UI (hoy no hay ningún botón de logout en ningún lado).
+  - [ ] P.5.2 Mejorar los globos de chat en `QuestionDisplay`/`InterviewPage` — distinguir visualmente a "Gaby" del usuario (avatar/ícono), timestamps.
+  - [ ] P.5.3 Pasada de responsive real (mobile-first) en las 3 pantallas — hoy están pensadas para desktop (`max-w-md`/`max-w-2xl`/`max-w-4xl` centrados), falta confirmar que se vean bien en mobile.
 
 ## Pivote: plataforma de reclutamiento con IA (agregado 2026-08-06, reemplaza la sección "Autenticación" anterior)
 
@@ -157,9 +161,11 @@ _Frontend 5.1-5.4 + Gateway 5.1 desplegados y verificados en producción el 2026
 
 ### Frontend — Fase 6: Panel de reclutador (futura)
 
-- [ ] 6.1 Login de reclutador (mismo mecanismo, redirige a su propio dashboard).
-- [ ] 6.2 Dashboard: listar puestos propios y sus postulaciones con estado.
-- [ ] 6.3 Vista de detalle de una entrevista completada (transcripción + resultado del filtro de IA).
+**Diseño:** acá sí va sidebar (componente `Sidebar` de shadcn/ui) — a diferencia de las pantallas del candidato (ver P.5), el dashboard tiene varias vistas reales (puestos, postulaciones, detalle de entrevista) que se benefician de navegación lateral. Tablas con el componente `Table` de shadcn + `@tanstack/react-table` (sorting/paginación), `Badge` para los estados (pendiente/aprobado/rechazado, con color por estado), y algún gráfico simple (postulaciones por estado) con el componente `Chart` de shadcn si aporta valor real — no decorativo.
+
+- [ ] 6.1 Login de reclutador — reusa `LoginPage`/`AuthContext` que ya existen (mismo endpoint `/api/auth/login/`, no se duplica el mecanismo). Falta decidir cómo el frontend sabe el rol del usuario logueado para redirigir al dashboard correcto (¿claim custom en el JWT, o un endpoint `/api/auth/me/` nuevo? — se decide al implementar, no antes).
+- [ ] 6.2 Dashboard con sidebar: listar puestos propios (`GET /api/puestos/` filtrado por `creado_por`, ya lo soporta el backend vía permisos) con su cantidad de postulaciones, y tabla de postulaciones por puesto con estado. Requiere revisar si `PostulacionViewSet` necesita algún ajuste para este listado (hoy ya filtra por `puesto__creado_por=request.user`, ver `apps/recruiting/views.py`).
+- [ ] 6.3 Vista de detalle de una entrevista completada (transcripción `Question`/`Answer` + resultado del filtro de CV `Postulacion.resultado_filtro`). Requiere un endpoint nuevo en `apps/interviews` para exponer esto al reclutador dueño (mismo patrón de permisos a nivel de objeto que ya se usa en `apps/recruiting/permissions.py`) — hoy no existe forma de consultar una `Interview` específica por la API, solo se crea/continúa vía `/api/ask/`.
 
 ## Notas
 
