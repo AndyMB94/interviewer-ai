@@ -126,7 +126,7 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
   - [x] P.6.1 Toggle de tema claro/oscuro manual en la navbar (`useTheme` hook + ícono sol/luna). Sigue `prefers-color-scheme` del sistema por default; al elegir manualmente, se guarda en `localStorage` y se aplica clase `.light`/`.dark` en `<html>` (agregado también el override `:not(.light)` en `index.css` para forzar claro incluso con el sistema en oscuro, y un script inline en `index.html` que aplica la clase antes de que React monte, para evitar flash del tema incorrecto). Probado: cambia en el momento y persiste después de refrescar (F5).
   - [x] P.6.2 Loading skeleton en `/postular` mientras cargan los puestos (`PuestoCardSkeleton`, 4 placeholders con la misma forma que `PuestoCard`) en vez del texto plano "Cargando puestos...". Probado visualmente.
   - [x] P.6.3 Pulir visualmente `LoginPage` — card centrada verticalmente en la pantalla (antes quedaba pegada arriba), ícono `KeyRound` en un badge circular sobre el título, header centrado. Confirmado visualmente.
-  - [ ] P.6.4 Favicon propio (hoy sigue el default de Vite) — pendiente definir el ícono/diseño.
+  - [x] P.6.4 Favicon propio — "V" blanca sobre fondo morado (`--primary`, mismo color de marca que el resto de la app), reemplaza el favicon default que había (era el logo de shadcn/base-ui, no propio). También se actualizó el `<title>` de `index.html` de "frontend" a "Vacantia".
 
 ## Pivote: plataforma de reclutamiento con IA (agregado 2026-08-06, reemplaza la sección "Autenticación" anterior)
 
