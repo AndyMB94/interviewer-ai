@@ -60,6 +60,20 @@ export async function loginRequest(username: string, password: string): Promise<
   return data.access as string;
 }
 
+export async function refreshAccessToken(): Promise<string> {
+  const response = await fetch(`${API_URL}/api/auth/token/refresh/`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("No hay sesión activa.");
+  }
+
+  const data = await response.json();
+  return data.access as string;
+}
+
 export async function logoutRequest(): Promise<void> {
   await fetch(`${API_URL}/api/auth/logout/`, {
     method: "POST",

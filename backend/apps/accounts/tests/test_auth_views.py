@@ -41,6 +41,19 @@ def test_login_includes_groups_claim_in_access_token():
 
 
 @pytest.mark.django_db
+def test_login_includes_email_claim_in_access_token():
+    User.objects.create_user("andy2", email="andy@example.com", password="testpass123")
+
+    client = APIClient()
+    response = client.post(
+        "/api/auth/login/", {"username": "andy2", "password": "testpass123"}, format="json"
+    )
+
+    access_token = AccessToken(response.data["access"])
+    assert access_token["email"] == "andy@example.com"
+
+
+@pytest.mark.django_db
 def test_login_with_wrong_password_fails(user):
     client = APIClient()
     response = client.post(
@@ -60,6 +73,23 @@ def test_refresh_with_valid_cookie_issues_new_access(user):
     assert response.status_code == 200
     assert "access" in response.data
     assert settings.JWT_AUTH_COOKIE in response.cookies
+
+
+@pytest.mark.django_db
+def test_refreshed_access_token_still_carries_groups_and_email_claims():
+    user = User.objects.create_user("reclutador2", email="reclutador2@example.com", password="testpass123")
+    user.groups.add(Group.objects.get(name="Reclutador"))
+
+    client = APIClient()
+    client.post(
+        "/api/auth/login/", {"username": "reclutador2", "password": "testpass123"}, format="json"
+    )
+
+    response = client.post("/api/auth/token/refresh/")
+
+    access_token = AccessToken(response.data["access"])
+    assert access_token["groups"] == ["Reclutador"]
+    assert access_token["email"] == "reclutador2@example.com"
 
 
 @pytest.mark.django_db
