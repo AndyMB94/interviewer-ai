@@ -7,6 +7,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   audioUrl?: string;
+  timestamp: Date;
 }
 
 export function useSocket(token?: string) {
@@ -23,7 +24,7 @@ export function useSocket(token?: string) {
     });
 
     socket.on("ask", (response: string) => {
-      setMessages((prev) => [...prev, { role: "assistant", text: response }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: response, timestamp: new Date() }]);
       setIsWaitingForResponse(false);
     });
 
@@ -37,7 +38,7 @@ export function useSocket(token?: string) {
     });
 
     socket.on("transcript", (text: string) => {
-      setMessages((prev) => [...prev, { role: "user", text }]);
+      setMessages((prev) => [...prev, { role: "user", text, timestamp: new Date() }]);
       setIsWaitingForResponse(true);
     });
 
@@ -47,7 +48,7 @@ export function useSocket(token?: string) {
   }, [token]);
 
   const askQuestion = useCallback((question: string) => {
-    setMessages((prev) => [...prev, { role: "user", text: question }]);
+    setMessages((prev) => [...prev, { role: "user", text: question, timestamp: new Date() }]);
     setIsWaitingForResponse(true);
     socketRef.current?.emit("ask", question);
   }, []);
