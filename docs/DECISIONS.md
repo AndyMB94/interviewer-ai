@@ -360,6 +360,16 @@ También se decidió explícitamente **dónde va sidebar y dónde no**: las pant
 
 ---
 
+## 2026-08-12 Rol del usuario viaja como claim custom en el JWT (Frontend Fase 6.1)
+
+**Contexto:** para redirigir al reclutador a `/dashboard` y al postulante a `/entrevista` después del login, el frontend necesita saber el rol (Group) del usuario. Se evaluó un claim custom en el JWT vs. un endpoint `/api/auth/me/` nuevo.
+
+**Decisión:** claim custom en el JWT (`groups` agregado al payload en `get_token()`). Importante: **esto no es una decisión de seguridad**, es de UX/routing — la autorización real sigue (y debe seguir) validándose en el backend en cada request, vía `IsReclutador`/`IsAdministrador`/etc., sin importar qué rol "cree" tener el frontend. El único trade-off real es frescura: el claim queda fijo hasta por 7 días (vida del refresh token) si un admin le cambia el grupo a alguien — aceptable acá porque los roles se asignan a mano y rara vez cambian, y porque el backend igual re-valida todo independientemente de este dato.
+
+**Alternativas consideradas:** endpoint `/api/auth/me/` — siempre refleja el estado actual de la base (sin la ventana de 7 días), pero suma un request extra por login sin necesidad real en este proyecto. Se descarta por ahora; si algún día los roles cambiaran con frecuencia, esta sería la alternativa a reconsiderar.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
