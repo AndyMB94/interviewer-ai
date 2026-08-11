@@ -22,7 +22,7 @@ export function LoginPage() {
     setError(null);
     try {
       await login(email, password);
-      navigate("/");
+      navigate("/entrevista");
     } catch {
       setError("Email o contraseña incorrectos.");
     } finally {

@@ -11,15 +11,15 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
+        element: <ApplyPage />,
+      },
+      {
+        path: "/entrevista",
         element: (
           <RequireAuth>
             <InterviewPage />
           </RequireAuth>
         ),
-      },
-      {
-        path: "/postular",
-        element: <ApplyPage />,
       },
       {
         path: "/login",

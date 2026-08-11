@@ -27,7 +27,7 @@ export function Navbar() {
   return (
     <nav className="border-b border-border">
       <div className="mx-auto flex max-w-4xl items-center justify-between p-4">
-        <Link to="/postular" className="font-bold">
+        <Link to="/" className="font-bold">
           Vacantia
         </Link>
 
