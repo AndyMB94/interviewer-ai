@@ -290,6 +290,16 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 ---
 
+## 2026-08-11 Cierre del acceso anónimo a la entrevista (Gateway Fase 5.1 + Frontend Fase 5.4)
+
+**Contexto:** en Backend Fase 9.5 se decidió no exigir login todavía porque el gateway no reenviaba el JWT y el frontend no tenía login — cerrar el acceso en ese momento hubiera roto la demo pública sin alternativa. Con Frontend 5.1-5.3 y Gateway 5.1 ya listos, llegó el momento coordinado de cerrar.
+
+**Decisión:** el cliente manda el access token en el handshake de Socket.io (`io(URL, { auth: { token } })`); el gateway lo lee de `socket.handshake.auth.token` y lo reenvía como header `Authorization: Bearer <token>` solo en la llamada a `/api/ask/` (la única que usa `request.user`, ver Fase 9.5 — `transcribe`/`speak` no lo necesitan). Del lado del frontend, `RequireAuth` (wrapper de ruta) redirige a `/login` si no hay `accessToken` en el `AuthContext`, cerrando la ruta `/` a usuarios no autenticados. Confirmado end-to-end: login → chat funciona → la `Interview` creada queda con el `user` correcto en el admin.
+
+**Costo conocido, no resuelto todavía:** el access token vive solo en memoria (`AuthContext`, nunca `localStorage`, decisión de Fase 8) — al refrescar la página se pierde y hay que volver a loguearse, aunque la cookie `httpOnly` con el refresh token (7 días) siga siendo válida. No se implementó un "silent refresh" al cargar la app (llamar a `/api/auth/token/refresh/` con la cookie para pedir un access token nuevo sin pedir credenciales) — queda como mejora de UX pendiente, no bloquea el flujo actual.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._

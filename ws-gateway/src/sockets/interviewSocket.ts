@@ -10,6 +10,11 @@ export function registerInterviewSocket(io: Server) {
   io.on("connection", (socket) => {
     console.log("cliente conectado:", socket.id);
 
+    // JWT de acceso, mandado por el cliente en el handshake (io(URL, { auth: { token } })).
+    // Sin token (demo pública / usuario no logueado), sigue funcionando anónimo — Django decide
+    // si la Interview queda con user=None o con el usuario del token (ver Backend Fase 9.5).
+    const token = socket.handshake.auth?.token as string | undefined;
+
     let interviewId: number | undefined;
 
     socket.on("echo", (message) => {
@@ -19,7 +24,7 @@ export function registerInterviewSocket(io: Server) {
 
     socket.on("ask", async (question: string) => {
       console.log("pregunta recibida:", question);
-      const result = await askQuestion(question, interviewId);
+      const result = await askQuestion(question, interviewId, token);
       interviewId = result.interviewId;
       socket.emit("ask", result.answer);
     });
@@ -32,7 +37,7 @@ export function registerInterviewSocket(io: Server) {
         console.log("transcripción:", transcript);
         socket.emit("transcript", transcript);
 
-        const result = await askQuestion(transcript, interviewId);
+        const result = await askQuestion(transcript, interviewId, token);
         interviewId = result.interviewId;
         console.log("respuesta del LLM:", result.answer, "| interview_id:", interviewId);
         socket.emit("ask", result.answer);

@@ -5,15 +5,21 @@ const DJANGO_URL = process.env.DJANGO_URL || "http://localhost:8000";
 export async function askQuestion(
   question: string,
   interviewId?: number,
+  token?: string,
 ): Promise<{ answer: string; interviewId: number }> {
   const body: Record<string, unknown> = { question };
   if (interviewId) {
     body.interview_id = interviewId;
   }
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const askResponse = await fetch(`${DJANGO_URL}/api/ask/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
   const { task_id, interview_id } = await askResponse.json();

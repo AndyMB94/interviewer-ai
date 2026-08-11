@@ -144,7 +144,8 @@ ws-gateway/
 ├── src/
 │   ├── index.ts               # setup de Express + servidor Socket.io
 │   ├── sockets/
-│   │   └── interviewSocket.ts # eventos del socket (audio in, resultado out)
+│   │   └── interviewSocket.ts # eventos del socket (audio in, resultado out); lee el JWT de
+│   │                           # socket.handshake.auth.token y lo reenvía a Django (Gateway Fase 5.1)
 │   ├── services/
 │   │   ├── djangoClient.ts    # llamadas REST al backend Django
 │   │   └── redisSubscriber.ts # suscripción a Redis pub/sub
@@ -166,7 +167,9 @@ frontend/
 │   │   ├── Header.tsx
 │   │   ├── QuestionDisplay.tsx
 │   │   ├── VoiceRecorder.tsx
-│   │   └── TextAnswerForm.tsx
+│   │   ├── TextAnswerForm.tsx
+│   │   ├── PuestoCard.tsx      # tarjeta de un puesto en ApplyPage
+│   │   └── RequireAuth.tsx     # wrapper de ruta: redirige a /login sin sesión (Frontend Fase 5.4)
 │   ├── hooks/
 │   │   ├── useSocket.ts        # conexión socket.io-client reutilizable
 │   │   └── useMicrophone.ts    # permiso/grabación de audio del navegador

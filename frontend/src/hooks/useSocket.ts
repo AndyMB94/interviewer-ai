@@ -9,13 +9,13 @@ export interface ChatMessage {
   audioUrl?: string;
 }
 
-export function useSocket() {
+export function useSocket(token?: string) {
   const socketRef = useRef<Socket | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
 
   useEffect(() => {
-    const socket = io(GATEWAY_URL);
+    const socket = io(GATEWAY_URL, token ? { auth: { token } } : undefined);
     socketRef.current = socket;
 
     socket.on("connect", () => {
@@ -44,7 +44,7 @@ export function useSocket() {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [token]);
 
   const askQuestion = useCallback((question: string) => {
     setMessages((prev) => [...prev, { role: "user", text: question }]);
