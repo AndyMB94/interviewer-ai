@@ -43,3 +43,26 @@ export async function postularA(payload: PostularPayload): Promise<void> {
     throw new Error(mensaje);
   }
 }
+
+export async function loginRequest(username: string, password: string): Promise<string> {
+  const response = await fetch(`${API_URL}/api/auth/login/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Email o contraseña incorrectos.");
+  }
+
+  const data = await response.json();
+  return data.access as string;
+}
+
+export async function logoutRequest(): Promise<void> {
+  await fetch(`${API_URL}/api/auth/logout/`, {
+    method: "POST",
+    credentials: "include",
+  });
+}

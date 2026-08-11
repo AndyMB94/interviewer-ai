@@ -144,7 +144,7 @@ _9.1-9.3 desplegadas y verificadas en producción el 2026-08-10 (rutas, `pypdf` 
 
 - [x] 5.1 Instalar `react-router`, estructura de `pages/` (ver `docs/ARCHITECTURE.md`). La pantalla de entrevista existente se movió a `pages/InterviewPage.tsx` sin cambiar su comportamiento — confirmado visualmente, mismo diseño y funcionamiento.
 - [x] 5.2 Pantalla pública de postulación (`pages/ApplyPage.tsx`, ruta `/postular`) — sin login. Grilla de puestos abiertos (filtrados en el frontend por `estado === "abierto"`) con `PuestoCard`, click lleva al formulario (nombre/email/CV) contra `POST /api/postulaciones/`, con pantalla de confirmación al final. Probado end-to-end en el navegador.
-- [ ] 5.3 Pantalla de login para postulantes ya aprobados.
+- [x] 5.3 Pantalla de login para postulantes ya aprobados (`pages/LoginPage.tsx`, ruta `/login`) — `AuthContext` guarda el access token en memoria (nunca `localStorage`, ver DECISIONS.md Fase 8). Redirige a `/` al loguear; probado end-to-end con una cuenta real.
 - [ ] 5.4 Proteger la pantalla de entrevista (requiere estar logueado).
 
 ### Frontend — Fase 6: Panel de reclutador (futura)
