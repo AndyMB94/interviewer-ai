@@ -1,3 +1,4 @@
+import { KeyRound } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
@@ -30,9 +31,12 @@ export function LoginPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md p-4 pt-8">
-      <Card>
-        <CardHeader>
+    <div className="flex min-h-[calc(100vh-65px)] items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="items-center text-center">
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <KeyRound className="h-6 w-6 text-primary" />
+          </div>
           <CardTitle>Ingresar</CardTitle>
           <CardDescription>
             Usá el email y la contraseña que te mandamos cuando aprobamos tu postulación.
