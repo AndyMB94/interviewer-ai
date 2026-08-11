@@ -215,8 +215,11 @@ En producción (VPS de Contabo), **Nginx corre nativo en el host** (no dockeriza
 - `/` → `frontend` (puerto 8080)
 - `/socket.io/` → `ws-gateway` (puerto 3000, con headers de upgrade para WebSocket)
 - `/media/` → `backend` (puerto 8000, archivos de audio de TTS)
+- `/api/` → `backend` (puerto 8000) — **pendiente de agregar**, necesario desde Frontend Fase 5 (postulación/login le hablan a Django directo desde el navegador, no a través del gateway).
 
-El dominio (`interviewer.andymallcco.dev`) es obligatorio para el certificado real (Let's Encrypt no emite para una IP pelada) y para que el navegador permita `getUserMedia` (el micrófono no funciona fuera de un contexto seguro/HTTPS). Por esto, `VITE_GATEWAY_URL` (frontend), `PUBLIC_DJANGO_URL` y `CORS_ORIGINS` (gateway) apuntan todos al mismo origen HTTPS del dominio en producción, en vez de a IPs/puertos sueltos — evita mezclar HTTP y HTTPS (mixed content), que el navegador bloquea. Ver [docs/DECISIONS.md](DECISIONS.md) (Infra Fase 2.3).
+El dominio (`interviewer.andymallcco.dev`) es obligatorio para el certificado real (Let's Encrypt no emite para una IP pelada) y para que el navegador permita `getUserMedia` (el micrófono no funciona fuera de un contexto seguro/HTTPS). Por esto, `VITE_GATEWAY_URL`/`VITE_API_URL` (frontend), `PUBLIC_DJANGO_URL` y `CORS_ORIGINS` (gateway) apuntan todos al mismo origen HTTPS del dominio en producción, en vez de a IPs/puertos sueltos — evita mezclar HTTP y HTTPS (mixed content), que el navegador bloquea. Ver [docs/DECISIONS.md](DECISIONS.md) (Infra Fase 2.3).
+
+**`frontend/nginx.conf`** (dentro de la imagen del contenedor `frontend`, distinto del Nginx del host): tiene `try_files $uri $uri/ /index.html`, necesario para que las rutas de React Router (`/postular`, `/login`) no den 404 al navegarlas directo o refrescar — la config default de `nginx:alpine` no tiene ese fallback.
 
 ## Modelo de datos
 
