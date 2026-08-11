@@ -342,6 +342,16 @@ También se decidió explícitamente **dónde va sidebar y dónde no**: las pant
 
 ---
 
+## 2026-08-11 Bug: `SessionAuthentication` en `REST_FRAMEWORK` causaba 403 en `/api/auth/logout/` con sesión de admin activa
+
+**Contexto:** al probar "Cerrar sesión" desde la navbar nueva, dio `403 Forbidden`. Causa: el navegador tenía una cookie de sesión de Django activa (por estar logueado en `/admin/` en la misma sesión de trabajo) — las cookies no distinguen puerto, así que esa cookie viajaba también a las llamadas del frontend (`localhost:5173`) hacia la API (`localhost:8000`). `SessionAuthentication` (listada en `REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"]` desde el principio, sin haberla usado realmente nunca) detectaba esa sesión válida y exigía un token CSRF que el frontend nunca manda (no tiene por qué — la API es JWT puro) → 403 antes de que el código de la vista corriera.
+
+**Decisión:** se sacó `"rest_framework.authentication.SessionAuthentication"` de `REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"]` — queda solo `JWTAuthentication`. Coherente con la decisión de Fase 8 (auth híbrida JWT, explícitamente **no** sesión pura). No afecta a `/admin/`, que tiene su propio sistema de sesión de Django totalmente aparte de `REST_FRAMEWORK`. Se agregó un test de regresión (`test_logout_works_even_with_an_active_django_admin_session`, usa `client.force_login()` para simular la sesión activa) para que esto no vuelva a colarse sin darse cuenta.
+
+**Alternativas consideradas:** mandar el token CSRF desde el frontend en cada request — descartado, sería resolver un síntoma agregando complejidad (manejar CSRF además de JWT) para un mecanismo de auth (sesión) que el proyecto no usa ni necesita.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._

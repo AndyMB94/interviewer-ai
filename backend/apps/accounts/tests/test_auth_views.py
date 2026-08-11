@@ -69,3 +69,16 @@ def test_logout_clears_cookie_and_blacklists_refresh(user):
     client.cookies[settings.JWT_AUTH_COOKIE] = old_refresh_token
     refresh_response = client.post("/api/auth/token/refresh/")
     assert refresh_response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_logout_works_even_with_an_active_django_admin_session(user):
+    """Regresión: si el navegador también tiene una sesión de /admin/ activa (cookie de sesión de
+    Django), SessionAuthentication la detectaba y exigía CSRF, que el frontend nunca manda —
+    daba 403. Se sacó SessionAuthentication de REST_FRAMEWORK (la API es JWT puro, no sesión)."""
+    client = APIClient()
+    client.force_login(user)  # simula tener una sesión de Django activa en el navegador
+
+    response = client.post("/api/auth/logout/")
+
+    assert response.status_code == 205
