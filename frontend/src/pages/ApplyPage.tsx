@@ -59,13 +59,13 @@ export function ApplyPage() {
           <CardHeader>
             <CardTitle>¡Postulación enviada!</CardTitle>
             <CardDescription>
-              Postulaste a <span className="font-medium text-foreground">{selectedPuesto.titulo}</span>.
+              Postuló a <span className="font-medium text-foreground">{selectedPuesto.titulo}</span>.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
-              Un filtro con IA va a revisar tu CV contra los requisitos del puesto. Si tu perfil
-              encaja, te vamos a mandar un email a <span className="font-medium">{email}</span> con
+              Un filtro con IA va a revisar su CV contra los requisitos del puesto. Si su perfil
+              encaja, le vamos a mandar un email a <span className="font-medium">{email}</span> con
               los siguientes pasos.
             </p>
             <Button variant="outline" onClick={resetFlow} className="self-start">
@@ -87,7 +87,7 @@ export function ApplyPage() {
         <Card>
           <CardHeader>
             <CardTitle>{selectedPuesto.titulo}</CardTitle>
-            <CardDescription>Completá tus datos para postular.</CardDescription>
+            <CardDescription>Complete sus datos para postular.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -140,7 +140,7 @@ export function ApplyPage() {
       <header className="space-y-2 text-center">
         <h1 className="text-3xl font-bold">Vacantes abiertas</h1>
         <p className="text-muted-foreground">
-          Elegí un puesto y postulá subiendo tu CV — sin necesidad de crear una cuenta.
+          Elija un puesto y postule subiendo su CV — sin necesidad de crear una cuenta.
         </p>
       </header>
 
@@ -148,7 +148,7 @@ export function ApplyPage() {
 
       {!loadingPuestos && !loadError && puestos.length === 0 && (
         <p className="text-center text-muted-foreground">
-          No hay vacantes abiertas por el momento. Volvé a intentarlo más adelante.
+          No hay vacantes abiertas por el momento. Vuelva a intentarlo más adelante.
         </p>
       )}
 

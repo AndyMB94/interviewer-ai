@@ -39,7 +39,7 @@ export function LoginPage() {
           </div>
           <CardTitle>Ingresar</CardTitle>
           <CardDescription>
-            Usá el email y la contraseña que te mandamos cuando aprobamos tu postulación.
+            Use el email y la contraseña que le mandamos cuando aprobamos su postulación.
           </CardDescription>
         </CardHeader>
         <CardContent>

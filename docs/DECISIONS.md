@@ -352,6 +352,14 @@ También se decidió explícitamente **dónde va sidebar y dónde no**: las pant
 
 ---
 
+## 2026-08-11 Español neutro (registro "usted") también en los textos de la UI, no solo en Gaby
+
+**Contexto:** el prompt de Gaby ya exigía español neutro con "usted" desde el 2026-08-05 (P.1), pero ese criterio nunca se aplicó explícitamente a los textos de la interfaz (botones, labels, mensajes) — varias pantallas nuevas de Frontend Fase 5-7 se escribieron con voseo rioplatense ("Podés", "Completá", "Usá", "Escribime"), inconsistente con cómo habla la propia Gaby.
+
+**Decisión:** todo el copy de la UI usa la misma conjugación de "usted" que ya se exige en `INTERVIEW_SYSTEM_PROMPT` — sin voseo ("vos", "podés", "tenés") ni tuteo mezclado. Aplica a cualquier texto nuevo que se escriba de acá en adelante, no solo a lo ya corregido en esta pasada (`ApplyPage`, `LoginPage`, `InterviewPage`, `QuestionDisplay`).
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._

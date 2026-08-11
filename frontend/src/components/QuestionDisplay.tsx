@@ -45,8 +45,8 @@ export function QuestionDisplay({
                 </AvatarFallback>
               </Avatar>
               <div className="max-w-[80%] rounded-lg bg-secondary px-4 py-2 text-secondary-foreground">
-                ¡Hola! Soy Gaby, tu entrevistadora técnica. Escribime o grabá tu voz cuando
-                quieras empezar.
+                ¡Hola! Soy Gaby, su entrevistadora técnica. Escríbame o grabe su voz cuando
+                quiera empezar.
               </div>
             </div>
           )}
@@ -110,7 +110,7 @@ export function QuestionDisplay({
 
         {isFinished ? (
           <p className="mt-4 text-sm text-muted-foreground">
-            Gracias por tu tiempo — tus respuestas quedaron registradas. Nos vamos a poner en
+            Gracias por su tiempo — sus respuestas quedaron registradas. Nos vamos a poner en
             contacto por email con los siguientes pasos.
           </p>
         ) : (
