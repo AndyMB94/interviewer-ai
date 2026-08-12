@@ -380,6 +380,16 @@ También se decidió explícitamente **dónde va sidebar y dónde no**: las pant
 
 ---
 
+## 2026-08-13 Vacantia cubre las primeras dos etapas de selección, no todo el proceso
+
+**Contexto:** al diseñar qué pasa después de la entrevista con Gaby (Backend 9.10, ver ROADMAP.md), el primer diseño usaba una decisión `contratado`/`no_contratado` — pero eso da a entender que Vacantia decide contrataciones, cuando en realidad un proceso de selección real tiene etapas que este sistema no cubre (típicamente: filtro de CV → primera entrevista/screening → entrevista técnica real con código en vivo → decisión final de contratación).
+
+**Decisión:** Vacantia automatiza/asiste explícitamente **dos etapas**: el filtro de CV con IA (Fase 9.3) y una primera entrevista conversacional con IA (Gaby, contextualizada al puesto). No hace, y no va a hacer, una entrevista técnica con código en vivo (pair programming, sistema de diseño) — eso lo sigue dando una persona, fuera del sistema. Por eso la decisión del reclutador tras la entrevista con Gaby es **"avanza a la siguiente etapa" / "no avanza"**, no "contratado" — la contratación final queda fuera del alcance del producto.
+
+**Por qué importa dejarlo escrito:** afecta directamente el modelo de datos (`Interview.decision`, Backend 9.10) y cualquier feature futura que toque el resultado de una entrevista — evita repetir el mismo malentendido más adelante.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._

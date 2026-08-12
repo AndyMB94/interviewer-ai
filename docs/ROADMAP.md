@@ -247,6 +247,36 @@ _9.8 + 6.3 probados end-to-end en local: reclutador dueño ve la transcripción 
 
 **Confirmado explícitamente, no cambia:** el proyecto sigue siendo para **una sola empresa** (varios reclutadores propios, no un marketplace multi-empresa tipo LinkedIn Jobs) — eso sería un cambio de arquitectura mayor (modelo `Empresa`, aislamiento entre tenants), no una feature más, y no está planeado.
 
+### Backend 9.10 + Frontend 6.4: avance a la siguiente etapa y vacantes por puesto (agregado 2026-08-13, futura — revisado el mismo día tras aclarar el alcance real del producto)
+
+**Contexto:** al revisar el panel de reclutador (6.3), surgió que hoy no hay ninguna forma de registrar qué pasa con un candidato después de la entrevista con Gaby — `Postulacion.estado` es el resultado del filtro de CV (gate para crear la cuenta), y `Interview.status` es solo si la entrevista se hizo o no. Ninguno de los dos captura una decisión del reclutador sobre el candidato.
+
+**Qué es Vacantia realmente, y qué no es (esto cambió el diseño de esta fase):** el primer diseño de esta fase usaba una decisión `contratado`/`no_contratado`, pero eso no refleja cómo funciona un proceso de selección real. Vacantia automatiza/asiste **dos etapas tempranas y de alto volumen**: el filtro de CV (Fase 9.3, IA lee el CV y evalúa el fit contra el puesto) y una primera entrevista conversacional (Gaby, contextualizada al puesto). Lo que **no** hace, y no debería hacer, es una entrevista técnica real con código en vivo (pair programming, sistema de diseño) — eso lo sigue dando una persona, fuera de este sistema. Por eso la decisión del reclutador después de la entrevista con Gaby no es "contratar", es **"¿este candidato avanza a la siguiente etapa (entrevista técnica real) o no?"** — la contratación final queda fuera del alcance de Vacantia.
+
+**Decisión 1 — la decisión es manual, no de IA:** a diferencia del filtro de CV (pre-filtro de volumen, reversible y de bajo riesgo), decidir si alguien avanza es un juicio humano — no se automatiza. Campo nuevo `Interview.decision` (`TextChoices`: `pendiente`/`avanza`/`no_avanza`, default `pendiente`), seteado a mano por el reclutador desde `InterviewDetailPage` después de leer la transcripción y el resultado del filtro de CV. Va en `Interview`, no en `Postulacion` — así no se pisa/pierde el resultado del filtro de CV (`Postulacion.estado`), que es un dato distinto e independiente. Igual que el resultado del filtro de CV, el candidato **nunca** ve esta decisión desde su lado (mismo criterio ya establecido en DECISIONS.md).
+
+**Decisión 2 — `Puesto.vacantes` (entero, default 1):** cuántas personas busca finalmente ese puesto. El panel de reclutador muestra, por separado (no como una fracción "X/N" — Vacantia no sabe si un preseleccionado termina contratado, esa decisión pasa después, fuera del sistema): la cantidad de `vacantes` buscadas, y la cantidad de candidatos que `avanzan` (preseleccionados) para ese puesto.
+
+**Decisión 3 — el cierre del puesto sigue siendo manual:** el puesto **no** se cierra solo por ningún motivo automático — el reclutador lo cierra a mano (ya existe `Puesto.estado`, no se toca ese mecanismo). Motivo: la contratación final ocurre fuera de Vacantia, así que el sistema no tiene forma de saber cuándo el puesto está realmente cubierto.
+
+**Escalabilidad — cómo se calcula el contador sin N+1:** igual que `postulaciones_count` en `PuestoSerializer` (Fase 6.2), el conteo de preseleccionados se anota en el queryset de `PuestoViewSet` con `Count`, no se calcula en Python iterando — una sola query trae todos los puestos con su contador ya resuelto, sin importar cuántos puestos/postulaciones/entrevistas haya:
+```python
+Puesto.objects.annotate(
+    preseleccionados=Count(
+        "postulaciones__interviews",
+        filter=Q(postulaciones__interviews__decision=Interview.Decision.AVANZA),
+    )
+)
+```
+
+- [ ] 9.10.1 Backend: `Interview.decision` (`TextChoices`: `pendiente`/`avanza`/`no_avanza`, default `pendiente`) — migración de esquema.
+- [ ] 9.10.2 Backend: `Puesto.vacantes` (`PositiveIntegerField`, default 1) — migración de esquema.
+- [ ] 9.10.3 Backend: endpoint para que el reclutador actualice `Interview.decision` (`PATCH /api/interviews/<id>/decision/` o similar), protegido con el mismo permiso `IsOwnerReclutadorOfInterview` de 9.8.2.
+- [ ] 9.10.4 Backend: `PuestoSerializer` anota `preseleccionados` (vía `Count` con `filter`, ver arriba — no N+1) y expone `vacantes`.
+- [ ] 9.10.5 Frontend: `InterviewDetailPage.tsx` — acción para marcar "Avanza a la siguiente etapa"/"No avanza" (botones o select), con confirmación (no debería tomarse por accidente con un click).
+- [ ] 9.10.6 Frontend: `PuestosPage.tsx` — columnas "Vacantes" y "Preseleccionados", junto a la de cantidad de postulaciones que ya existe.
+- [ ] 9.10.7 Tests: setear/leer `Interview.decision`, permiso (solo el reclutador dueño puede cambiarla), `preseleccionados` cuenta bien con múltiples puestos/postulaciones/decisiones mezcladas (incluyendo `no_avanza` y `pendiente`, que no deben sumar).
+
 ## Notas
 
 - El orden entre tracks importa: cada paso del gateway/frontend depende de que exista el paso equivalente del backend (por eso las referencias cruzadas, ej. "Backend Fase 1.2").
