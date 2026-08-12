@@ -95,3 +95,4 @@ def test_owner_reclutador_sees_postulaciones_of_their_puesto(puesto, reclutador)
 
     assert response.status_code == 200
     assert len(response.json()) == 1
+    assert response.json()[0]["puesto_titulo"] == puesto.titulo

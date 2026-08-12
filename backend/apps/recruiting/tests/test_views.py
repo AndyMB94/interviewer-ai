@@ -116,6 +116,47 @@ def test_owner_reclutador_can_edit_their_own_puesto(puesto, reclutador):
 
 
 @pytest.mark.django_db
+def test_mias_filter_returns_only_the_reclutador_own_puestos(puesto, otro_reclutador, reclutador):
+    Puesto.objects.create(
+        titulo="QA Engineer", descripcion="...", requisitos="...", creado_por=otro_reclutador
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/puestos/?mias=true")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == puesto.id
+
+
+@pytest.mark.django_db
+def test_mias_filter_returns_empty_for_anonymous():
+    client = APIClient()
+    response = client.get("/api/puestos/?mias=true")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+@pytest.mark.django_db
+def test_puesto_list_includes_postulaciones_count(puesto):
+    Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+    )
+
+    client = APIClient()
+    response = client.get("/api/puestos/")
+
+    data = response.json()
+    assert data[0]["postulaciones_count"] == 1
+
+
+@pytest.mark.django_db
 def test_mi_postulacion_requires_authentication():
     client = APIClient()
     response = client.get("/api/postulaciones/mia/")

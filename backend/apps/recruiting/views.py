@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -11,9 +12,16 @@ from apps.recruiting.tasks import screen_postulacion_task
 
 
 class PuestoViewSet(viewsets.ModelViewSet):
-    queryset = Puesto.objects.all()
     serializer_class = PuestoSerializer
     permission_classes = [IsOwnerReclutadorOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Puesto.objects.annotate(postulaciones_count=Count("postulaciones"))
+        if self.request.query_params.get("mias") == "true":
+            if not self.request.user.is_authenticated:
+                return Puesto.objects.none()
+            queryset = queryset.filter(creado_por=self.request.user)
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(creado_por=self.request.user)
@@ -27,7 +35,7 @@ class PostulacionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if not self.request.user.is_authenticated:
             return Postulacion.objects.none()
-        return Postulacion.objects.filter(puesto__creado_por=self.request.user)
+        return Postulacion.objects.filter(puesto__creado_por=self.request.user).select_related("puesto")
 
     def perform_create(self, serializer):
         postulacion = serializer.save()

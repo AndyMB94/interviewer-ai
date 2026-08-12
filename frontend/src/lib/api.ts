@@ -6,6 +6,7 @@ export interface Puesto {
   descripcion: string;
   requisitos: string;
   estado: "abierto" | "cerrado";
+  postulaciones_count: number;
 }
 
 export async function fetchPuestosAbiertos(): Promise<Puesto[]> {
@@ -15,6 +16,16 @@ export async function fetchPuestosAbiertos(): Promise<Puesto[]> {
   }
   const puestos: Puesto[] = await response.json();
   return puestos.filter((puesto) => puesto.estado === "abierto");
+}
+
+export async function fetchMisPuestos(token: string): Promise<Puesto[]> {
+  const response = await fetch(`${API_URL}/api/puestos/?mias=true`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    throw new Error("No se pudieron cargar tus puestos.");
+  }
+  return response.json();
 }
 
 export interface PostularPayload {
@@ -79,6 +90,28 @@ export async function logoutRequest(): Promise<void> {
     method: "POST",
     credentials: "include",
   });
+}
+
+export interface Postulacion {
+  id: number;
+  puesto: number;
+  puesto_titulo: string;
+  nombre: string;
+  email: string;
+  cv: string;
+  estado: "pendiente" | "aprobado" | "rechazado";
+  resultado_filtro: string;
+  created_at: string;
+}
+
+export async function fetchMisPostulaciones(token: string): Promise<Postulacion[]> {
+  const response = await fetch(`${API_URL}/api/postulaciones/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    throw new Error("No se pudieron cargar las postulaciones.");
+  }
+  return response.json();
 }
 
 export interface MiPostulacion {
