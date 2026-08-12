@@ -47,15 +47,15 @@ export function useSocket(token?: string) {
     };
   }, [token]);
 
-  const askQuestion = useCallback((question: string) => {
+  const askQuestion = useCallback((question: string, postulacionId?: number) => {
     setMessages((prev) => [...prev, { role: "user", text: question, timestamp: new Date() }]);
     setIsWaitingForResponse(true);
-    socketRef.current?.emit("ask", question);
+    socketRef.current?.emit("ask", question, postulacionId);
   }, []);
 
-  const sendAudio = useCallback(async (blob: Blob) => {
+  const sendAudio = useCallback(async (blob: Blob, postulacionId?: number) => {
     const buffer = await blob.arrayBuffer();
-    socketRef.current?.emit("audio", buffer);
+    socketRef.current?.emit("audio", buffer, postulacionId);
   }, []);
 
   const finishInterview = useCallback(() => {

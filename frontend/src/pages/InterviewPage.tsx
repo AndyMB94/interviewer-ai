@@ -8,7 +8,7 @@ import { VoiceRecorder } from "../components/VoiceRecorder";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { fetchMiPostulacion, type MiPostulacion } from "@/lib/api";
+import { fetchMisPostulacionesPendientes, type MiPostulacion } from "@/lib/api";
 
 export function InterviewPage() {
   const { accessToken } = useAuth();
@@ -18,7 +18,13 @@ export function InterviewPage() {
   const [question, setQuestion] = useState("");
   const [isFinished, setIsFinished] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
-  const [miPostulacion, setMiPostulacion] = useState<MiPostulacion | null>(null);
+  const [postulacionesPendientes, setPostulacionesPendientes] = useState<MiPostulacion[]>([]);
+  const [postulacionesRestantes, setPostulacionesRestantes] = useState<MiPostulacion[]>([]);
+  const [postulacionElegida, setPostulacionElegida] = useState<MiPostulacion | null>(null);
+  // Con una sola postulación pendiente, se elige sola (sin mostrar el selector) -- Frontend 9.7.5.
+  const miPostulacion =
+    postulacionElegida ?? (postulacionesPendientes.length === 1 ? postulacionesPendientes[0] : null);
+  const requiereElegirPuesto = postulacionesPendientes.length > 1 && !postulacionElegida;
   const {
     stream,
     error,
@@ -31,7 +37,7 @@ export function InterviewPage() {
 
   const handleSubmit = () => {
     if (!question.trim()) return;
-    askQuestion(question);
+    askQuestion(question, miPostulacion?.id);
     setQuestion("");
   };
 
@@ -42,16 +48,25 @@ export function InterviewPage() {
 
   useEffect(() => {
     if (audioBlob) {
-      sendAudio(audioBlob);
+      sendAudio(audioBlob, miPostulacion?.id);
     }
-  }, [audioBlob, sendAudio]);
+  }, [audioBlob, sendAudio, miPostulacion]);
 
   useEffect(() => {
     if (!accessToken) return;
-    fetchMiPostulacion(accessToken)
-      .then(setMiPostulacion)
-      .catch(() => setMiPostulacion(null));
+    fetchMisPostulacionesPendientes(accessToken)
+      .then(setPostulacionesPendientes)
+      .catch(() => setPostulacionesPendientes([]));
   }, [accessToken]);
+
+  // Al terminar, se vuelve a consultar por si quedan otras postulaciones pendientes de
+  // entrevistar -- sin esto, no hay forma visual de enterarse que hay que volver (Frontend 9.7.6).
+  useEffect(() => {
+    if (!isFinished || !accessToken) return;
+    fetchMisPostulacionesPendientes(accessToken)
+      .then(setPostulacionesRestantes)
+      .catch(() => setPostulacionesRestantes([]));
+  }, [isFinished, accessToken]);
 
   // Bloquea salir de una entrevista activa sin terminar (Frontend Fase 7.3) — evita perder el
   // progreso por un click accidental en el logo u otro link, ya que salir desconecta el socket.
@@ -79,6 +94,34 @@ export function InterviewPage() {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [entrevistaActivaSinTerminar]);
+
+  if (!hasStarted && requiereElegirPuesto) {
+    return (
+      <div className="mx-auto max-w-2xl p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>¿Para cuál puesto quiere hacer la entrevista?</CardTitle>
+            <CardDescription>
+              Tiene más de una postulación aprobada pendiente de entrevista — elija con cuál
+              empezar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            {postulacionesPendientes.map((postulacion) => (
+              <Button
+                key={postulacion.id}
+                variant="outline"
+                className="justify-start"
+                onClick={() => setPostulacionElegida(postulacion)}
+              >
+                {postulacion.puesto.titulo}
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!hasStarted) {
     return (
@@ -132,6 +175,24 @@ export function InterviewPage() {
             stopRecording={stopRecording}
           />
         </>
+      )}
+
+      {isFinished && postulacionesRestantes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Tiene entrevistas pendientes</CardTitle>
+            <CardDescription>
+              Todavía tiene postulaciones aprobadas pendientes de entrevistar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Recarga real de página (no navegación de React Router): la entrevista nueva
+                necesita una conexión de socket nueva -- ver Frontend 9.7.6 en el roadmap. */}
+            <Button nativeButton={false} render={<a href="/entrevista" />}>
+              Continuar con mi próxima entrevista
+            </Button>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

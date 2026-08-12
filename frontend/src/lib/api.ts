@@ -146,18 +146,16 @@ export async function fetchInterviewDetail(token: string, interviewId: number): 
 }
 
 export interface MiPostulacion {
+  id: number;
   nombre: string;
   puesto: { id: number; titulo: string };
 }
 
-export async function fetchMiPostulacion(token: string): Promise<MiPostulacion | null> {
+export async function fetchMisPostulacionesPendientes(token: string): Promise<MiPostulacion[]> {
   const response = await fetch(`${API_URL}/api/postulaciones/mia/`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (response.status === 404) {
-    return null;
-  }
   if (!response.ok) {
     throw new Error("No se pudo cargar la información de la postulación.");
   }

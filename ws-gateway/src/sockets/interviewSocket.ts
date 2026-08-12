@@ -22,14 +22,16 @@ export function registerInterviewSocket(io: Server) {
       socket.emit("echo", message);
     });
 
-    socket.on("ask", async (question: string) => {
+    // postulacionId solo viaja en el primer mensaje (todavía sin interviewId) -- es la postulación
+    // elegida en la sala de espera (Frontend 9.7.5). Backend 9.7.3 la usa para crear la Interview.
+    socket.on("ask", async (question: string, postulacionId?: number) => {
       console.log("pregunta recibida:", question);
-      const result = await askQuestion(question, interviewId, token);
+      const result = await askQuestion(question, interviewId, token, postulacionId);
       interviewId = result.interviewId;
       socket.emit("ask", result.answer);
     });
 
-    socket.on("audio", async (buffer: ArrayBuffer) => {
+    socket.on("audio", async (buffer: ArrayBuffer, postulacionId?: number) => {
       console.log("audio recibido:", buffer.byteLength, "bytes");
 
       try {
@@ -37,7 +39,7 @@ export function registerInterviewSocket(io: Server) {
         console.log("transcripción:", transcript);
         socket.emit("transcript", transcript);
 
-        const result = await askQuestion(transcript, interviewId, token);
+        const result = await askQuestion(transcript, interviewId, token, postulacionId);
         interviewId = result.interviewId;
         console.log("respuesta del LLM:", result.answer, "| interview_id:", interviewId);
         socket.emit("ask", result.answer);

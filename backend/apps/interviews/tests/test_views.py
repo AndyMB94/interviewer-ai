@@ -65,7 +65,7 @@ def test_ask_authenticated_creates_interview_with_user(mock_delay):
 
 @pytest.mark.django_db
 @patch("apps.interviews.views.ask_llm_task.delay")
-def test_ask_authenticated_links_the_approved_postulacion(mock_delay):
+def test_ask_links_the_postulacion_id_sent_explicitly(mock_delay):
     mock_result = MagicMock()
     mock_result.id = "fake-task-id"
     mock_delay.return_value = mock_result
@@ -86,10 +86,107 @@ def test_ask_authenticated_links_the_approved_postulacion(mock_delay):
 
     client = APIClient()
     client.force_authenticate(user=user)
-    response = client.post("/api/ask/", {"question": "hello"}, format="json")
+    response = client.post(
+        "/api/ask/", {"question": "hello", "postulacion_id": postulacion.id}, format="json"
+    )
 
     interview = Interview.objects.get(id=response.json()["interview_id"])
     assert interview.postulacion == postulacion
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.ask_llm_task.delay")
+def test_ask_without_postulacion_id_does_not_guess_it(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
+
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post("/api/ask/", {"question": "hello"}, format="json")
+
+    interview = Interview.objects.get(id=response.json()["interview_id"])
+    assert interview.postulacion is None
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.ask_llm_task.delay")
+def test_ask_rejects_postulacion_that_already_has_an_interview(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
+
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    Interview.objects.create(postulacion=postulacion)
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/ask/", {"question": "hello", "postulacion_id": postulacion.id}, format="json"
+    )
+
+    assert response.status_code == 409
+
+
+@pytest.mark.django_db
+def test_ask_rejects_postulacion_id_that_does_not_belong_to_the_user():
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    otro_user = User.objects.create_user(
+        "otro@example.com", email="otro@example.com", password="testpass123"
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=otro_user)
+    response = client.post(
+        "/api/ask/", {"question": "hello", "postulacion_id": postulacion.id}, format="json"
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_ask_rejects_postulacion_id_when_anonymous():
+    client = APIClient()
+    response = client.post("/api/ask/", {"question": "hello", "postulacion_id": 99999}, format="json")
+
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db

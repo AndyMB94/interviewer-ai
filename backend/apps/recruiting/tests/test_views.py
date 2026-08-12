@@ -165,12 +165,13 @@ def test_mi_postulacion_requires_authentication():
 
 
 @pytest.mark.django_db
-def test_mi_postulacion_404_without_a_matching_aprobada(postulante):
+def test_mi_postulacion_returns_empty_list_without_a_matching_aprobada(postulante):
     client = APIClient()
     client.force_authenticate(user=postulante)
     response = client.get("/api/postulaciones/mia/")
 
-    assert response.status_code == 404
+    assert response.status_code == 200
+    assert response.json() == []
 
 
 @pytest.mark.django_db
@@ -193,5 +194,38 @@ def test_mi_postulacion_returns_nombre_and_puesto(puesto):
 
     assert response.status_code == 200
     data = response.json()
-    assert data["nombre"] == "Andy Mallcco"
-    assert data["puesto"]["titulo"] == puesto.titulo
+    assert len(data) == 1
+    assert data[0]["nombre"] == "Andy Mallcco"
+    assert data[0]["puesto"]["titulo"] == puesto.titulo
+
+
+@pytest.mark.django_db
+def test_mi_postulacion_returns_more_than_one_when_pending(puesto):
+    postulante = User.objects.create_user(
+        "andy@example.com", email="andy@example.com", password="testpass123"
+    )
+    postulante.groups.add(Group.objects.get(name="Postulante"))
+    otro_puesto = Puesto.objects.create(
+        titulo="Otro puesto", descripcion="...", requisitos="...", creado_por=puesto.creado_por
+    )
+    Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy Mallcco",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    Postulacion.objects.create(
+        puesto=otro_puesto,
+        nombre="Andy Mallcco",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=postulante)
+    response = client.get("/api/postulaciones/mia/")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2

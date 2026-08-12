@@ -6,10 +6,14 @@ export async function askQuestion(
   question: string,
   interviewId?: number,
   token?: string,
+  postulacionId?: number,
 ): Promise<{ answer: string; interviewId: number }> {
   const body: Record<string, unknown> = { question };
   if (interviewId) {
     body.interview_id = interviewId;
+  } else if (postulacionId) {
+    // postulacion_id solo importa al crear la Interview (primer mensaje) -- ver Backend 9.7.3
+    body.postulacion_id = postulacionId;
   }
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };

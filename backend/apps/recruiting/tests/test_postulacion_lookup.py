@@ -2,8 +2,12 @@ import pytest
 from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import SimpleUploadedFile
 
+from apps.interviews.models import Interview
 from apps.recruiting.models import Postulacion, Puesto
-from apps.recruiting.services.postulacion_lookup import get_ultima_postulacion_aprobada
+from apps.recruiting.services.postulacion_lookup import (
+    get_postulaciones_aprobadas_pendientes,
+    get_ultima_postulacion_aprobada,
+)
 
 
 @pytest.fixture
@@ -57,3 +61,68 @@ def test_ignores_postulaciones_pendientes_or_rechazadas(puesto):
 @pytest.mark.django_db
 def test_returns_none_when_no_match():
     assert get_ultima_postulacion_aprobada("nadie@example.com") is None
+
+
+@pytest.mark.django_db
+def test_pendientes_excludes_postulaciones_that_already_have_an_interview(puesto):
+    con_entrevista = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=_fake_pdf(),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    Interview.objects.create(postulacion=con_entrevista)
+    sin_entrevista = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=_fake_pdf(),
+        estado=Postulacion.Estado.APROBADO,
+    )
+
+    resultado = get_postulaciones_aprobadas_pendientes("andy@example.com")
+
+    assert list(resultado) == [sin_entrevista]
+
+
+@pytest.mark.django_db
+def test_pendientes_excludes_pendientes_y_rechazadas(puesto):
+    Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=_fake_pdf(),
+        estado=Postulacion.Estado.PENDIENTE,
+    )
+    Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=_fake_pdf(),
+        estado=Postulacion.Estado.RECHAZADO,
+    )
+
+    assert list(get_postulaciones_aprobadas_pendientes("andy@example.com")) == []
+
+
+@pytest.mark.django_db
+def test_pendientes_can_return_more_than_one(puesto):
+    p1 = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=_fake_pdf(),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    p2 = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=_fake_pdf(),
+        estado=Postulacion.Estado.APROBADO,
+    )
+
+    resultado = list(get_postulaciones_aprobadas_pendientes("andy@example.com"))
+
+    assert set(p.id for p in resultado) == {p1.id, p2.id}

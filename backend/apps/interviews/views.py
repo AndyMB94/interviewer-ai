@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from apps.interviews.models import Interview, Question
 from apps.interviews.permissions import IsOwnerReclutadorOfInterview
 from apps.interviews.tasks import ask_llm_task, synthesize_speech_task, transcribe_audio_task
-from apps.recruiting.services.postulacion_lookup import get_ultima_postulacion_aprobada
+from apps.recruiting.models import Postulacion
 
 
 @api_view(["GET"])
@@ -30,7 +30,20 @@ def ask(request):
             return Response({"error": "interview not found"}, status=404)
     else:
         user = request.user if request.user.is_authenticated else None
-        postulacion = get_ultima_postulacion_aprobada(user.email) if user else None
+        postulacion_id = request.data.get("postulacion_id")
+
+        postulacion = None
+        if postulacion_id:
+            if user is None:
+                return Response({"error": "authentication required to select a postulacion"}, status=401)
+            postulacion = Postulacion.objects.filter(
+                pk=postulacion_id, email=user.email, estado=Postulacion.Estado.APROBADO
+            ).first()
+            if postulacion is None:
+                return Response({"error": "postulacion not found"}, status=404)
+            if postulacion.interviews.exists():
+                return Response({"error": "this postulacion already has an interview"}, status=409)
+
         interview = Interview.objects.create(user=user, postulacion=postulacion)
 
     question = Question.objects.create(interview=interview, text=question_text)
