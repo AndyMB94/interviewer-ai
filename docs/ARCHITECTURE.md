@@ -2,6 +2,35 @@
 
 ## Vista general
 
+Vacantia es una plataforma de reclutamiento con IA: un reclutador publica un puesto, un candidato postula con su CV sin necesitar cuenta, un filtro con IA evalúa el fit contra el puesto, y solo si aprueba se le crea una cuenta automáticamente (con sus credenciales por email) para que haga una entrevista de voz con IA contextualizada a ese puesto. El reclutador tiene su propio panel para ver sus puestos, sus postulaciones, y el detalle (transcripción + resultado del filtro) de cada entrevista.
+
+```
+Candidato                                   Reclutador
+    │                                            │
+    ▼                                            ▼
+Postular con CV (sin cuenta)          Login (JWT híbrido, ver DECISIONS.md)
+    │                                            │
+    ▼                                            ▼
+Filtro de CV con IA (Celery + LLM)    Panel: puestos, postulaciones,
+    │                                  detalle de entrevista (transcripción +
+    ├── rechaza → termina ahí          resultado del filtro de CV)
+    │
+    └── aprueba → se crea la cuenta + email de credenciales (Resend)
+            │
+            ▼
+        Login (JWT en memoria + cookie httpOnly)
+            │
+            ▼
+        Entrevista de voz con Gaby, contextualizada al puesto
+        (o selector de puesto, si hay más de una postulación aprobada)
+```
+
+Auth híbrida (JWT de acceso en memoria del frontend + refresh token en cookie httpOnly), roles vía Django Groups (`Administrador`/`Reclutador`/`Postulante`), y sin autoregistro de ningún tipo — el detalle completo de estas decisiones está en `docs/DECISIONS.md`.
+
+### El pipeline de audio de la entrevista
+
+La pieza técnica más compleja del sistema es la entrevista de voz en sí — el resto del producto es CRUD + auth + un par de tareas Celery. Este es el pipeline en tiempo real detrás de esa parte:
+
 ```
 Cliente (React)            WS Gateway (Node)                  Backend (Django)
 ┌─────────────────┐ WS  ┌────────────────────┐    REST  ┌──────────────────────────┐   APIs externas
@@ -75,81 +104,81 @@ Encapsula el acceso a datos vía Django ORM detrás de una interfaz, para que lo
 ```
 backend/
 ├── config/
-│   ├── settings/
-│   │   ├── base.py
-│   │   ├── dev.py
-│   │   └── prod.py
+│   ├── settings.py             # un solo archivo (dev y prod comparten config, ver .env)
 │   ├── urls.py
-│   └── celery.py
+│   ├── celery.py
+│   ├── asgi.py
+│   └── wsgi.py
 ├── apps/
 │   ├── interviews/
-│   │   ├── models.py          # Interview (con FK a Postulacion desde Fase 9.6), Question, Answer
-│   │   ├── views.py          # endpoints REST (ask, health, subir audio, finish_interview)
+│   │   ├── models.py           # Interview (FK a Postulacion desde Fase 9.6), Question, Answer
+│   │   ├── views.py            # ask, health, transcribe, speak, finish_interview, interview_detail (9.8)
+│   │   ├── permissions.py      # IsOwnerReclutadorOfInterview — solo el dueño del puesto ve la entrevista (9.8.2)
 │   │   ├── urls.py
-│   │   ├── tasks.py          # tareas Celery (ask_llm_task, transcribe_audio_task, synthesize_speech_task)
-│   │   ├── tests/            # pytest, colocado con la app que prueba
-│   │   └── services/         # lógica de negocio, NO en las vistas
+│   │   ├── tasks.py            # tareas Celery (ask_llm_task, transcribe_audio_task, synthesize_speech_task)
+│   │   ├── tests/               # pytest, colocado con la app que prueba
+│   │   └── services/            # lógica de negocio, NO en las vistas
 │   │       └── interview_prompt_service.py  # arma el system_prompt contextual con el puesto (Fase 9.6.3)
-│   ├── accounts/             # autenticación y roles (Backend Fase 8)
-│       ├── models.py          # ApplicantProfile (perfil del postulante)
-│       ├── views.py           # login/refresh/logout (JWT híbrido, ver DECISIONS.md)
-│       ├── permissions.py     # IsAdministrador/IsReclutador/IsPostulante (por Django Group)
-│       ├── admin.py
-│       ├── migrations/        # incluye una migración de datos que crea los 3 Groups
-│       ├── services/
-│       │   ├── ubigeo_service.py  # trae y cachea departamento/provincia/distrito (Fase 8.4)
-│       │   └── account_provisioning.py  # crea/resetea la cuenta del postulante aprobado + email de credenciales (Fase 9.4)
-│       ├── templates/emails/
-│       │   └── credenciales_postulante.html
-│       └── tests/
-│   └── recruiting/            # puestos y postulaciones (Backend Fase 9)
-│       ├── models.py          # Puesto (9.1), Postulacion (9.2)
-│       ├── views.py           # PuestoViewSet, PostulacionViewSet (DRF ModelViewSet) + mi_postulacion (9.6.4)
-│       ├── permissions.py     # permisos a nivel de objeto (dueño del puesto)
-│       ├── serializers.py
-│       ├── tasks.py           # screen_postulacion_task (9.3)
+│   ├── accounts/                # autenticación y roles (Backend Fase 8)
+│   │   ├── models.py            # ApplicantProfile (perfil del postulante)
+│   │   ├── views.py             # login/refresh/logout (JWT híbrido, ver DECISIONS.md)
+│   │   ├── serializers.py       # CustomTokenObtainPairSerializer — agrega claims groups/email al JWT
+│   │   ├── permissions.py       # IsAdministrador/IsReclutador/IsPostulante (por Django Group)
+│   │   ├── admin.py
+│   │   ├── migrations/          # incluye una migración de datos que crea los 3 Groups
+│   │   ├── services/
+│   │   │   ├── ubigeo_service.py        # trae y cachea departamento/provincia/distrito (Fase 8.4)
+│   │   │   └── account_provisioning.py  # crea/resetea la cuenta del postulante aprobado + email de credenciales (Fase 9.4)
+│   │   ├── templates/emails/
+│   │   │   └── credenciales_postulante.html
+│   │   └── tests/
+│   └── recruiting/              # puestos y postulaciones (Backend Fase 9)
+│       ├── models.py            # Puesto (9.1), Postulacion (9.2)
+│       ├── views.py             # PuestoViewSet, PostulacionViewSet (DRF ModelViewSet) + mi_postulacion (9.6.4, lista desde 9.7.2)
+│       ├── permissions.py       # permisos a nivel de objeto (dueño del puesto)
+│       ├── serializers.py       # PuestoSerializer (postulaciones_count), PostulacionSerializer (puesto_titulo, interview_id)
+│       ├── tasks.py             # screen_postulacion_task (9.3)
 │       ├── services/
 │       │   ├── cv_screening_service.py  # extrae texto del CV y evalúa el fit con el LLM
-│       │   └── postulacion_lookup.py    # busca la Postulacion aprobada más reciente por email (9.6.2, 9.6.4)
+│       │   └── postulacion_lookup.py    # get_ultima_postulacion_aprobada (9.6.2/9.6.4) y get_postulaciones_aprobadas_pendientes (9.7.1)
 │       ├── admin.py
 │       └── tests/
 ├── core/
-│   └── ai_providers/          # adapters de proveedores externos (Fase 7, Strategy/Adapter)
-│       ├── base.py            # interfaces abstractas (STTProvider, LLMProvider, TTSProvider...)
+│   └── ai_providers/            # adapters de proveedores externos (Fase 7, Strategy/Adapter)
+│       ├── base.py              # interfaces abstractas (STTProvider, LLMProvider, TTSProvider...)
 │       ├── deepgram_stt.py
 │       ├── deepseek_llm.py
 │       └── elevenlabs_tts.py
-├── scripts/                    # scripts sueltos de validación, fuera de Django (uno por fase: "probar X en un script suelto")
+├── scripts/                     # scripts sueltos de validación, fuera de Django (uno por fase: "probar X en un script suelto")
 │   ├── test_llm.py
 │   ├── test_celery.py
 │   ├── test_stt.py
 │   └── test_tts.py
-├── requirements.txt            # generado con `pip freeze` a medida que se instala
-├── .env                        # secretos reales (SECRET_KEY, DB, Redis, API keys), gitignored
-├── .env.example                # plantilla sin valores, sí se commitea
+├── requirements.txt             # generado con `pip freeze` a medida que se instala
+├── .env                         # secretos reales (SECRET_KEY, DB, Redis, API keys), gitignored
+├── .env.example                 # plantilla sin valores, sí se commitea
 └── manage.py
 ```
-
-Cuando el proyecto tenga settings reales de producción distintos a los de desarrollo, ahí sí conviene dividir en `requirements/base.txt` + `dev.txt` + `prod.txt` — no antes.
 
 ### `ws-gateway/` (Node + TypeScript + Express + Socket.io)
 
 ```
 ws-gateway/
 ├── src/
-│   ├── index.ts               # setup de Express + servidor Socket.io
+│   ├── index.ts                # setup de Express + servidor Socket.io
 │   ├── sockets/
-│   │   └── interviewSocket.ts # eventos del socket (audio in, resultado out); lee el JWT de
-│   │                           # socket.handshake.auth.token y lo reenvía a Django (Gateway Fase 5.1)
-│   ├── services/
-│   │   ├── djangoClient.ts    # llamadas REST al backend Django
-│   │   └── redisSubscriber.ts # suscripción a Redis pub/sub
-│   └── config/
-│       └── env.ts
+│   │   └── interviewSocket.ts  # eventos del socket (ask, audio in, resultado out). Lee el JWT de
+│   │                            # socket.handshake.auth.token (Gateway Fase 5.1). El postulacionId elegido
+│   │                            # (Gateway 5.2) viaja como segundo argumento de los eventos ask/audio, NO en
+│   │                            # el handshake — el socket se conecta al montar la página, antes de que la
+│   │                            # persona elija en el selector (ver ROADMAP.md, Frontend 9.7.5/9.7.6).
+│   └── services/
+│       ├── djangoClient.ts     # llamadas REST al backend Django (askQuestion recibe postulacionId opcional)
+│       └── redisSubscriber.ts  # suscripción a Redis pub/sub
 ├── package.json
 ├── tsconfig.json
-├── .env                        # secretos reales, gitignored
-└── .env.example                # plantilla sin valores, sí se commitea
+├── .env                         # secretos reales, gitignored
+└── .env.example                 # plantilla sin valores, sí se commitea
 ```
 
 ### `frontend/` (React + TypeScript)
@@ -158,39 +187,49 @@ ws-gateway/
 frontend/
 ├── src/
 │   ├── components/
-│   │   ├── ui/                 # componentes de shadcn/ui (Button, Card...), generados, no se editan a mano
-│   │   ├── Header.tsx
-│   │   ├── QuestionDisplay.tsx
+│   │   ├── ui/                  # componentes de shadcn/ui (Button, Card, Table, Sidebar...), generados, no se editan a mano
+│   │   ├── RootLayout.tsx       # Navbar + Outlet, envuelto en TooltipProvider (lo requiere Sidebar)
+│   │   ├── Navbar.tsx           # toggle de tema, dropdown de cuenta/logout (P.5/P.6)
+│   │   ├── DashboardLayout.tsx  # sidebar del panel de reclutador (Puestos/Postulaciones), Frontend 6.2
+│   │   ├── QuestionDisplay.tsx  # transcripción en vivo (candidato), con avatares/timestamps
 │   │   ├── VoiceRecorder.tsx
 │   │   ├── TextAnswerForm.tsx
-│   │   ├── PuestoCard.tsx      # tarjeta de un puesto en ApplyPage
-│   │   └── RequireAuth.tsx     # wrapper de ruta: redirige a /login sin sesión (Frontend Fase 5.4)
+│   │   ├── PuestoCard.tsx       # tarjeta de un puesto en ApplyPage
+│   │   ├── PuestoCardSkeleton.tsx
+│   │   ├── RequireAuth.tsx      # wrapper de ruta: redirige a /login sin sesión (Frontend 5.4), espera el silent refresh (P.7)
+│   │   └── RequireRole.tsx      # RequireAuth + chequeo de rol (claim `groups` del JWT), usado por /dashboard (6.1)
 │   ├── hooks/
-│   │   ├── useSocket.ts        # conexión socket.io-client reutilizable
-│   │   └── useMicrophone.ts    # permiso/grabación de audio del navegador
-│   ├── pages/                  # una pantalla por archivo (Frontend Fase 5, react-router)
-│   │   ├── InterviewPage.tsx   # la pantalla de entrevista original, sin cambios de comportamiento
-│   │   ├── ApplyPage.tsx       # postulación pública (elegir puesto + subir CV), ruta /postular
-│   │   └── LoginPage.tsx       # login de postulantes aprobados, ruta /login
+│   │   ├── useSocket.ts         # conexión socket.io-client; askQuestion/sendAudio reciben un postulacionId opcional (9.7.4)
+│   │   ├── useMicrophone.ts     # permiso/grabación de audio del navegador
+│   │   ├── useTheme.ts          # tema claro/oscuro manual, persistido en localStorage (P.6.1)
+│   │   └── use-mobile.ts        # hook de shadcn (Sidebar responsive)
+│   ├── pages/                   # una pantalla por archivo (Frontend Fase 5, react-router)
+│   │   ├── InterviewPage.tsx    # sala de espera + selector de puesto si hay varias postulaciones pendientes (9.7.5/9.7.6) + chat, ruta /entrevista (protegida)
+│   │   ├── ApplyPage.tsx        # postulación pública (elegir puesto + subir CV), ruta / (7.1)
+│   │   ├── LoginPage.tsx        # login (postulante o reclutador, redirige según rol), ruta /login
+│   │   └── dashboard/           # panel de reclutador (Frontend Fase 6), rutas hijas de /dashboard
+│   │       ├── PuestosPage.tsx           # tabla de puestos propios + cantidad de postulaciones (6.2)
+│   │       ├── PostulacionesPage.tsx     # tabla de postulaciones + botón "Ver entrevista" (6.2/6.3)
+│   │       └── InterviewDetailPage.tsx   # transcripción + resultado del filtro de CV de una entrevista (6.3)
 │   ├── context/
-│   │   └── AuthContext.tsx     # access token en memoria (React state, nunca localStorage) + login()/logout()
+│   │   └── AuthContext.tsx      # access token en memoria (nunca localStorage) + silent refresh al montar (P.7)
 │   ├── lib/
-│   │   ├── utils.ts            # helper `cn()` de shadcn/ui
-│   │   └── api.ts              # llamadas REST a Django (puestos, postulaciones, auth) — no pasan por el gateway
-│   ├── router.tsx              # definición de rutas (createBrowserRouter)
-│   └── main.tsx                # AuthProvider + RouterProvider
+│   │   ├── utils.ts             # helper `cn()` de shadcn/ui
+│   │   ├── jwt.ts               # decodeJwtPayload — lee roles/email del JWT sin librería externa
+│   │   └── api.ts               # llamadas REST a Django (puestos, postulaciones, auth, entrevistas) — no pasan por el gateway
+│   ├── router.tsx               # definición de rutas (createBrowserRouter)
+│   └── main.tsx                 # AuthProvider + RouterProvider
 ├── public/
-├── components.json              # config de shadcn/ui
+│   └── favicon.svg              # ícono propio de Vacantia (P.6.4)
+├── components.json               # config de shadcn/ui
 ├── tailwind.config.js
 ├── package.json
 ├── tsconfig.json
-├── .env                        # solo config pública (nunca secretos: se expone en el bundle)
+├── .env                         # solo config pública (nunca secretos: se expone en el bundle)
 └── .env.example
 ```
 
-Estas estructuras son el objetivo a mediano plazo, no lo que se crea en la Fase 0 de cada track — al inicio cada carpeta va a estar casi vacía y se va llenando fase a fase (ver ROADMAP.md).
-
-`pages/` + `react-router` ya están armados (Frontend Fase 5.1) — cada pantalla nueva (postulación, login, dashboard de reclutador) se agrega como un archivo en `pages/` más una entrada en `router.tsx`, sin tocar `components/`/`hooks/` (esos siguen siendo compartidos entre pantallas).
+`pages/` + `react-router` ya están armados (Frontend Fase 5.1) — cada pantalla nueva se agrega como un archivo en `pages/` (o `pages/dashboard/` si es del panel de reclutador) más una entrada en `router.tsx`, sin tocar `components/`/`hooks/` (esos siguen siendo compartidos entre pantallas).
 
 ## Infraestructura (Docker)
 

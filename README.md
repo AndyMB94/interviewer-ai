@@ -1,6 +1,6 @@
-# Interviewer AI
+# Vacantia (antes Interviewer AI)
 
-Entrevistador técnico con IA por voz: el usuario responde preguntas de programación hablando por el navegador, y un pipeline de IA (voz → texto → LLM → voz) lo evalúa y responde en tiempo real vía WebSockets.
+Plataforma de reclutamiento con IA: un reclutador publica un puesto, un candidato postula con su CV sin necesitar cuenta, un filtro con IA evalúa el fit contra el puesto, y si aprueba se le crea una cuenta automáticamente para que haga una entrevista técnica por voz con IA — contextualizada a ese puesto — vía WebSockets (voz → texto → LLM → voz, en tiempo real).
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)
@@ -13,11 +13,11 @@ Entrevistador técnico con IA por voz: el usuario responde preguntas de programa
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 
-> Estado: **El círculo de entrevista por voz está completo y desplegado — [interviewer.andymallcco.dev](https://interviewer.andymallcco.dev)**. Hablás por el micrófono en el navegador → Frontend (React) → Gateway (Node/Socket.io) → Backend (Django/Celery) → Deepgram (STT) → DeepSeek (LLM, con el historial de la entrevista) → ElevenLabs (TTS) → la respuesta se reproduce sola, con voz, en el navegador. Todo vía Redis pub/sub (sin polling), dockerizado detrás de Nginx + HTTPS en un VPS real. **En construcción:** el proyecto está pivotando de herramienta de práctica a una plataforma de reclutamiento con IA (nombre nuevo: **Vacantia**, pendiente de aplicar) — puesto → postulación con CV → filtro con IA → cuenta automática → login → entrevista. **El embudo completo ya está desplegado y funcionando en producción**: postular sin cuenta con CV real → DeepSeek evalúa el fit → si aprueba, se crea la cuenta y se manda la contraseña por email (Resend, dominio propio verificado) → login (JWT en memoria + cookie httpOnly) → entrevista protegida, con el JWT viajando hasta Django a través del gateway. Falta el panel de reclutador. Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle completo.
+> Estado: **El embudo completo de reclutamiento está desplegado y funcionando en producción — [interviewer.andymallcco.dev](https://interviewer.andymallcco.dev)** (nombre nuevo del producto: **Vacantia**, pendiente de aplicar al repo/dominio). Un reclutador publica un puesto → un candidato postula con su CV sin necesitar cuenta → DeepSeek evalúa el fit contra el puesto → si aprueba, se crea la cuenta automáticamente y se manda la contraseña por email (Resend, dominio propio verificado) → el candidato inicia sesión (JWT en memoria + cookie httpOnly) → hace la entrevista de voz con Gaby, contextualizada al puesto real: Frontend (React) → Gateway (Node/Socket.io) → Backend (Django/Celery) → Deepgram (STT) → DeepSeek (LLM, con el historial de la entrevista) → ElevenLabs (TTS) → la respuesta se reproduce sola, con voz, en el navegador. Si tiene más de una postulación aprobada, elige para cuál puesto entrevistarse. El reclutador tiene su propio panel (login separado) para ver sus puestos, sus postulaciones, y el detalle de cada entrevista (transcripción + resultado del filtro de CV). Todo vía Redis pub/sub (sin polling), dockerizado detrás de Nginx + HTTPS en un VPS real. Ver [docs/ROADMAP.md](docs/ROADMAP.md) para el detalle completo y lo que sigue.
 
 ## Por qué este proyecto
 
-Proyecto de portafolio pensado para demostrar WebSockets bidireccionales con datos binarios (audio), procesamiento asíncrono real (no solo `async def` decorativo), e integración de múltiples APIs externas (STT, LLM, TTS) detrás de una arquitectura desacoplada.
+Proyecto de portafolio pensado para demostrar, todo en un mismo sistema: WebSockets bidireccionales con datos binarios (audio), procesamiento asíncrono real (no solo `async def` decorativo), integración de múltiples APIs externas (STT, LLM, TTS) detrás de una arquitectura desacoplada, autenticación híbrida con roles (JWT + cookie httpOnly, Django Groups), un pipeline asíncrono de evaluación de candidatos con IA, y un panel multi-rol (candidato/reclutador) sobre la misma base de datos.
 
 ## Stack
 
@@ -51,9 +51,9 @@ interviewer_ai/
 │   ├── ARCHITECTURE.md   # arquitectura, diagrama, patrones de diseño
 │   ├── ROADMAP.md        # fases de desarrollo, backend, gateway y frontend
 │   └── DECISIONS.md      # decisiones técnicas y por qué (ADRs cortos)
-├── backend/               # Django + Celery + Dockerfile — Fases 0-7 completas (LLM, STT, TTS, persistencia, memoria de conversación y patrones Strategy/Adapter); Fase 8 (auth/roles) completa, Fase 9 (puestos/postulaciones) en progreso
-├── ws-gateway/            # Node + Express + Socket.io + Dockerfile — Fases 0-4 completas (puente hacia Django, memoria de conversación por sesión)
-└── frontend/              # React + TypeScript + Dockerfile — Fases 0-4 completas (entrevista completa: texto, voz y feedback final)
+├── backend/               # Django + Celery + Dockerfile — Fases 0-7 completas (LLM, STT, TTS, persistencia, memoria de conversación y patrones Strategy/Adapter); Fase 8 (auth/roles) y Fase 9 (puestos/postulaciones, filtro de CV con IA, panel de reclutador) completas
+├── ws-gateway/            # Node + Express + Socket.io + Dockerfile — Fases 0-4 completas (puente hacia Django, memoria de conversación por sesión) + Fase 5 (JWT y postulación elegida hasta Django)
+└── frontend/              # React + TypeScript + Dockerfile — Fases 0-7 completas (postulación pública, login, entrevista con selector de puesto, y panel de reclutador con dashboard/detalle de entrevista)
 ```
 
 ## Requisitos
