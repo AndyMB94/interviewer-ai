@@ -118,6 +118,24 @@ pnpm run dev
 
 Con todo esto corriendo, abrí `http://localhost:5173` en el navegador: podés escribir una pregunta de texto (respuesta del LLM en pantalla), o darle permiso al micrófono, grabar una pregunta hablada y detener — unos segundos después vas a escuchar la respuesta del entrevistador de IA, generada con voz real, de punta a punta (React → Socket.io → Django → Celery → Deepgram → DeepSeek → ElevenLabs → Redis pub/sub → de vuelta al navegador).
 
+### Parar y reanudar
+
+Para el día a día de desarrollo (con cualquiera de las dos opciones de arriba, o una mezcla de ambas), al terminar:
+
+```bash
+docker compose down
+```
+
+Para y borra los contenedores, pero no se pierde nada: `postgres_data` y `media_data` son volúmenes con nombre, sobreviven al `down` (la base de datos y los archivos subidos — CVs, audios de TTS — siguen ahí). Si además tenías algo corriendo nativo (`pnpm run dev`, `python manage.py runserver`, `celery worker`), basta con `Ctrl+C` en cada terminal — no tienen estado que perder.
+
+Para retomar:
+
+```bash
+docker compose up -d
+```
+
+Sin `--build`, salvo que hayas hecho `git pull` o cambiado código del backend/gateway/frontend desde la última vez — en ese caso, `docker compose up -d --build`. Lo que hayas estado corriendo nativo (Opción B) se levanta de nuevo con los mismos comandos de la sección de arriba.
+
 ## Operación
 
 Los 6 servicios escriben sus logs a stdout/stderr (no a archivos), como corresponde en Docker — no hay ninguna carpeta de logs en el repo ni en el servidor. Para diagnosticar cualquier problema, tanto en local como en producción (conectado por SSH al VPS):
