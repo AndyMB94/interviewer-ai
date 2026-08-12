@@ -223,6 +223,30 @@ _9.7 completo, probado end-to-end en local: selector con dos postulaciones aprob
 
 _9.8 + 6.3 probados end-to-end en local: reclutador dueño ve la transcripción completa de una postulación de prueba con entrevista finalizada._
 
+### Backend 9.9 + Frontend 7.5: página de detalle de puesto, formato real de oferta, y categorías (agregado 2026-08-13, futura)
+
+**Contexto:** hoy `ApplyPage` muestra el título/descripción/requisitos completos de cada puesto directo en la card de la grilla — no hay una página de detalle propia, y `Puesto` no tiene categoría/área. Al revisar cómo se ven las ofertas reales (LinkedIn, Computrabajo), surgieron tres mejoras encadenadas.
+
+**Decisión 1 — página de detalle, no modal:** cada puesto pasa a tener su propia URL (`/puestos/:id`), coherente con el patrón que ya usa el resto del proyecto (una pantalla = una ruta, no modales). La card en `ApplyPage` se vuelve un preview compacto (título, área, 1-2 líneas de resumen) que linkea al detalle — el layout de esa página de detalle debe organizarse en secciones claras (no un bloque de texto centrado), acercándose al formato de LinkedIn/Computrabajo.
+
+**Decisión 2 — formato de oferta más real:** `Puesto` gana campos nuevos, separando lo que hoy vive todo mezclado en `descripcion`:
+- `descripcion` se mantiene como resumen general del rol.
+- `funciones` (nuevo, `TextField`) — responsabilidades del día a día.
+- `requisitos` se mantiene (obligatorios).
+- `requisitos_deseables` (nuevo, `TextField`, opcional) — nice-to-have, separado de los obligatorios.
+- `modalidad` (nuevo, choices: `presencial`/`remoto`/`hibrido`).
+
+**Decisión 3 — categorías como tabla propia, no `choices`:** se investigaron categorías reales (Computrabajo Perú: Ventas, Atención a Clientes, Recursos Humanos, Almacén/Logística/Transporte, Administración/Oficina, Contabilidad/Finanzas, Producción/Operarios/Manufactura, Mantenimiento y Reparaciones Técnicas, Servicios Generales/Aseo/Seguridad, Medicina/Salud, CallCenter/Telemercadeo; LinkedIn usa una taxonomía de 26 "funciones" más corporativa: IT, Data/Research, Marketing, Legal, Consulting, etc.). Se decidió modelar `Categoria` como su propio modelo (`nombre`), **no** un `TextChoices` en `Puesto` — mismo patrón que ya se usó para los Groups (`accounts/migrations/0002_create_groups.py`): una migración de datos siembra un set curado inicial (mezcla de ambas fuentes + los rubros que mencionó el usuario: Tecnología/Sistemas, Análisis de Datos, Recursos Humanos, Ventas, Atención al Cliente, Administración, Contabilidad/Finanzas, Marketing, Logística/Almacén, Producción/Operaciones, Mantenimiento Técnico, Servicios Generales/Limpieza/Seguridad, Legal, Consultoría, Salud, Educación, Call Center), editable después desde el admin de Django **sin deploy de código** — a diferencia de `choices`, que requiere migración + deploy para agregar una categoría nueva. `Puesto.categoria` pasa a ser FK (`on_delete=PROTECT`, para no perder la categoría de puestos existentes si se borra una por error).
+
+- [ ] 9.9.1 Backend: modelo `Categoria` (`apps/recruiting/models.py`) + migración de datos que siembra el set curado inicial (mismo patrón que `0002_create_groups.py`).
+- [ ] 9.9.2 Backend: `Puesto` gana `categoria` (FK), `funciones`, `requisitos_deseables`, `modalidad` — migración de esquema + admin actualizado.
+- [ ] 9.9.3 Backend: `PuestoSerializer` expone los campos nuevos + `categoria_nombre` (igual que `puesto_titulo` en `PostulacionSerializer`); `PuestoViewSet` soporta `?categoria=<id>` para filtrar.
+- [ ] 9.9.4 Frontend: `ApplyPage.tsx` — cards como preview compacto (no todo el contenido), filtro por categoría, grilla organizada visualmente (referencia: LinkedIn Jobs/Computrabajo, no un bloque centrado).
+- [ ] 9.9.5 Frontend: página nueva `pages/PuestoDetailPage.tsx`, ruta `/puestos/:id` — secciones claras (descripción, funciones, requisitos, requisitos deseables, modalidad, categoría), botón "Postular a este puesto" lleva al formulario existente.
+- [ ] 9.9.6 Tests: filtro por categoría, serializer expone los campos nuevos, migración de datos siembra las categorías esperadas.
+
+**Confirmado explícitamente, no cambia:** el proyecto sigue siendo para **una sola empresa** (varios reclutadores propios, no un marketplace multi-empresa tipo LinkedIn Jobs) — eso sería un cambio de arquitectura mayor (modelo `Empresa`, aislamiento entre tenants), no una feature más, y no está planeado.
+
 ## Notas
 
 - El orden entre tracks importa: cada paso del gateway/frontend depende de que exista el paso equivalente del backend (por eso las referencias cruzadas, ej. "Backend Fase 1.2").

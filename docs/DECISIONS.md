@@ -370,6 +370,16 @@ También se decidió explícitamente **dónde va sidebar y dónde no**: las pant
 
 ---
 
+## 2026-08-13 Categorías de puesto como tabla propia (`Categoria`), no `choices`
+
+**Contexto:** al planear la página de detalle de puesto (Backend 9.9/Frontend 7.5, ver ROADMAP.md), surgió la necesidad de categorizar los puestos por área (una empresa real de telecomunicaciones, consultora, etc. tiene varios departamentos: Sistemas, RRHH, Ventas, Contabilidad, Logística...). Se evaluó un campo `categoria` con `TextChoices` en `Puesto` vs. un modelo `Categoria` aparte con FK.
+
+**Decisión:** modelo `Categoria` propio, sembrado con una migración de datos (mismo patrón que los Django Groups en `accounts/migrations/0002_create_groups.py`) — no `TextChoices`. Razón concreta: una lista de categorías reales de una empresa cambia con el tiempo (se abre un área nueva, se renombra una) y con `choices` cada cambio exige migración + deploy de código; con una tabla, se edita desde el admin de Django sin tocar código. Además, si más adelante se quiere agregar algo a la categoría (un ícono, un orden de despliegue, si está activa o no), una tabla tiene dónde ponerlo — un `TextChoices` no. El costo es una tabla más y una migración de datos, aceptable dado que ya existe el mismo patrón exacto en el proyecto para los roles.
+
+**Alternativas consideradas:** `TextChoices` en el propio campo — más simple de entrada (sin modelo ni migración de datos extra), pero se descartó porque el conjunto de categorías no es tan fijo como los 3 roles del sistema (`Administrador`/`Reclutador`/`Postulante`, que sí son parte del diseño de auth y prácticamente no cambian) — las áreas de una empresa sí varían.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
