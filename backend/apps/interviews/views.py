@@ -2,10 +2,12 @@ import base64
 
 from celery.result import AsyncResult
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.interviews.models import Interview, Question
+from apps.interviews.permissions import IsOwnerReclutadorOfInterview
 from apps.interviews.tasks import ask_llm_task, synthesize_speech_task, transcribe_audio_task
 from apps.recruiting.services.postulacion_lookup import get_ultima_postulacion_aprobada
 
@@ -35,6 +37,41 @@ def ask(request):
 
     task = ask_llm_task.delay(question.id)
     return Response({"task_id": task.id, "interview_id": interview.id}, status=202)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def interview_detail(request, interview_id):
+    interview = get_object_or_404(
+        Interview.objects.select_related("postulacion__puesto"), pk=interview_id
+    )
+    if not IsOwnerReclutadorOfInterview().has_object_permission(request, None, interview):
+        return Response({"detail": "No tiene permiso para ver esta entrevista."}, status=403)
+
+    questions = [
+        {
+            "question": question.text,
+            "created_at": question.created_at,
+            "answer": question.answer.text if hasattr(question, "answer") else None,
+            "answered_at": question.answer.created_at if hasattr(question, "answer") else None,
+        }
+        for question in interview.questions.select_related("answer").order_by("created_at")
+    ]
+
+    return Response(
+        {
+            "id": interview.id,
+            "status": interview.status,
+            "created_at": interview.created_at,
+            "postulacion": {
+                "nombre": interview.postulacion.nombre,
+                "puesto_titulo": interview.postulacion.puesto.titulo,
+                "estado": interview.postulacion.estado,
+                "resultado_filtro": interview.postulacion.resultado_filtro,
+            },
+            "questions": questions,
+        }
+    )
 
 
 @api_view(["POST"])

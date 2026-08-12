@@ -23,6 +23,7 @@ class PuestoSerializer(serializers.ModelSerializer):
 
 class PostulacionSerializer(serializers.ModelSerializer):
     puesto_titulo = serializers.CharField(source="puesto.titulo", read_only=True)
+    interview_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Postulacion
@@ -36,5 +37,10 @@ class PostulacionSerializer(serializers.ModelSerializer):
             "estado",
             "resultado_filtro",
             "created_at",
+            "interview_id",
         ]
         read_only_fields = ["estado", "resultado_filtro", "created_at"]
+
+    def get_interview_id(self, obj):
+        interview = next(iter(obj.interviews.all()), None)
+        return interview.id if interview else None

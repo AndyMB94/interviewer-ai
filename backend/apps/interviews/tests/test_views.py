@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 from unittest.mock import MagicMock, patch
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from apps.interviews.models import Interview
+from apps.interviews.models import Answer, Interview, Question
 from apps.recruiting.models import Postulacion, Puesto
 
 
@@ -223,3 +223,78 @@ def test_finish_interview_404_for_unknown_id():
     response = client.post("/api/interviews/99999/finish/")
 
     assert response.status_code == 404
+
+
+@pytest.fixture
+def interview_con_postulacion():
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+        resultado_filtro="Buen fit para el puesto.",
+    )
+    interview = Interview.objects.create(postulacion=postulacion)
+    question = Question.objects.create(interview=interview, text="¿Cuál es tu experiencia con Django?")
+    Answer.objects.create(question=question, text="Cinco años.")
+    return reclutador, interview
+
+
+@pytest.mark.django_db
+def test_interview_detail_owner_reclutador_sees_full_transcript(interview_con_postulacion):
+    reclutador, interview = interview_con_postulacion
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get(f"/api/interviews/{interview.id}/")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["postulacion"]["nombre"] == "Andy"
+    assert data["postulacion"]["puesto_titulo"] == "Dev Backend"
+    assert data["postulacion"]["resultado_filtro"] == "Buen fit para el puesto."
+    assert len(data["questions"]) == 1
+    assert data["questions"][0]["question"] == "¿Cuál es tu experiencia con Django?"
+    assert data["questions"][0]["answer"] == "Cinco años."
+
+
+@pytest.mark.django_db
+def test_interview_detail_forbidden_for_other_reclutador(interview_con_postulacion):
+    _, interview = interview_con_postulacion
+    otro_reclutador = User.objects.create_user("reclutador2", password="testpass123")
+    otro_reclutador.groups.add(Group.objects.get(name="Reclutador"))
+
+    client = APIClient()
+    client.force_authenticate(user=otro_reclutador)
+    response = client.get(f"/api/interviews/{interview.id}/")
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_interview_detail_requires_authentication(interview_con_postulacion):
+    _, interview = interview_con_postulacion
+
+    client = APIClient()
+    response = client.get(f"/api/interviews/{interview.id}/")
+
+    assert response.status_code in (401, 403)
+
+
+@pytest.mark.django_db
+def test_interview_detail_forbidden_without_postulacion():
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    interview = Interview.objects.create()
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get(f"/api/interviews/{interview.id}/")
+
+    assert response.status_code == 403

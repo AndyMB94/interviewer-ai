@@ -162,6 +162,12 @@ _9.1-9.3 desplegadas y verificadas en producción el 2026-08-10 (rutas, `pypdf` 
 
 _9.6 completa y probada — 74 tests pasando en toda la suite del backend._
 
+- [x] 9.8 Endpoint de detalle de entrevista para el panel de reclutador (agregado 2026-08-12, soporte de Frontend 6.3). Hoy no existe forma de consultar una `Interview` puntual por la API, solo crear/continuar vía `/api/ask/`.
+  - [x] 9.8.1 `GET /api/interviews/<id>/` (`apps/interviews/views.py::interview_detail`) — devuelve `status`, `created_at`, los datos de la `Postulacion` conectada (`nombre`, `puesto_titulo`, `estado`, `resultado_filtro`) y la lista de preguntas con su respuesta (`question`, `created_at`, `answer`, `answered_at`), en orden cronológico.
+  - [x] 9.8.2 Permiso nuevo `IsOwnerReclutadorOfInterview` (`apps/interviews/permissions.py`, mismo patrón que `CanManagePostulacion` de `apps/recruiting/permissions.py`): solo el Reclutador dueño del puesto de esa postulación puede ver la entrevista. Si la `Interview` no tiene `postulacion` (demo anónima, sin cuenta), no le pertenece a ningún reclutador — 403.
+  - [x] 9.8.3 `PostulacionSerializer` (`apps/recruiting/serializers.py`) gana `interview_id` (nullable, `SerializerMethodField` sobre `obj.interviews.all()` vía el `related_name="interviews"` del FK agregado en 9.6.1 — `prefetch_related("interviews")` en `PostulacionViewSet.get_queryset` para evitar N+1) para que el frontend sepa si ya existe una entrevista que mostrar.
+  - [x] 9.8.4 Tests: reclutador dueño ve el detalle completo con transcripción; otro reclutador (no dueño) recibe 403; anónimo recibe 401/403; entrevista sin postulación (demo) recibe 403; postulación sin entrevista trae `interview_id: null` en el listado, con entrevista trae su id. 55/55 tests pasando en `apps/interviews` + `apps/recruiting`.
+
 ### Gateway — Fase 5: Autenticación
 
 - [x] 5.1 Recibir el JWT del cliente en el handshake de Socket.io y reenviarlo como header `Authorization` en cada llamada REST a Django (solo en `/api/ask/`, que es la que usa `request.user` desde Backend Fase 9.5).
@@ -204,7 +210,12 @@ _Frontend 5.1-5.4 + Gateway 5.1 desplegados y verificados en producción el 2026
 
 - [x] 6.1 Login de reclutador — reusa `LoginPage`/`AuthContext` que ya existen (mismo endpoint `/api/auth/login/`, no se duplica el mecanismo). El rol viaja como claim custom en el JWT (`CustomTokenObtainPairSerializer`, ver DECISIONS.md 2026-08-12) — `AuthContext` lo decodifica al loguear, `LoginPage` redirige a `/dashboard` (Reclutador) o `/entrevista` (Postulante); `/dashboard` protegida con `RequireRole` (extiende `RequireAuth`). Probado end-to-end con una cuenta de reclutador real: login → `/dashboard`; un Postulante no puede entrar a `/dashboard` a mano, y viceversa.
 - [x] 6.2 Dashboard con sidebar (`DashboardLayout.tsx`, componente `Sidebar` de shadcn, nav "Puestos"/"Postulaciones"). Backend: `PuestoViewSet` soporta `?mias=true` (filtra por `creado_por`, `Puesto.objects.none()` si no autenticado) y anota `postulaciones_count` (`Count("postulaciones")`); `PostulacionViewSet` agrega `select_related("puesto")` y expone `puesto_titulo` (campo `source="puesto.titulo"`) para evitar joins del lado del cliente. Frontend: `PuestosPage.tsx` (tabla título/estado/cantidad de postulaciones) y `PostulacionesPage.tsx` (tabla nombre/email/puesto/estado con `Badge` por color). Tests: `test_mias_filter_returns_only_the_reclutador_own_puestos`, `test_mias_filter_returns_empty_for_anonymous`, `test_puesto_list_includes_postulaciones_count` en `apps/recruiting`. Probado en navegador con una cuenta de reclutador real.
-- [ ] 6.3 Vista de detalle de una entrevista completada (transcripción `Question`/`Answer` + resultado del filtro de CV `Postulacion.resultado_filtro`). Requiere un endpoint nuevo en `apps/interviews` para exponer esto al reclutador dueño (mismo patrón de permisos a nivel de objeto que ya se usa en `apps/recruiting/permissions.py`) — hoy no existe forma de consultar una `Interview` específica por la API, solo se crea/continúa vía `/api/ask/`.
+- [x] 6.3 Vista de detalle de una entrevista completada (transcripción + resultado del filtro de CV), agregado 2026-08-12. Usa Backend 9.8 (`GET /api/interviews/<id>/` + `interview_id` en `PostulacionSerializer`).
+  - [x] 6.3.1 Botón "Ver entrevista" en cada fila de `PostulacionesPage.tsx` — visible solo si `interview_id` no es `null`. Usa `Button` de shadcn con `render={<Link .../>}` + `nativeButton={false}` (Base UI exige avisar explícitamente cuando el botón renderiza como otro elemento, ej. un `<a>`, en vez de un `<button>` nativo).
+  - [x] 6.3.2 Página nueva `pages/dashboard/InterviewDetailPage.tsx`, ruta `/dashboard/entrevistas/:id` (child de `DashboardLayout`, mismo `RequireRole` que el resto del panel) — muestra el resultado del filtro de CV (`resultado_filtro` + `Badge` de estado) y la transcripción completa (pregunta/respuesta en orden, versión de solo lectura, distinta del `QuestionDisplay` del candidato que depende del socket en vivo).
+  - [x] 6.3.3 `fetchInterviewDetail(token, interviewId)` en `lib/api.ts`.
+
+_9.8 + 6.3 probados end-to-end en local: reclutador dueño ve la transcripción completa de una postulación de prueba con entrevista finalizada._
 
 ## Notas
 

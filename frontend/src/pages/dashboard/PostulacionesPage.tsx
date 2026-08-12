@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/context/AuthContext";
 import { fetchMisPostulaciones, type Postulacion } from "@/lib/api";
@@ -42,6 +44,7 @@ export function PostulacionesPage() {
               <TableHead>Email</TableHead>
               <TableHead>Puesto</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -52,6 +55,18 @@ export function PostulacionesPage() {
                 <TableCell>{postulacion.puesto_titulo}</TableCell>
                 <TableCell>
                   <Badge variant={ESTADO_VARIANT[postulacion.estado]}>{postulacion.estado}</Badge>
+                </TableCell>
+                <TableCell>
+                  {postulacion.interview_id !== null && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      nativeButton={false}
+                      render={<Link to={`/dashboard/entrevistas/${postulacion.interview_id}`} />}
+                    >
+                      Ver entrevista
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

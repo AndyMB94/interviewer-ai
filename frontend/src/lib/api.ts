@@ -102,6 +102,7 @@ export interface Postulacion {
   estado: "pendiente" | "aprobado" | "rechazado";
   resultado_filtro: string;
   created_at: string;
+  interview_id: number | null;
 }
 
 export async function fetchMisPostulaciones(token: string): Promise<Postulacion[]> {
@@ -110,6 +111,36 @@ export async function fetchMisPostulaciones(token: string): Promise<Postulacion[
   });
   if (!response.ok) {
     throw new Error("No se pudieron cargar las postulaciones.");
+  }
+  return response.json();
+}
+
+export interface InterviewQuestion {
+  question: string;
+  created_at: string;
+  answer: string | null;
+  answered_at: string | null;
+}
+
+export interface InterviewDetail {
+  id: number;
+  status: "in_progress" | "finished";
+  created_at: string;
+  postulacion: {
+    nombre: string;
+    puesto_titulo: string;
+    estado: "pendiente" | "aprobado" | "rechazado";
+    resultado_filtro: string;
+  };
+  questions: InterviewQuestion[];
+}
+
+export async function fetchInterviewDetail(token: string, interviewId: number): Promise<InterviewDetail> {
+  const response = await fetch(`${API_URL}/api/interviews/${interviewId}/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    throw new Error("No se pudo cargar el detalle de la entrevista.");
   }
   return response.json();
 }

@@ -96,3 +96,21 @@ def test_owner_reclutador_sees_postulaciones_of_their_puesto(puesto, reclutador)
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]["puesto_titulo"] == puesto.titulo
+    assert response.json()[0]["interview_id"] is None
+
+
+@pytest.mark.django_db
+def test_postulacion_list_includes_interview_id_when_it_has_one(puesto, reclutador):
+    from apps.interviews.models import Interview
+
+    postulacion = Postulacion.objects.create(
+        puesto=puesto, nombre="Andy", email="andy@example.com", cv=_fake_pdf()
+    )
+    interview = Interview.objects.create(postulacion=postulacion)
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/postulaciones/")
+
+    assert response.status_code == 200
+    assert response.json()[0]["interview_id"] == interview.id

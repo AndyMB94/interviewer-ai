@@ -35,7 +35,11 @@ class PostulacionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if not self.request.user.is_authenticated:
             return Postulacion.objects.none()
-        return Postulacion.objects.filter(puesto__creado_por=self.request.user).select_related("puesto")
+        return (
+            Postulacion.objects.filter(puesto__creado_por=self.request.user)
+            .select_related("puesto")
+            .prefetch_related("interviews")
+        )
 
     def perform_create(self, serializer):
         postulacion = serializer.save()
