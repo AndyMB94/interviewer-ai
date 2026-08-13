@@ -15,7 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 
 export function Navbar() {
-  const { isAuthenticated, userEmail, logout } = useAuth();
+  const { isAuthenticated, userEmail, roles, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -24,10 +24,18 @@ export function Navbar() {
     navigate("/login");
   };
 
+  // El logo lleva de vuelta a la pantalla principal de cada rol, no siempre a "/" — un Reclutador
+  // no quiere terminar en la grilla pública, y un Postulante necesita cómo volver a su entrevista.
+  const logoDestination = roles.includes("Reclutador")
+    ? "/dashboard"
+    : roles.includes("Postulante")
+      ? "/entrevista"
+      : "/";
+
   return (
     <nav className="border-b border-border">
       <div className="mx-auto flex max-w-4xl items-center justify-between p-4">
-        <Link to="/" className="font-bold">
+        <Link to={logoDestination} className="font-bold">
           Vacantia
         </Link>
 
