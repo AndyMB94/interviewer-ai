@@ -33,7 +33,7 @@ export function QuestionDisplay({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{isFinished ? "Feedback final" : "Entrevista"}</CardTitle>
+        <CardTitle>{isFinished ? "Entrevista finalizada" : "Entrevista"}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex max-h-112 flex-col gap-3 overflow-y-auto">
