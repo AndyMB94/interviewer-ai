@@ -1,139 +1,36 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PuestoCard } from "@/components/PuestoCard";
 import { PuestoCardSkeleton } from "@/components/PuestoCardSkeleton";
-import { fetchPuestosAbiertos, postularA, type Puesto } from "@/lib/api";
+import { fetchCategorias, fetchPuestosAbiertos, type Categoria, type Puesto } from "@/lib/api";
 
 export function ApplyPage() {
   const [puestos, setPuestos] = useState<Puesto[]>([]);
   const [loadingPuestos, setLoadingPuestos] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-
-  const [selectedPuesto, setSelectedPuesto] = useState<Puesto | null>(null);
-  const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
-  const [cvFile, setCvFile] = useState<File | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriaId, setCategoriaId] = useState<string>("todas");
 
   useEffect(() => {
-    fetchPuestosAbiertos()
+    fetchCategorias()
+      .then(setCategorias)
+      .catch(() => setCategorias([]));
+  }, []);
+
+  useEffect(() => {
+    setLoadingPuestos(true);
+    fetchPuestosAbiertos(categoriaId === "todas" ? undefined : Number(categoriaId))
       .then(setPuestos)
       .catch((error: Error) => setLoadError(error.message))
       .finally(() => setLoadingPuestos(false));
-  }, []);
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!selectedPuesto || !cvFile) return;
-
-    setSubmitting(true);
-    setSubmitError(null);
-    try {
-      await postularA({ puesto: selectedPuesto.id, nombre, email, cv: cvFile });
-      setSubmitted(true);
-    } catch (error) {
-      setSubmitError((error as Error).message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetFlow = () => {
-    setSelectedPuesto(null);
-    setNombre("");
-    setEmail("");
-    setCvFile(null);
-    setSubmitted(false);
-    setSubmitError(null);
-  };
-
-  if (submitted && selectedPuesto) {
-    return (
-      <div className="mx-auto max-w-md p-4 pt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>¡Postulación enviada!</CardTitle>
-            <CardDescription>
-              Postuló a <span className="font-medium text-foreground">{selectedPuesto.titulo}</span>.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground">
-              Un filtro con IA va a revisar su CV contra los requisitos del puesto. Si su perfil
-              encaja, le vamos a mandar un email a <span className="font-medium">{email}</span> con
-              los siguientes pasos.
-            </p>
-            <Button variant="outline" onClick={resetFlow} className="self-start">
-              Postular a otro puesto
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (selectedPuesto) {
-    return (
-      <div className="mx-auto max-w-md space-y-4 p-4 pt-8">
-        <Button variant="ghost" size="sm" onClick={() => setSelectedPuesto(null)}>
-          ‹ Elegir otro puesto
-        </Button>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{selectedPuesto.titulo}</CardTitle>
-            <CardDescription>Complete sus datos para postular.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="nombre">Nombre completo</Label>
-                <Input
-                  id="nombre"
-                  value={nombre}
-                  onChange={(event) => setNombre(event.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="cv">CV (PDF)</Label>
-                <Input
-                  id="cv"
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(event) => setCvFile(event.target.files?.[0] ?? null)}
-                  required
-                />
-              </div>
-
-              {submitError && <p className="text-sm text-destructive">{submitError}</p>}
-
-              <Button type="submit" disabled={submitting}>
-                {submitting ? "Enviando..." : "Enviar postulación"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  }, [categoriaId]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 p-4 pt-8">
@@ -143,6 +40,31 @@ export function ApplyPage() {
           Elija un puesto y postule subiendo su CV — sin necesidad de crear una cuenta.
         </p>
       </header>
+
+      <div className="flex justify-center">
+        <Select value={categoriaId} onValueChange={(value) => setCategoriaId(value ?? "todas")}>
+          <SelectTrigger className="w-72">
+            <SelectValue placeholder="Todas las categorías">
+              {(value: string) =>
+                value === "todas"
+                  ? "Todas las categorías"
+                  : (categorias.find((categoria) => String(categoria.id) === value)?.nombre ??
+                    "Todas las categorías")
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="todas">Todas las categorías</SelectItem>
+              {categorias.map((categoria) => (
+                <SelectItem key={categoria.id} value={String(categoria.id)}>
+                  {categoria.nombre}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
 
       {loadError && <p className="text-center text-destructive">{loadError}</p>}
 
@@ -155,9 +77,7 @@ export function ApplyPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         {loadingPuestos
           ? Array.from({ length: 4 }).map((_, index) => <PuestoCardSkeleton key={index} />)
-          : puestos.map((puesto) => (
-              <PuestoCard key={puesto.id} puesto={puesto} onSelect={setSelectedPuesto} />
-            ))}
+          : puestos.map((puesto) => <PuestoCard key={puesto.id} puesto={puesto} />)}
       </div>
     </div>
   );

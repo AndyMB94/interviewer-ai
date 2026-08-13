@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import { InterviewPage } from "./pages/InterviewPage";
 import { ApplyPage } from "./pages/ApplyPage";
+import { PuestoDetailPage } from "./pages/PuestoDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PuestosPage } from "./pages/dashboard/PuestosPage";
 import { PostulacionesPage } from "./pages/dashboard/PostulacionesPage";
@@ -17,6 +18,10 @@ export const router = createBrowserRouter([
       {
         path: "/",
         element: <ApplyPage />,
+      },
+      {
+        path: "/puestos/:id",
+        element: <PuestoDetailPage />,
       },
       {
         path: "/entrevista",

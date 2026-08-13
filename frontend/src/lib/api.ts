@@ -1,21 +1,51 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+export interface Categoria {
+  id: number;
+  nombre: string;
+}
+
 export interface Puesto {
   id: number;
   titulo: string;
   descripcion: string;
+  funciones: string;
   requisitos: string;
+  requisitos_deseables: string;
+  modalidad: "presencial" | "remoto" | "hibrido";
+  categoria: number | null;
+  categoria_nombre: string | null;
   estado: "abierto" | "cerrado";
   postulaciones_count: number;
 }
 
-export async function fetchPuestosAbiertos(): Promise<Puesto[]> {
-  const response = await fetch(`${API_URL}/api/puestos/`);
+export async function fetchCategorias(): Promise<Categoria[]> {
+  const response = await fetch(`${API_URL}/api/categorias/`);
+  if (!response.ok) {
+    throw new Error("No se pudieron cargar las categorías.");
+  }
+  return response.json();
+}
+
+export async function fetchPuestosAbiertos(categoriaId?: number): Promise<Puesto[]> {
+  const url = new URL(`${API_URL}/api/puestos/`);
+  if (categoriaId) {
+    url.searchParams.set("categoria", String(categoriaId));
+  }
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error("No se pudieron cargar los puestos disponibles.");
   }
   const puestos: Puesto[] = await response.json();
   return puestos.filter((puesto) => puesto.estado === "abierto");
+}
+
+export async function fetchPuesto(id: number): Promise<Puesto> {
+  const response = await fetch(`${API_URL}/api/puestos/${id}/`);
+  if (!response.ok) {
+    throw new Error("No se pudo cargar el puesto.");
+  }
+  return response.json();
 }
 
 export async function fetchMisPuestos(token: string): Promise<Puesto[]> {

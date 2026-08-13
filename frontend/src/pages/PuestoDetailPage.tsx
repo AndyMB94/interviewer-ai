@@ -1,0 +1,188 @@
+import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import { Link, useParams } from "react-router";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { fetchPuesto, postularA, type Puesto } from "@/lib/api";
+
+const MODALIDAD_LABEL: Record<Puesto["modalidad"], string> = {
+  presencial: "Presencial",
+  remoto: "Remoto",
+  hibrido: "Híbrido",
+};
+
+function Seccion({ titulo, texto }: { titulo: string; texto: string }) {
+  if (!texto) return null;
+  return (
+    <div className="space-y-1">
+      <h2 className="font-semibold">{titulo}</h2>
+      <p className="whitespace-pre-line text-sm text-muted-foreground">{texto}</p>
+    </div>
+  );
+}
+
+export function PuestoDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const [puesto, setPuesto] = useState<Puesto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [showForm, setShowForm] = useState(false);
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    fetchPuesto(Number(id))
+      .then(setPuesto)
+      .catch((error: Error) => setLoadError(error.message))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!puesto || !cvFile) return;
+
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await postularA({ puesto: puesto.id, nombre, email, cv: cvFile });
+      setSubmitted(true);
+    } catch (error) {
+      setSubmitError((error as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return <p className="mx-auto max-w-2xl p-4 pt-8 text-center text-muted-foreground">Cargando...</p>;
+  }
+
+  if (loadError || !puesto) {
+    return (
+      <p className="mx-auto max-w-2xl p-4 pt-8 text-center text-destructive">
+        {loadError ?? "No se encontró el puesto."}
+      </p>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <div className="mx-auto max-w-md p-4 pt-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>¡Postulación enviada!</CardTitle>
+            <CardDescription>
+              Postuló a <span className="font-medium text-foreground">{puesto.titulo}</span>.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              Un filtro con IA va a revisar su CV contra los requisitos del puesto. Si su perfil
+              encaja, le vamos a mandar un email a <span className="font-medium">{email}</span> con
+              los siguientes pasos.
+            </p>
+            <Button variant="outline" nativeButton={false} render={<Link to="/" />} className="self-start">
+              Volver a vacantes
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-4 p-4 pt-8">
+      <Button variant="outline" size="sm" nativeButton={false} render={<Link to="/" />}>
+        <ArrowLeft />
+        Volver a vacantes
+      </Button>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-2xl">{puesto.titulo}</CardTitle>
+            {puesto.categoria_nombre && <Badge variant="secondary">{puesto.categoria_nombre}</Badge>}
+          </div>
+          <Badge variant="outline" className="w-fit">
+            {MODALIDAD_LABEL[puesto.modalidad]}
+          </Badge>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Seccion titulo="Descripción del empleo" texto={puesto.descripcion} />
+          <Separator />
+          <Seccion titulo="Funciones" texto={puesto.funciones} />
+          {puesto.funciones && <Separator />}
+          <Seccion titulo="Requisitos" texto={puesto.requisitos} />
+          <Separator />
+          <Seccion titulo="Requisitos deseables" texto={puesto.requisitos_deseables} />
+
+          {!showForm && (
+            <Button onClick={() => setShowForm(true)}>Postular a este puesto</Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Complete sus datos</CardTitle>
+            <CardDescription>Postulando a {puesto.titulo}.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="nombre">Nombre completo</Label>
+                <Input
+                  id="nombre"
+                  autoComplete="name"
+                  value={nombre}
+                  onChange={(event) => setNombre(event.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="cv">CV (PDF)</Label>
+                <Input
+                  id="cv"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(event) => setCvFile(event.target.files?.[0] ?? null)}
+                  required
+                />
+              </div>
+
+              {submitError && <p className="text-sm text-destructive">{submitError}</p>}
+
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Enviando..." : "Enviar postulación"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

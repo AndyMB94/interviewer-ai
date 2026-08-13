@@ -1,10 +1,17 @@
 from rest_framework import serializers
 
-from apps.recruiting.models import Postulacion, Puesto
+from apps.recruiting.models import Categoria, Postulacion, Puesto
+
+
+class CategoriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Categoria
+        fields = ["id", "nombre"]
 
 
 class PuestoSerializer(serializers.ModelSerializer):
     postulaciones_count = serializers.IntegerField(read_only=True, default=0)
+    categoria_nombre = serializers.CharField(source="categoria.nombre", read_only=True, default=None)
 
     class Meta:
         model = Puesto
@@ -12,7 +19,12 @@ class PuestoSerializer(serializers.ModelSerializer):
             "id",
             "titulo",
             "descripcion",
+            "funciones",
             "requisitos",
+            "requisitos_deseables",
+            "modalidad",
+            "categoria",
+            "categoria_nombre",
             "estado",
             "creado_por",
             "created_at",

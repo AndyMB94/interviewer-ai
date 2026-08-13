@@ -4,11 +4,16 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.recruiting.models import Postulacion, Puesto
+from apps.recruiting.models import Categoria, Postulacion, Puesto
 from apps.recruiting.permissions import CanManagePostulacion, IsOwnerReclutadorOrReadOnly
-from apps.recruiting.serializers import PostulacionSerializer, PuestoSerializer
+from apps.recruiting.serializers import CategoriaSerializer, PostulacionSerializer, PuestoSerializer
 from apps.recruiting.services.postulacion_lookup import get_postulaciones_aprobadas_pendientes
 from apps.recruiting.tasks import screen_postulacion_task
+
+
+class CategoriaViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Categoria.objects.all()
+    serializer_class = CategoriaSerializer
 
 
 class PuestoViewSet(viewsets.ModelViewSet):
@@ -16,11 +21,16 @@ class PuestoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsOwnerReclutadorOrReadOnly]
 
     def get_queryset(self):
-        queryset = Puesto.objects.annotate(postulaciones_count=Count("postulaciones"))
+        queryset = Puesto.objects.select_related("categoria").annotate(
+            postulaciones_count=Count("postulaciones")
+        )
         if self.request.query_params.get("mias") == "true":
             if not self.request.user.is_authenticated:
                 return Puesto.objects.none()
             queryset = queryset.filter(creado_por=self.request.user)
+        categoria_id = self.request.query_params.get("categoria")
+        if categoria_id:
+            queryset = queryset.filter(categoria_id=categoria_id)
         return queryset
 
     def perform_create(self, serializer):

@@ -3,7 +3,7 @@ from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
-from apps.recruiting.models import Postulacion, Puesto
+from apps.recruiting.models import Categoria, Postulacion, Puesto
 
 
 @pytest.fixture
@@ -229,3 +229,58 @@ def test_mi_postulacion_returns_more_than_one_when_pending(puesto):
 
     assert response.status_code == 200
     assert len(response.json()) == 2
+
+
+@pytest.mark.django_db
+def test_anyone_can_list_categorias():
+    Categoria.objects.create(nombre="Categoría de prueba")
+
+    client = APIClient()
+    response = client.get("/api/categorias/")
+
+    assert response.status_code == 200
+    nombres = [c["nombre"] for c in response.json()]
+    assert "Categoría de prueba" in nombres
+
+
+@pytest.mark.django_db
+def test_puesto_includes_categoria_nombre_when_set(puesto):
+    categoria = Categoria.objects.create(nombre="Categoría de prueba")
+    puesto.categoria = categoria
+    puesto.save()
+
+    client = APIClient()
+    response = client.get("/api/puestos/")
+
+    assert response.json()[0]["categoria_nombre"] == "Categoría de prueba"
+
+
+@pytest.mark.django_db
+def test_puesto_categoria_nombre_is_null_without_categoria(puesto):
+    client = APIClient()
+    response = client.get("/api/puestos/")
+
+    assert response.json()[0]["categoria_nombre"] is None
+
+
+@pytest.mark.django_db
+def test_puestos_filter_by_categoria(puesto, reclutador):
+    categoria_a = Categoria.objects.create(nombre="Categoría A de prueba")
+    categoria_b = Categoria.objects.create(nombre="Categoría B de prueba")
+    puesto.categoria = categoria_a
+    puesto.save()
+    Puesto.objects.create(
+        titulo="Abogado corporativo",
+        descripcion="...",
+        requisitos="...",
+        creado_por=reclutador,
+        categoria=categoria_b,
+    )
+
+    client = APIClient()
+    response = client.get(f"/api/puestos/?categoria={categoria_a.id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == puesto.id
