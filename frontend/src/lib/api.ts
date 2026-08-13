@@ -13,10 +13,12 @@ export interface Puesto {
   requisitos: string;
   requisitos_deseables: string;
   modalidad: "presencial" | "remoto" | "hibrido";
+  vacantes: number;
   categoria: number | null;
   categoria_nombre: string | null;
   estado: "abierto" | "cerrado";
   postulaciones_count: number;
+  preseleccionados: number;
 }
 
 export async function fetchCategorias(): Promise<Categoria[]> {
@@ -152,9 +154,12 @@ export interface InterviewQuestion {
   answered_at: string | null;
 }
 
+export type InterviewDecision = "pendiente" | "avanza" | "no_avanza";
+
 export interface InterviewDetail {
   id: number;
   status: "in_progress" | "finished";
+  decision: InterviewDecision;
   created_at: string;
   postulacion: {
     nombre: string;
@@ -173,6 +178,21 @@ export async function fetchInterviewDetail(token: string, interviewId: number): 
     throw new Error("No se pudo cargar el detalle de la entrevista.");
   }
   return response.json();
+}
+
+export async function updateInterviewDecision(
+  token: string,
+  interviewId: number,
+  decision: InterviewDecision,
+): Promise<void> {
+  const response = await fetch(`${API_URL}/api/interviews/${interviewId}/decision/`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ decision }),
+  });
+  if (!response.ok) {
+    throw new Error("No se pudo actualizar la decisión.");
+  }
 }
 
 export interface MiPostulacion {

@@ -271,13 +271,15 @@ Puesto.objects.annotate(
 )
 ```
 
-- [ ] 9.10.1 Backend: `Interview.decision` (`TextChoices`: `pendiente`/`avanza`/`no_avanza`, default `pendiente`) — migración de esquema.
-- [ ] 9.10.2 Backend: `Puesto.vacantes` (`PositiveIntegerField`, default 1) — migración de esquema.
-- [ ] 9.10.3 Backend: endpoint para que el reclutador actualice `Interview.decision` (`PATCH /api/interviews/<id>/decision/` o similar), protegido con el mismo permiso `IsOwnerReclutadorOfInterview` de 9.8.2.
-- [ ] 9.10.4 Backend: `PuestoSerializer` anota `preseleccionados` (vía `Count` con `filter`, ver arriba — no N+1) y expone `vacantes`.
-- [ ] 9.10.5 Frontend: `InterviewDetailPage.tsx` — acción para marcar "Avanza a la siguiente etapa"/"No avanza" (botones o select), con confirmación (no debería tomarse por accidente con un click).
-- [ ] 9.10.6 Frontend: `PuestosPage.tsx` — columnas "Vacantes" y "Preseleccionados", junto a la de cantidad de postulaciones que ya existe.
-- [ ] 9.10.7 Tests: setear/leer `Interview.decision`, permiso (solo el reclutador dueño puede cambiarla), `preseleccionados` cuenta bien con múltiples puestos/postulaciones/decisiones mezcladas (incluyendo `no_avanza` y `pendiente`, que no deben sumar).
+- [x] 9.10.1 Backend: `Interview.decision` (`TextChoices`: `pendiente`/`avanza`/`no_avanza`, default `pendiente`) — migración de esquema aplicada.
+- [x] 9.10.2 Backend: `Puesto.vacantes` (`PositiveIntegerField`, default 1) — migración de esquema aplicada.
+- [x] 9.10.3 Backend: `PATCH /api/interviews/<id>/decision/` (`update_interview_decision`), protegido con `IsOwnerReclutadorOfInterview` (9.8.2). Valida que el valor esté en `Interview.Decision.values` (400 si no). `interview_detail` también expone `decision` ahora.
+- [x] 9.10.4 Backend: `PuestoSerializer` anota `preseleccionados` (`Count` con `filter=Q(postulaciones__interviews__decision=AVANZA)`, mismo patrón que `postulaciones_count`) y expone `vacantes`.
+- [x] 9.10.5 Frontend: `InterviewDetailPage.tsx` — card "Decisión" con badge de estado + botones "Avanza a la siguiente etapa"/"No avanza", confirmados con `window.confirm` (mismo patrón que el bloqueo de salida de `InterviewPage`, no se instaló `AlertDialog` para esto). Cada botón se deshabilita solo cuando **su propia** decisión ya es la actual — el otro se deja habilitado a propósito, para poder revertir la decisión si el reclutador se equivocó o reconsidera.
+- [x] 9.10.6 Frontend: `PuestosPage.tsx` — columnas "Vacantes" y "Preseleccionados" agregadas a la tabla.
+- [x] 9.10.7 Tests backend: `Interview.decision` se puede leer/actualizar (dueño), 403 para otro reclutador, 400 con valor inválido, 401/403 sin autenticar; `preseleccionados` cuenta solo `avanza` (no `no_avanza` ni `pendiente`) en `apps/recruiting`. 75/75 tests de `apps/interviews` + `apps/recruiting` pasando.
+
+_Probado end-to-end en local: decisión pendiente por default, cambio a "avanza" confirmado con `window.confirm`, badge y botones reflejan el estado nuevo correctamente, el botón contrario queda habilitado para poder revertir._
 
 ## Notas
 

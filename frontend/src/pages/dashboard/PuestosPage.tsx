@@ -35,6 +35,8 @@ export function PuestosPage() {
               <TableHead>Título</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Postulaciones</TableHead>
+              <TableHead>Vacantes</TableHead>
+              <TableHead>Preseleccionados</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -47,6 +49,8 @@ export function PuestosPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>{puesto.postulaciones_count}</TableCell>
+                <TableCell>{puesto.vacantes}</TableCell>
+                <TableCell>{puesto.preseleccionados}</TableCell>
               </TableRow>
             ))}
           </TableBody>

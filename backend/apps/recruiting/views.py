@@ -1,9 +1,10 @@
-from django.db.models import Count
+from django.db.models import Count, Q
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.interviews.models import Interview
 from apps.recruiting.models import Categoria, Postulacion, Puesto
 from apps.recruiting.permissions import CanManagePostulacion, IsOwnerReclutadorOrReadOnly
 from apps.recruiting.serializers import CategoriaSerializer, PostulacionSerializer, PuestoSerializer
@@ -22,7 +23,11 @@ class PuestoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Puesto.objects.select_related("categoria").annotate(
-            postulaciones_count=Count("postulaciones")
+            postulaciones_count=Count("postulaciones"),
+            preseleccionados=Count(
+                "postulaciones__interviews",
+                filter=Q(postulaciones__interviews__decision=Interview.Decision.AVANZA),
+            ),
         )
         if self.request.query_params.get("mias") == "true":
             if not self.request.user.is_authenticated:

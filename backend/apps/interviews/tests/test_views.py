@@ -395,3 +395,66 @@ def test_interview_detail_forbidden_without_postulacion():
     response = client.get(f"/api/interviews/{interview.id}/")
 
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_interview_detail_includes_decision(interview_con_postulacion):
+    reclutador, interview = interview_con_postulacion
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get(f"/api/interviews/{interview.id}/")
+
+    assert response.json()["decision"] == "pendiente"
+
+
+@pytest.mark.django_db
+def test_owner_reclutador_can_update_decision(interview_con_postulacion):
+    reclutador, interview = interview_con_postulacion
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.patch(f"/api/interviews/{interview.id}/decision/", {"decision": "avanza"}, format="json")
+
+    assert response.status_code == 200
+    assert response.json()["decision"] == "avanza"
+    interview.refresh_from_db()
+    assert interview.decision == Interview.Decision.AVANZA
+
+
+@pytest.mark.django_db
+def test_other_reclutador_cannot_update_decision(interview_con_postulacion):
+    _, interview = interview_con_postulacion
+    otro_reclutador = User.objects.create_user("reclutador2", password="testpass123")
+    otro_reclutador.groups.add(Group.objects.get(name="Reclutador"))
+
+    client = APIClient()
+    client.force_authenticate(user=otro_reclutador)
+    response = client.patch(f"/api/interviews/{interview.id}/decision/", {"decision": "avanza"}, format="json")
+
+    assert response.status_code == 403
+    interview.refresh_from_db()
+    assert interview.decision == Interview.Decision.PENDIENTE
+
+
+@pytest.mark.django_db
+def test_update_decision_rejects_invalid_value(interview_con_postulacion):
+    reclutador, interview = interview_con_postulacion
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.patch(
+        f"/api/interviews/{interview.id}/decision/", {"decision": "contratado"}, format="json"
+    )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_update_decision_requires_authentication(interview_con_postulacion):
+    _, interview = interview_con_postulacion
+
+    client = APIClient()
+    response = client.patch(f"/api/interviews/{interview.id}/decision/", {"decision": "avanza"}, format="json")
+
+    assert response.status_code in (401, 403)

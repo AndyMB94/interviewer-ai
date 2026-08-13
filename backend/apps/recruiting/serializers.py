@@ -11,6 +11,7 @@ class CategoriaSerializer(serializers.ModelSerializer):
 
 class PuestoSerializer(serializers.ModelSerializer):
     postulaciones_count = serializers.IntegerField(read_only=True, default=0)
+    preseleccionados = serializers.IntegerField(read_only=True, default=0)
     categoria_nombre = serializers.CharField(source="categoria.nombre", read_only=True, default=None)
 
     class Meta:
@@ -23,12 +24,14 @@ class PuestoSerializer(serializers.ModelSerializer):
             "requisitos",
             "requisitos_deseables",
             "modalidad",
+            "vacantes",
             "categoria",
             "categoria_nombre",
             "estado",
             "creado_por",
             "created_at",
             "postulaciones_count",
+            "preseleccionados",
         ]
         read_only_fields = ["creado_por", "created_at"]
 

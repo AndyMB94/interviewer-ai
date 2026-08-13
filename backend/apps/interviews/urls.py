@@ -12,4 +12,9 @@ urlpatterns = [
     path("speak/<str:task_id>/", views.speak_result, name="speak_result"),
     path("interviews/<int:interview_id>/", views.interview_detail, name="interview_detail"),
     path("interviews/<int:interview_id>/finish/", views.finish_interview, name="finish_interview"),
+    path(
+        "interviews/<int:interview_id>/decision/",
+        views.update_interview_decision,
+        name="update_interview_decision",
+    ),
 ]

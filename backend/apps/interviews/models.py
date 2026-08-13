@@ -8,6 +8,11 @@ class Interview(models.Model):
         IN_PROGRESS = "in_progress", "En progreso"
         FINISHED = "finished", "Finalizada"
 
+    class Decision(models.TextChoices):
+        PENDIENTE = "pendiente", "Pendiente"
+        AVANZA = "avanza", "Avanza a la siguiente etapa"
+        NO_AVANZA = "no_avanza", "No avanza"
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -26,6 +31,11 @@ class Interview(models.Model):
         max_length=20,
         choices=Status.choices,
         default=Status.IN_PROGRESS,
+    )
+    decision = models.CharField(
+        max_length=10,
+        choices=Decision.choices,
+        default=Decision.PENDIENTE,
     )
 
     def __str__(self):

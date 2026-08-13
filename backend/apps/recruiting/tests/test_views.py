@@ -3,6 +3,7 @@ from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
+from apps.interviews.models import Interview
 from apps.recruiting.models import Categoria, Postulacion, Puesto
 
 
@@ -284,3 +285,38 @@ def test_puestos_filter_by_categoria(puesto, reclutador):
     data = response.json()
     assert len(data) == 1
     assert data[0]["id"] == puesto.id
+
+
+@pytest.mark.django_db
+def test_puesto_default_vacantes_is_one(puesto):
+    client = APIClient()
+    response = client.get("/api/puestos/")
+
+    assert response.json()[0]["vacantes"] == 1
+
+
+def _postulacion_aprobada(puesto):
+    return Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+
+
+@pytest.mark.django_db
+def test_puesto_counts_only_interviews_with_avanza_as_preseleccionados(puesto):
+    postulacion_avanza = _postulacion_aprobada(puesto)
+    Interview.objects.create(postulacion=postulacion_avanza, decision=Interview.Decision.AVANZA)
+
+    postulacion_no_avanza = _postulacion_aprobada(puesto)
+    Interview.objects.create(postulacion=postulacion_no_avanza, decision=Interview.Decision.NO_AVANZA)
+
+    postulacion_pendiente = _postulacion_aprobada(puesto)
+    Interview.objects.create(postulacion=postulacion_pendiente, decision=Interview.Decision.PENDIENTE)
+
+    client = APIClient()
+    response = client.get("/api/puestos/")
+
+    assert response.json()[0]["preseleccionados"] == 1

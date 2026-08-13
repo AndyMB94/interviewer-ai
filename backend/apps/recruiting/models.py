@@ -30,6 +30,7 @@ class Puesto(models.Model):
     requisitos = models.TextField()
     requisitos_deseables = models.TextField(blank=True)
     modalidad = models.CharField(max_length=10, choices=Modalidad.choices, default=Modalidad.PRESENCIAL)
+    vacantes = models.PositiveIntegerField(default=1)
     categoria = models.ForeignKey(
         Categoria, on_delete=models.PROTECT, related_name="puestos", null=True, blank=True
     )

@@ -75,6 +75,7 @@ def interview_detail(request, interview_id):
         {
             "id": interview.id,
             "status": interview.status,
+            "decision": interview.decision,
             "created_at": interview.created_at,
             "postulacion": {
                 "nombre": interview.postulacion.nombre,
@@ -85,6 +86,22 @@ def interview_detail(request, interview_id):
             "questions": questions,
         }
     )
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def update_interview_decision(request, interview_id):
+    interview = get_object_or_404(Interview.objects.select_related("postulacion__puesto"), pk=interview_id)
+    if not IsOwnerReclutadorOfInterview().has_object_permission(request, None, interview):
+        return Response({"detail": "No tiene permiso para modificar esta entrevista."}, status=403)
+
+    decision = request.data.get("decision")
+    if decision not in Interview.Decision.values:
+        return Response({"error": "decision inválida"}, status=400)
+
+    interview.decision = decision
+    interview.save(update_fields=["decision"])
+    return Response({"decision": interview.decision})
 
 
 @api_view(["POST"])

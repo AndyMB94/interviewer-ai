@@ -5,12 +5,29 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
-import { fetchInterviewDetail, type InterviewDetail } from "@/lib/api";
+import {
+  fetchInterviewDetail,
+  updateInterviewDecision,
+  type InterviewDecision,
+  type InterviewDetail,
+} from "@/lib/api";
 
 const ESTADO_VARIANT: Record<InterviewDetail["postulacion"]["estado"], "outline" | "default" | "destructive"> = {
   pendiente: "outline",
   aprobado: "default",
   rechazado: "destructive",
+};
+
+const DECISION_VARIANT: Record<InterviewDecision, "outline" | "default" | "destructive"> = {
+  pendiente: "outline",
+  avanza: "default",
+  no_avanza: "destructive",
+};
+
+const DECISION_LABEL: Record<InterviewDecision, string> = {
+  pendiente: "Pendiente",
+  avanza: "Avanza a la siguiente etapa",
+  no_avanza: "No avanza",
 };
 
 function formatDateTime(value: string) {
@@ -23,6 +40,7 @@ export function InterviewDetailPage() {
   const [interview, setInterview] = useState<InterviewDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingDecision, setUpdatingDecision] = useState(false);
 
   useEffect(() => {
     if (!accessToken || !id) return;
@@ -31,6 +49,26 @@ export function InterviewDetailPage() {
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, [accessToken, id]);
+
+  const handleDecision = async (decision: InterviewDecision) => {
+    if (!accessToken || !id || !interview) return;
+    const confirmar = window.confirm(
+      decision === "avanza"
+        ? "¿Confirma que este candidato avanza a la siguiente etapa?"
+        : "¿Confirma que este candidato no avanza?",
+    );
+    if (!confirmar) return;
+
+    setUpdatingDecision(true);
+    try {
+      await updateInterviewDecision(accessToken, Number(id), decision);
+      setInterview({ ...interview, decision });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setUpdatingDecision(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -62,6 +100,32 @@ export function InterviewDetailPage() {
               <p className="whitespace-pre-line text-sm">
                 {interview.postulacion.resultado_filtro || "Sin resultado registrado."}
               </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Decisión
+                <Badge variant={DECISION_VARIANT[interview.decision]}>
+                  {DECISION_LABEL[interview.decision]}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex gap-2">
+              <Button
+                disabled={updatingDecision || interview.decision === "avanza"}
+                onClick={() => handleDecision("avanza")}
+              >
+                Avanza a la siguiente etapa
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={updatingDecision || interview.decision === "no_avanza"}
+                onClick={() => handleDecision("no_avanza")}
+              >
+                No avanza
+              </Button>
             </CardContent>
           </Card>
 
