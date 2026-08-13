@@ -3,8 +3,7 @@ import { useBlocker } from "react-router";
 import { useSocket } from "../hooks/useSocket";
 import { useMicrophone } from "../hooks/useMicrophone";
 import { QuestionDisplay } from "../components/QuestionDisplay";
-import { TextAnswerForm } from "../components/TextAnswerForm";
-import { VoiceRecorder } from "../components/VoiceRecorder";
+import { MessageComposer } from "../components/MessageComposer";
 import { useAuth } from "../context/AuthContext";
 import {
   AlertDialog,
@@ -157,22 +156,17 @@ export function InterviewPage() {
       />
 
       {!isFinished && (
-        <>
-          <TextAnswerForm
-            question={question}
-            onQuestionChange={setQuestion}
-            onSubmit={handleSubmit}
-          />
-
-          <VoiceRecorder
-            stream={stream}
-            error={error}
-            requestPermission={requestPermission}
-            isRecording={isRecording}
-            startRecording={startRecording}
-            stopRecording={stopRecording}
-          />
-        </>
+        <MessageComposer
+          question={question}
+          onQuestionChange={setQuestion}
+          onSubmit={handleSubmit}
+          stream={stream}
+          error={error}
+          requestPermission={requestPermission}
+          isRecording={isRecording}
+          startRecording={startRecording}
+          stopRecording={stopRecording}
+        />
       )}
 
       {isFinished && postulacionesRestantes.length > 0 && (
