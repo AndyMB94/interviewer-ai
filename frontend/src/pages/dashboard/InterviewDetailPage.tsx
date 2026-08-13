@@ -1,9 +1,21 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/context/AuthContext";
 import {
   fetchInterviewDetail,
@@ -41,6 +53,7 @@ export function InterviewDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingDecision, setUpdatingDecision] = useState(false);
+  const [pendingDecision, setPendingDecision] = useState<InterviewDecision | null>(null);
 
   useEffect(() => {
     if (!accessToken || !id) return;
@@ -50,15 +63,10 @@ export function InterviewDetailPage() {
       .finally(() => setLoading(false));
   }, [accessToken, id]);
 
-  const handleDecision = async (decision: InterviewDecision) => {
-    if (!accessToken || !id || !interview) return;
-    const confirmar = window.confirm(
-      decision === "avanza"
-        ? "¿Confirma que este candidato avanza a la siguiente etapa?"
-        : "¿Confirma que este candidato no avanza?",
-    );
-    if (!confirmar) return;
-
+  const confirmDecision = async () => {
+    if (!accessToken || !id || !interview || !pendingDecision) return;
+    const decision = pendingDecision;
+    setPendingDecision(null);
     setUpdatingDecision(true);
     try {
       await updateInterviewDecision(accessToken, Number(id), decision);
@@ -77,7 +85,13 @@ export function InterviewDetailPage() {
         Volver a postulaciones
       </Button>
 
-      {loading && <p className="text-muted-foreground">Cargando...</p>}
+      {loading && (
+        <div className="space-y-4">
+          <Skeleton className="h-7 w-1/3" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-40 w-full" />
+        </div>
+      )}
       {error && <p className="text-destructive">{error}</p>}
 
       {!loading && !error && interview && (
@@ -112,20 +126,21 @@ export function InterviewDetailPage() {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex gap-2">
+            <CardContent className="flex items-center gap-2">
               <Button
                 disabled={updatingDecision || interview.decision === "avanza"}
-                onClick={() => handleDecision("avanza")}
+                onClick={() => setPendingDecision("avanza")}
               >
                 Avanza a la siguiente etapa
               </Button>
               <Button
                 variant="destructive"
                 disabled={updatingDecision || interview.decision === "no_avanza"}
-                onClick={() => handleDecision("no_avanza")}
+                onClick={() => setPendingDecision("no_avanza")}
               >
                 No avanza
               </Button>
+              {updatingDecision && <Spinner />}
             </CardContent>
           </Card>
 
@@ -154,6 +169,30 @@ export function InterviewDetailPage() {
           </Card>
         </>
       )}
+
+      <AlertDialog
+        open={pendingDecision !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDecision(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingDecision === "avanza" ? "¿Avanza a la siguiente etapa?" : "¿No avanza?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDecision === "avanza"
+                ? "Confirma que este candidato avanza a la siguiente etapa."
+                : "Confirma que este candidato no avanza."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDecision}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

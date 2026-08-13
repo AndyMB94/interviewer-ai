@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/context/AuthContext";
 import { fetchMisPuestos, type Puesto } from "@/lib/api";
@@ -22,7 +23,13 @@ export function PuestosPage() {
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Mis puestos</h1>
 
-      {loading && <p className="text-muted-foreground">Cargando...</p>}
+      {loading && (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-10 w-full" />
+          ))}
+        </div>
+      )}
       {error && <p className="text-destructive">{error}</p>}
       {!loading && !error && puestos.length === 0 && (
         <p className="text-muted-foreground">Todavía no publicaste ningún puesto.</p>

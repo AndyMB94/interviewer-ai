@@ -6,6 +6,16 @@ import { QuestionDisplay } from "../components/QuestionDisplay";
 import { TextAnswerForm } from "../components/TextAnswerForm";
 import { VoiceRecorder } from "../components/VoiceRecorder";
 import { useAuth } from "../context/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { fetchMisPostulacionesPendientes, type MiPostulacion } from "@/lib/api";
@@ -73,18 +83,6 @@ export function InterviewPage() {
   const entrevistaActivaSinTerminar = hasStarted && !isFinished;
 
   const blocker = useBlocker(entrevistaActivaSinTerminar);
-
-  useEffect(() => {
-    if (blocker.state !== "blocked") return;
-    const confirmarSalida = window.confirm(
-      "¿Seguro que quiere salir? Va a perder el progreso de esta entrevista.",
-    );
-    if (confirmarSalida) {
-      blocker.proceed();
-    } else {
-      blocker.reset();
-    }
-  }, [blocker]);
 
   useEffect(() => {
     if (!entrevistaActivaSinTerminar) return;
@@ -194,6 +192,32 @@ export function InterviewPage() {
           </CardContent>
         </Card>
       )}
+
+      <AlertDialog
+        open={blocker.state === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && blocker.state === "blocked") blocker.reset();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Seguro que quiere salir?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Va a perder el progreso de esta entrevista.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (blocker.state === "blocked") blocker.proceed();
+              }}
+            >
+              Salir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

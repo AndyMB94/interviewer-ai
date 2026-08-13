@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/context/AuthContext";
 
 export function LoginPage() {
@@ -32,7 +33,7 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-65px)] items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
         <CardHeader className="items-center text-center">
           <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <KeyRound className="h-6 w-6 text-primary" />
@@ -71,6 +72,7 @@ export function LoginPage() {
             {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Button type="submit" disabled={submitting}>
+              {submitting && <Spinner data-icon="inline-start" />}
               {submitting ? "Ingresando..." : "Ingresar"}
             </Button>
           </form>

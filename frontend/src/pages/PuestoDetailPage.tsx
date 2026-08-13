@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { fetchPuesto, postularA, type Puesto } from "@/lib/api";
 
 const MODALIDAD_LABEL: Record<Puesto["modalidad"], string> = {
@@ -64,7 +66,22 @@ export function PuestoDetailPage() {
   };
 
   if (loading) {
-    return <p className="mx-auto max-w-2xl p-4 pt-8 text-center text-muted-foreground">Cargando...</p>;
+    return (
+      <div className="mx-auto max-w-2xl space-y-4 p-4 pt-8">
+        <Skeleton className="h-8 w-32" />
+        <Card>
+          <CardHeader className="gap-2">
+            <Skeleton className="h-7 w-2/3" />
+            <Skeleton className="h-5 w-24" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-2/3" />
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (loadError || !puesto) {
@@ -177,6 +194,7 @@ export function PuestoDetailPage() {
               {submitError && <p className="text-sm text-destructive">{submitError}</p>}
 
               <Button type="submit" disabled={submitting}>
+                {submitting && <Spinner data-icon="inline-start" />}
                 {submitting ? "Enviando..." : "Enviar postulación"}
               </Button>
             </form>

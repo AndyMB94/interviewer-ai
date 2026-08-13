@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/context/AuthContext";
 import { fetchMisPostulaciones, type Postulacion } from "@/lib/api";
@@ -30,7 +31,13 @@ export function PostulacionesPage() {
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Postulaciones</h1>
 
-      {loading && <p className="text-muted-foreground">Cargando...</p>}
+      {loading && (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-10 w-full" />
+          ))}
+        </div>
+      )}
       {error && <p className="text-destructive">{error}</p>}
       {!loading && !error && postulaciones.length === 0 && (
         <p className="text-muted-foreground">Todavía no recibiste postulaciones.</p>
