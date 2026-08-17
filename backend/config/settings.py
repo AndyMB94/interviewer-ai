@@ -31,7 +31,14 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "backend", "195.26.250.245", "interviewer.andymallcco.dev"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "backend",
+    "195.26.250.245",
+    "interviewer.andymallcco.dev",
+    "vacantia.andymallcco.dev",
+]
 
 
 # Application definition
@@ -176,6 +183,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8080",
     "https://interviewer.andymallcco.dev",
+    "https://vacantia.andymallcco.dev",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
