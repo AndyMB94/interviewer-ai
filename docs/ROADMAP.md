@@ -103,6 +103,29 @@ Fases de menor a mayor complejidad, subdivididas en pasos chicos. La regla: cada
 - [x] 2.3 Nginx como reverse proxy + certificado SSL (Let's Encrypt / Certbot) delante de todo.
 - [x] 2.4 Configurar logging de Django/Celery/Node a stdout (no a archivos), verificar que `docker compose logs <servicio>` muestre los mensajes correctamente.
 
+**Fase 3 — Migrar el dominio a `vacantia.andymallcco.dev` (agregado 2026-08-17)**
+
+**Contexto:** el producto se llama Vacantia desde el pivote (2026-08-06, ver DECISIONS.md), pero el dominio en producción sigue siendo `interviewer.andymallcco.dev` — quedó pendiente de aplicar. El dominio nuevo vive en el mismo VPS, mismo Nginx, mismos seis contenedores — no es una migración de infraestructura, es apuntar un dominio nuevo a lo que ya existe y avisarle a cada pieza (Django, el gateway, el frontend) cuál es su origen público.
+
+**Decisión — convivencia con redirect, no corte abrupto:** `interviewer.andymallcco.dev` sigue funcionando durante la migración (agregado, no reemplazado, en `ALLOWED_HOSTS`/`CORS_ALLOWED_ORIGINS`/Nginx) hasta que todo esté verificado end-to-end en el dominio nuevo. Una vez confirmado, Nginx redirige el dominio viejo con un 301 permanente hacia el nuevo — así nadie con el link viejo (bookmarks, el propio README de portafolio en otros lados) se queda con un enlace roto, y queda claro cuál es el dominio "real" (buscadores y navegadores no se confunden con dos URLs sirviendo el mismo contenido).
+
+**Dónde vive cada pieza del dominio (relevado antes de tocar nada):**
+- **En el repo (código):** `backend/config/settings.py` — `ALLOWED_HOSTS` y `CORS_ALLOWED_ORIGINS` tienen `interviewer.andymallcco.dev` hardcodeado.
+- **Fuera del repo, solo en el VPS (no están en git):** un `.env` en la raíz del proyecto en el servidor con `PUBLIC_DJANGO_URL`/`CORS_ORIGINS` (los usa `ws-gateway`); un `frontend/.env` en el servidor con `VITE_API_URL`/`VITE_GATEWAY_URL` — estos se hornean **dentro del bundle de JS al momento del build** (Vite), no se leen en tiempo de ejecución, así que cualquier cambio ahí exige reconstruir el frontend después.
+- **El Nginx del sistema** (no dockerizado, corre directo en el VPS, fuera del repo) — necesita un `server_name` nuevo y su propio certificado SSL.
+- **El DNS en Porkbun** — hoy solo tiene el registro A de `interviewer.andymallcco.dev`.
+
+- [ ] 3.1 DNS (Porkbun): agregar registro A `vacantia.andymallcco.dev` → misma IP del VPS que ya usa `interviewer.andymallcco.dev` (`195.26.250.245`). Esperar propagación antes de seguir (puede tardar de minutos a un par de horas).
+- [ ] 3.2 Nginx + Certbot (en el VPS): certificado SSL nuevo para el dominio nuevo (`certbot --nginx -d vacantia.andymallcco.dev`), y un `server_name`/`location` que apunten a los mismos puertos que ya usa `interviewer.andymallcco.dev` (`/` → frontend 8080, `/socket.io/` → gateway 3000 con headers de upgrade, `/media/` y `/api/` → backend 8000) — mismo patrón documentado en DECISIONS.md, solo con el `server_name` nuevo.
+- [ ] 3.3 Backend: `settings.py` — agregar `vacantia.andymallcco.dev` a `ALLOWED_HOSTS` y a `CORS_ALLOWED_ORIGINS`, **sin borrar** las entradas de `interviewer.andymallcco.dev` todavía (conviven hasta 3.7).
+- [ ] 3.4 VPS: actualizar `PUBLIC_DJANGO_URL` y `CORS_ORIGINS` en el `.env` raíz del servidor a `https://vacantia.andymallcco.dev`, reiniciar `ws-gateway` (`docker compose up -d ws-gateway`).
+- [ ] 3.5 VPS: actualizar `VITE_API_URL`/`VITE_GATEWAY_URL` en `frontend/.env` del servidor a `https://vacantia.andymallcco.dev`, y **reconstruir** el frontend (`docker compose up -d --build frontend`) — sin el rebuild, el bundle sigue apuntando al dominio viejo aunque el `.env` ya esté actualizado.
+- [ ] 3.6 Verificación end-to-end completa en `https://vacantia.andymallcco.dev`, con `interviewer.andymallcco.dev` todavía activo en paralelo: postular con CV real, login, entrevista completa por texto **y por voz** (confirma que el WebSocket del gateway conecta bien contra el dominio nuevo, no solo HTTP), panel de reclutador (puestos, postulaciones, detalle de entrevista).
+- [ ] 3.7 Una vez confirmado 3.6: Nginx — `interviewer.andymallcco.dev` pasa a redirigir (301 permanente) hacia `https://vacantia.andymallcco.dev` en vez de servir la app. `settings.py` puede dejar la entrada vieja en `ALLOWED_HOSTS`/`CORS_ALLOWED_ORIGINS` (no molesta, y el redirect de Nginx nunca deja que una request llegue a Django por ese host de todas formas) o quitarla — decidir en el momento según se sienta más prolijo.
+- [ ] 3.8 Docs: `README.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` (nueva entrada con la fecha de la migración) — reemplazar las menciones de `interviewer.andymallcco.dev` como el dominio activo por `vacantia.andymallcco.dev`, dejando una nota de que el dominio viejo redirige.
+
+**Fuera de alcance acá, explícitamente:** renombrar el repositorio de GitHub (`interviewer-ai` → algo con "vacantia") — es un cambio aparte, no depende de este ni bloquea nada del dominio, se evalúa después si hace falta.
+
 ## Mejoras post-lanzamiento (agregado 2026-08-05, no estaba previsto en el roadmap original)
 
 - [x] P.1 Reescribir el system prompt del LLM en español neutro (sin voseo rioplatense).
