@@ -390,6 +390,21 @@ También se decidió explícitamente **dónde va sidebar y dónde no**: las pant
 
 ---
 
+## 2026-08-17 Migración de dominio a `vacantia.andymallcco.dev`
+
+**Contexto:** el producto se llama Vacantia desde el pivote (2026-08-06), pero el dominio de producción seguía siendo `interviewer.andymallcco.dev` — quedó pendiente de aplicar hasta ahora. Al hacer la migración, salieron a la luz tres problemas reales que no tenían que ver con el dominio en sí, sino con que el admin de Django nunca se había probado de verdad a través del dominio público en producción:
+1. El Nginx de producción nunca tuvo `location /admin/` — cualquier pedido a `/admin/` caía en el frontend (SPA), no en Django.
+2. Tampoco tenía `location /static/` — sin eso, el admin cargaba sin ningún CSS/JS.
+3. `settings.py` nunca tuvo `CSRF_TRUSTED_ORIGINS` — el login del admin (que usa sesión + CSRF, a diferencia del resto de la API que es JWT puro) fallaba con 403 por HTTPS sin ese setting, en cualquier dominio.
+
+**Decisión — convivencia con redirect, no corte abrupto:** los dos dominios (`interviewer.andymallcco.dev` y `vacantia.andymallcco.dev`) convivieron mientras se verificaba todo end-to-end (DNS, SSL, `ALLOWED_HOSTS`/`CORS_ALLOWED_ORIGINS`, variables del gateway y del frontend) — recién después de confirmar que el dominio nuevo funcionaba de punta a punta (postular, filtro de CV, cuenta automática, email, login, entrevista por texto y voz, panel de reclutador) se cambió `interviewer.andymallcco.dev` a redirigir (301, preservando la ruta) hacia el nuevo. Evita que cualquier link viejo (bookmarks) quede roto.
+
+**Decisión — `/static/` proxyeado a Django es un parche temporal, no la solución final:** el `location /static/` que se agregó a Nginx (`proxy_pass` a Django) solo funciona porque `DEBUG=True` hace que `manage.py runserver` sirva los estáticos él mismo — algo que Django mismo advierte que no es apto para producción. La solución de fondo (`DEBUG=False` real, `collectstatic`, Nginx sirviendo estáticos directo con `alias`, y `gunicorn` en vez de `runserver`) queda detallada como Infra Fase 4 en ROADMAP.md, sin bloquear esta migración.
+
+**Por qué importa dejarlo escrito:** encontrar `DEBUG=True` hardcodeado en producción durante una tarea de infraestructura no relacionada es la prueba de que nunca se había ejercitado el admin por el dominio público — buen recordatorio de que "funciona en el flujo principal" no significa "está bien configurado en todos los caminos".
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
