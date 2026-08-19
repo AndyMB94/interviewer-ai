@@ -20,6 +20,9 @@ build/
 # Audio generado en runtime (TTS)
 backend/media/
 
+# Estáticos generados por collectstatic (Infra Fase 4) — se regeneran en cada arranque del contenedor
+backend/staticfiles/
+
 # OS / editor
 .DS_Store
 

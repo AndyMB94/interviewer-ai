@@ -15,16 +15,19 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from django.views.static import serve
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('apps.interviews.urls')),
     path('api/auth/', include('apps.accounts.urls')),
     path('api/', include('apps.recruiting.urls')),
+    # django.conf.urls.static.static() se niega a registrar esto si DEBUG=False (por diseño de
+    # Django, para no invitar a servir media así en producciones grandes) -- acá se usa la vista
+    # de abajo directo, sin ese guard, porque Nginx ya proxya /media/ hasta Django igual que
+    # /api/, /admin/ y /static/ (ver DECISIONS.md, Infra Fase 3/4) y el volumen de tráfico de este
+    # proyecto no justifica montar un servidor de archivos aparte todavía.
+    path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
