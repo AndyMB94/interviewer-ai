@@ -148,11 +148,13 @@ _Infra Fase 4 completa — producción corre con `DEBUG=False`, estáticos servi
 
 **Fase 5 — Baja definitiva de `interviewer.andymallcco.dev` (agregado 2026-08-19):** tras confirmar que `vacantia.andymallcco.dev` funciona de punta a punta (Fase 3) y que el hardening de producción está completo (Fase 4), se decidió no mantener el dominio viejo ni como redirect — un solo dominio público, sin superficie extra que mantener (certificado, DNS, bloque de Nginx).
 - [x] 5.1 Backend: `interviewer.andymallcco.dev` removido de `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS` y `CSRF_TRUSTED_ORIGINS` en `settings.py` — queda solo `vacantia.andymallcco.dev`.
-- [ ] 5.2 VPS: `.env` raíz — `CORS_ORIGINS` queda solo con `https://vacantia.andymallcco.dev` (hoy tiene los dos separados por coma). `ws-gateway` reiniciado.
-- [ ] 5.3 VPS: Nginx — se quita el `server` block de `interviewer.andymallcco.dev` (el que redirige) de `sites-available`/`sites-enabled`, `nginx -t` + reload.
-- [ ] 5.4 VPS: `certbot delete --cert-name interviewer.andymallcco.dev` — se da de baja el certificado ya sin `server` block que lo use.
-- [ ] 5.5 Porkbun: se borra el registro DNS (A) de `interviewer.andymallcco.dev`.
-- [ ] 5.6 Verificación: `interviewer.andymallcco.dev` deja de resolver (o de responder) — confirmar con `curl`/navegador que ya no sirve nada, y que `vacantia.andymallcco.dev` sigue funcionando igual.
+- [x] 5.2 VPS: `.env` raíz — `CORS_ORIGINS` actualizado a solo `https://vacantia.andymallcco.dev`, confirmado con `printenv` dentro del contenedor tras reiniciar `ws-gateway`.
+- [x] 5.3 VPS: Nginx — `server` block de `interviewer.andymallcco.dev` eliminado de `sites-available`/`sites-enabled`, `nginx -t` exitoso, reload aplicado.
+- [x] 5.4 VPS: `certbot delete --cert-name interviewer.andymallcco.dev` — certificado dado de baja.
+- [x] 5.5 Porkbun: registro DNS (A) de `interviewer.andymallcco.dev` eliminado desde el panel web.
+- [x] 5.6 Verificación: `curl -v https://interviewer.andymallcco.dev/` ya no llega al VPS — cae en el `CNAME *.andymallcco.dev → pixie.porkbun.com` (comodín de Porkbun para subdominios sin registro propio) y falla el handshake TLS (esa página de parking no tiene certificado para el hostname). `vacantia.andymallcco.dev` confirmado funcionando normal en el navegador tras el cambio.
+
+_Infra Fase 5 completa — `vacantia.andymallcco.dev` es el único dominio público del proyecto; `interviewer.andymallcco.dev` fue dado de baja del todo (Nginx, certificado, DNS), sin dejar redirect._
 
 ## Mejoras post-lanzamiento (agregado 2026-08-05, no estaba previsto en el roadmap original)
 
