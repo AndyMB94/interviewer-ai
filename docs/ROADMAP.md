@@ -146,6 +146,14 @@ _Infra Fase 3 completa — `vacantia.andymallcco.dev` es el dominio de producci�
 
 _Infra Fase 4 completa — producción corre con `DEBUG=False`, estáticos servidos por Nginx desde `/srv/vacantia-static` (collectstatic, sin pasar por Django), y gunicorn en vez de `runserver`._
 
+**Fase 5 — Baja definitiva de `interviewer.andymallcco.dev` (agregado 2026-08-19):** tras confirmar que `vacantia.andymallcco.dev` funciona de punta a punta (Fase 3) y que el hardening de producción está completo (Fase 4), se decidió no mantener el dominio viejo ni como redirect — un solo dominio público, sin superficie extra que mantener (certificado, DNS, bloque de Nginx).
+- [x] 5.1 Backend: `interviewer.andymallcco.dev` removido de `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS` y `CSRF_TRUSTED_ORIGINS` en `settings.py` — queda solo `vacantia.andymallcco.dev`.
+- [ ] 5.2 VPS: `.env` raíz — `CORS_ORIGINS` queda solo con `https://vacantia.andymallcco.dev` (hoy tiene los dos separados por coma). `ws-gateway` reiniciado.
+- [ ] 5.3 VPS: Nginx — se quita el `server` block de `interviewer.andymallcco.dev` (el que redirige) de `sites-available`/`sites-enabled`, `nginx -t` + reload.
+- [ ] 5.4 VPS: `certbot delete --cert-name interviewer.andymallcco.dev` — se da de baja el certificado ya sin `server` block que lo use.
+- [ ] 5.5 Porkbun: se borra el registro DNS (A) de `interviewer.andymallcco.dev`.
+- [ ] 5.6 Verificación: `interviewer.andymallcco.dev` deja de resolver (o de responder) — confirmar con `curl`/navegador que ya no sirve nada, y que `vacantia.andymallcco.dev` sigue funcionando igual.
+
 ## Mejoras post-lanzamiento (agregado 2026-08-05, no estaba previsto en el roadmap original)
 
 - [x] P.1 Reescribir el system prompt del LLM en español neutro (sin voseo rioplatense).

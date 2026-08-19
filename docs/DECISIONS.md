@@ -403,6 +403,12 @@ También se decidió explícitamente **dónde va sidebar y dónde no**: las pant
 
 **Por qué importa dejarlo escrito:** encontrar `DEBUG=True` hardcodeado en producción durante una tarea de infraestructura no relacionada es la prueba de que nunca se había ejercitado el admin por el dominio público — buen recordatorio de que "funciona en el flujo principal" no significa "está bien configurado en todos los caminos".
 
+## 2026-08-19 Baja definitiva de `interviewer.andymallcco.dev`
+
+**Contexto:** desde la migración de dominio (2026-08-17), `interviewer.andymallcco.dev` quedó como redirect 301 permanente hacia `vacantia.andymallcco.dev`, decisión tomada explícitamente para no romper links/bookmarks viejos mientras se terminaba de verificar el dominio nuevo (Fase 3) y el hardening de producción (Fase 4). Con ambas fases cerradas y verificadas end-to-end, se decidió dar de baja el dominio viejo del todo en vez de mantenerlo como redirect indefinidamente.
+
+**Decisión:** un solo dominio público, `vacantia.andymallcco.dev`. Se elimina `interviewer.andymallcco.dev` de `ALLOWED_HOSTS`/`CORS_ALLOWED_ORIGINS`/`CSRF_TRUSTED_ORIGINS` en `settings.py`, del `.env` del gateway, del Nginx del VPS (se quita el `server` block que redirigía), del certificado SSL (`certbot delete`), y del registro DNS en Porkbun. El costo de mantener el redirect era bajo, pero no había ninguna razón para seguir pagándolo (nulo tráfico externo real al link viejo, proyecto de portafolio personal, no un producto con usuarios externos dependientes del dominio anterior) — un solo dominio es más simple de razonar y mantener que dos, sin beneficio real a cambio.
+
 ---
 
 ## Pendientes por decidir

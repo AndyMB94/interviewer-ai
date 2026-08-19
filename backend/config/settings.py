@@ -36,7 +36,6 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "backend",
     "195.26.250.245",
-    "interviewer.andymallcco.dev",
     "vacantia.andymallcco.dev",
 ]
 
@@ -183,7 +182,6 @@ JWT_AUTH_COOKIE_SECURE = not DEBUG
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8080",
-    "https://interviewer.andymallcco.dev",
     "https://vacantia.andymallcco.dev",
 ]
 CORS_ALLOW_CREDENTIALS = True
@@ -191,7 +189,6 @@ CORS_ALLOW_CREDENTIALS = True
 # Exigido por Django (desde la 4.0) para aceptar POSTs por HTTPS con verificación de Origin,
 # como el login del admin — sin esto, cualquier dominio falla con "CSRF verification failed".
 CSRF_TRUSTED_ORIGINS = [
-    "https://interviewer.andymallcco.dev",
     "https://vacantia.andymallcco.dev",
 ]
 
