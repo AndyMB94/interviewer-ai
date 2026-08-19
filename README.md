@@ -1,4 +1,4 @@
-# Vacantia (antes Interviewer AI)
+# Vacantia
 
 Plataforma de reclutamiento con IA: un reclutador publica un puesto, un candidato postula con su CV sin necesitar cuenta, un filtro con IA evalúa el fit contra el puesto, y si aprueba se le crea una cuenta automáticamente para que haga una entrevista técnica por voz con IA — contextualizada a ese puesto — vía WebSockets (voz → texto → LLM → voz, en tiempo real).
 

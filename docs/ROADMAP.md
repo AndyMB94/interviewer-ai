@@ -137,7 +137,7 @@ _Infra Fase 3 completa — `vacantia.andymallcco.dev` es el dominio de producci�
 
 **Tercer hallazgo (al intentar loguearse en el admin ya con estilos, tras el parche de `/static/`):** `Forbidden (403) — CSRF verification failed. Origin checking failed - https://vacantia.andymallcco.dev does not match any trusted origins.` Causa: `settings.py` nunca tuvo `CSRF_TRUSTED_ORIGINS` — desde Django 4.0, ese setting es obligatorio para aceptar POSTs por HTTPS con verificación de Origin (como el login del admin, que usa sesión + CSRF, a diferencia del resto de la API que es JWT puro). Mismo patrón que los dos hallazgos anteriores: el admin nunca se había probado de verdad por el dominio público, así que esto nunca hizo falta hasta ahora. Se agregó `CSRF_TRUSTED_ORIGINS = ["https://interviewer.andymallcco.dev", "https://vacantia.andymallcco.dev"]` a `settings.py` — a diferencia de los otros dos, este **sí es la solución final**, no un parche temporal (no depende de `DEBUG` ni de Nginx). 105/105 tests pasando. **Confirmado en el navegador:** login al admin en `https://vacantia.andymallcco.dev/admin/` funciona de punta a punta, con estilos correctos.
 
-**Fase 4 — Hardening de producción (agregado 2026-08-17, futura, no bloquea la migración de dominio):**
+**Fase 4 — Hardening de producción (agregado 2026-08-17, completa):**
 - [x] 4.1 `DEBUG = os.environ.get("DEBUG", "False") == "True"` en `settings.py` — `False` por default (seguro si falta la variable), `True` explícito en `backend/.env`/`.env.example` para local/dev. **Hallazgo real al revisar qué más asumía `DEBUG=True`:** `config/urls.py` tenía `if settings.DEBUG: urlpatterns += static(...)` para servir `/media/` — y el helper `static()` de Django además tiene su **propio** chequeo interno de `DEBUG` (se niega a registrar la URL aunque se saque el `if` de afuera). Con `DEBUG=False` en producción, `/media/` iba a devolver 404 pese a que Nginx ya lo proxya a Django. Se reemplazó por `path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT})` usando `django.views.static.serve` directo (sin pasar por el helper `static()`), documentado como decisión deliberada (no un shortcut) porque Nginx ya proxya `/media/` igual que `/api/`/`/admin/`/`/static/`, y el volumen de este proyecto no justifica un servidor de archivos aparte. 105/105 tests pasando.
 - [x] 4.2 `STATIC_ROOT = BASE_DIR / "staticfiles"` en `settings.py`. `backend/Dockerfile` — `CMD` corre `collectstatic --noinput` antes de arrancar el servidor. `docker-compose.yml` — bind mount `./backend/staticfiles:/app/staticfiles` en el servicio `backend` (no `celery-worker`, no sirve HTTP) — a diferencia de `media_data` (volumen con nombre de Docker), acá hace falta un **bind mount a una carpeta real del host**, porque Nginx corre fuera de Docker y necesita una ruta de filesystem real para el `alias` de 4.3. `backend/staticfiles/` agregado a `.gitignore` (se regenera en cada arranque). Probado en Docker local: 157 archivos copiados (`admin` + `rest_framework`), visibles en `backend/staticfiles/` del host.
 - [x] 4.3 Nginx: `location /static/` en `vacantia.andymallcco.dev` pasa de `proxy_pass` a `alias /srv/vacantia-static/` — sirve la carpeta de `collectstatic` directo, sin pasar por Django. **Decisión — carpeta fuera de `/root`, no `chmod o+x /root`:** el proyecto vive en `/root/interviewer-ai`, y `/root` es `drwx------` — `www-data` (usuario de Nginx) no puede ni entrar ahí. Se evaluó `chmod o+x /root` (rápido, un comando) contra bindear a una carpeta fuera de `/root` (ej. `/srv/vacantia-static/`, `755`) parametrizando la ruta en `docker-compose.yml` (`STATIC_HOST_PATH`, con default `./backend/staticfiles` para no romper local). Se eligió la segunda: aflojar `/root` es una decisión que se acumula — si el VPS aloja otro proyecto más adelante, esa apertura queda ahí afectando a cualquier cosa nueva bajo `/root`, no solo a este proyecto. La carpeta en `/srv` mantiene el radio de exposición acotado a un solo directorio pensado para esto. Confirmado en el navegador: admin con estilos correctos, servido por Nginx directo.
@@ -214,16 +214,16 @@ _Infra Fase 5 completa — `vacantia.andymallcco.dev` es el único dominio públ
 
 **Contexto:** el proyecto deja de ser solo una herramienta de práctica de entrevistas y pasa a ser un embudo de reclutamiento completo: una empresa publica un puesto, los candidatos postulan mandando su CV (sin cuenta todavía), un filtro con IA evalúa el fit contra el puesto, y **solo si aprueba** se le crea una cuenta automáticamente y se le mandan las credenciales por correo — recién ahí hace la entrevista de voz con la IA. Un reclutador tiene su propio panel para ver los postulantes de sus puestos y los resultados de sus entrevistas. Ver `docs/DECISIONS.md` para el detalle de cada decisión tomada acá.
 
-**Nombre del proyecto:** se decidió renombrar a **Vacantia** (pendiente de aplicar en README/docs/dominio — se hace cuando se llegue a esa parte, no bloquea el trabajo de backend).
+**Nombre del proyecto:** se decidió renombrar a **Vacantia**. Aplicado en README/docs desde entonces, y en el dominio de producción desde Infra Fase 3 (`vacantia.andymallcco.dev`) — el dominio anterior fue dado de baja del todo en Infra Fase 5.
 
-### Backend — Fase 8: Autenticación y roles (arranca ahora)
+### Backend — Fase 8: Autenticación y roles (completa)
 
 - [x] 8.1 Instalar `djangorestframework-simplejwt` + `django-cors-headers`; configurar autenticación híbrida (JWT de acceso en memoria del lado del cliente, refresh token en cookie `httpOnly`).
 - [x] 8.2 Crear los 3 Groups de Django (`Administrador`, `Reclutador`, `Postulante`) vía migración de datos.
 - [x] 8.3 Nueva app `apps/accounts`: modelo `ApplicantProfile` (uno a uno con el usuario — tipo y número de documento, nacionalidad, fecha de nacimiento, sexo, teléfono, departamento/provincia/distrito) + endpoints `login`/`refresh`/`logout`.
 - [x] 8.4 Servicio de ubigeos (`departamento`/`provincia`/`distrito` seleccionables) consumiendo `free.e-api.net.pe/ubigeos.json` como fuente, cacheado del lado del backend (no se le pega en vivo por cada request) — el frontend consume un endpoint propio, no la API externa directo.
 
-### Backend — Fase 9: Puestos y postulaciones (futura)
+### Backend — Fase 9: Puestos y postulaciones (completa)
 
 _9.1-9.3 desplegadas y verificadas en producción el 2026-08-10 (rutas, `pypdf` instalando bien en el contenedor, volumen de `media/` compartido con `celery-worker`, y llamada real a DeepSeek desde el worker en producción, todo confirmado con una postulación de prueba end-to-end)._
 
@@ -288,7 +288,7 @@ _Frontend 5.1-5.4 + Gateway 5.1 desplegados y verificados en producción el 2026
 
 _9.7 completo, probado end-to-end en local: selector con dos postulaciones aprobadas, elección respetada (verificado en la base de datos que la `Interview` quedó ligada al puesto elegido, no al otro), y auto-selección sin selector al quedar una sola pendiente. 93/93 tests del backend pasando._
 
-### Frontend — Fase 6: Panel de reclutador (futura)
+### Frontend — Fase 6: Panel de reclutador (completa)
 
 **Diseño:** acá sí va sidebar (componente `Sidebar` de shadcn/ui) — a diferencia de las pantallas del candidato (ver P.5), el dashboard tiene varias vistas reales (puestos, postulaciones, detalle de entrevista) que se benefician de navegación lateral. Tablas con el componente `Table` de shadcn, `Badge` para los estados (pendiente/aprobado/rechazado, con color por estado), y algún gráfico simple (postulaciones por estado) con el componente `Chart` de shadcn si aporta valor real — no decorativo. **Nota (6.2):** se evaluó `@tanstack/react-table` para sorting/paginación pero la versión instalada (9.1.2) resultó ser una reescritura mayor con una API completamente distinta a la v8 estable documentada (no exporta `useReactTable`/`getCoreRowModel`/`flexRender`) — se descartó la dependencia y las tablas se renderizan con `.map()` plano sobre los primitivos `Table` de shadcn, ya que hoy no se usa sorting/paginación real. Si se necesita más adelante, reinstalar fijando `@tanstack/react-table@^8` explícitamente.
 
@@ -301,7 +301,7 @@ _9.7 completo, probado end-to-end en local: selector con dos postulaciones aprob
 
 _9.8 + 6.3 probados end-to-end en local: reclutador dueño ve la transcripción completa de una postulación de prueba con entrevista finalizada._
 
-### Backend 9.9 + Frontend 7.5: página de detalle de puesto, formato real de oferta, y categorías (agregado 2026-08-13, futura)
+### Backend 9.9 + Frontend 7.5: página de detalle de puesto, formato real de oferta, y categorías (agregado 2026-08-13, completa)
 
 **Contexto:** hoy `ApplyPage` muestra el título/descripción/requisitos completos de cada puesto directo en la card de la grilla — no hay una página de detalle propia, y `Puesto` no tiene categoría/área. Al revisar cómo se ven las ofertas reales (LinkedIn, Computrabajo), surgieron tres mejoras encadenadas.
 
@@ -327,7 +327,7 @@ _Probado end-to-end en local: filtro por categoría, página de detalle con las 
 
 **Confirmado explícitamente, no cambia:** el proyecto sigue siendo para **una sola empresa** (varios reclutadores propios, no un marketplace multi-empresa tipo LinkedIn Jobs) — eso sería un cambio de arquitectura mayor (modelo `Empresa`, aislamiento entre tenants), no una feature más, y no está planeado.
 
-### Backend 9.10 + Frontend 6.4: avance a la siguiente etapa y vacantes por puesto (agregado 2026-08-13, futura — revisado el mismo día tras aclarar el alcance real del producto)
+### Backend 9.10 + Frontend 6.4: avance a la siguiente etapa y vacantes por puesto (agregado 2026-08-13, completa — revisado el mismo día tras aclarar el alcance real del producto)
 
 **Contexto:** al revisar el panel de reclutador (6.3), surgió que hoy no hay ninguna forma de registrar qué pasa con un candidato después de la entrevista con Gaby — `Postulacion.estado` es el resultado del filtro de CV (gate para crear la cuenta), y `Interview.status` es solo si la entrevista se hizo o no. Ninguno de los dos captura una decisión del reclutador sobre el candidato.
 

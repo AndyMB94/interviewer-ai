@@ -111,7 +111,7 @@ backend/
 │   └── wsgi.py
 ├── apps/
 │   ├── interviews/
-│   │   ├── models.py           # Interview (FK a Postulacion desde Fase 9.6), Question, Answer
+│   │   ├── models.py           # Interview (FK a Postulacion desde Fase 9.6, decision pendiente/avanza/no_avanza desde 9.10), Question, Answer
 │   │   ├── views.py            # ask, health, transcribe, speak, finish_interview, interview_detail (9.8)
 │   │   ├── permissions.py      # IsOwnerReclutadorOfInterview — solo el dueño del puesto ve la entrevista (9.8.2)
 │   │   ├── urls.py
@@ -133,10 +133,10 @@ backend/
 │   │   │   └── credenciales_postulante.html
 │   │   └── tests/
 │   └── recruiting/              # puestos y postulaciones (Backend Fase 9)
-│       ├── models.py            # Puesto (9.1), Postulacion (9.2)
-│       ├── views.py             # PuestoViewSet, PostulacionViewSet (DRF ModelViewSet) + mi_postulacion (9.6.4, lista desde 9.7.2)
+│       ├── models.py            # Puesto (9.1, categoria/funciones/requisitos_deseables/modalidad/vacantes desde 9.9-9.10), Postulacion (9.2), Categoria (tabla propia, seed vía migración de datos, 9.9)
+│       ├── views.py             # PuestoViewSet, PostulacionViewSet, CategoriaViewSet (ReadOnly) + mi_postulacion (9.6.4, lista desde 9.7.2)
 │       ├── permissions.py       # permisos a nivel de objeto (dueño del puesto)
-│       ├── serializers.py       # PuestoSerializer (postulaciones_count), PostulacionSerializer (puesto_titulo, interview_id)
+│       ├── serializers.py       # PuestoSerializer (postulaciones_count, preseleccionados, categoria_nombre, vacantes), PostulacionSerializer (puesto_titulo, interview_id)
 │       ├── tasks.py             # screen_postulacion_task (9.3)
 │       ├── services/
 │       │   ├── cv_screening_service.py  # extrae texto del CV y evalúa el fit con el LLM
@@ -192,9 +192,8 @@ frontend/
 │   │   ├── Navbar.tsx           # toggle de tema, dropdown de cuenta/logout (P.5/P.6)
 │   │   ├── DashboardLayout.tsx  # sidebar del panel de reclutador (Puestos/Postulaciones), Frontend 6.2
 │   │   ├── QuestionDisplay.tsx  # transcripción en vivo (candidato), con avatares/timestamps
-│   │   ├── VoiceRecorder.tsx
-│   │   ├── TextAnswerForm.tsx
-│   │   ├── PuestoCard.tsx       # tarjeta de un puesto en ApplyPage
+│   │   ├── MessageComposer.tsx  # composer de chat unificado (texto + mic, 3 estados), reemplaza VoiceRecorder/TextAnswerForm (P.10)
+│   │   ├── PuestoCard.tsx       # tarjeta de un puesto en ApplyPage/PuestoDetailPage
 │   │   ├── PuestoCardSkeleton.tsx
 │   │   ├── RequireAuth.tsx      # wrapper de ruta: redirige a /login sin sesión (Frontend 5.4), espera el silent refresh (P.7)
 │   │   └── RequireRole.tsx      # RequireAuth + chequeo de rol (claim `groups` del JWT), usado por /dashboard (6.1)
@@ -205,12 +204,13 @@ frontend/
 │   │   └── use-mobile.ts        # hook de shadcn (Sidebar responsive)
 │   ├── pages/                   # una pantalla por archivo (Frontend Fase 5, react-router)
 │   │   ├── InterviewPage.tsx    # sala de espera + selector de puesto si hay varias postulaciones pendientes (9.7.5/9.7.6) + chat, ruta /entrevista (protegida)
-│   │   ├── ApplyPage.tsx        # postulación pública (elegir puesto + subir CV), ruta / (7.1)
+│   │   ├── ApplyPage.tsx        # postulación pública (elegir puesto + filtro por categoría), ruta / (7.1/7.5)
+│   │   ├── PuestoDetailPage.tsx # detalle de un puesto + formulario de postulación con CV (9.9/7.5)
 │   │   ├── LoginPage.tsx        # login (postulante o reclutador, redirige según rol), ruta /login
 │   │   └── dashboard/           # panel de reclutador (Frontend Fase 6), rutas hijas de /dashboard
-│   │       ├── PuestosPage.tsx           # tabla de puestos propios + cantidad de postulaciones (6.2)
+│   │       ├── PuestosPage.tsx           # tabla de puestos propios + vacantes/preseleccionados (6.2/9.10)
 │   │       ├── PostulacionesPage.tsx     # tabla de postulaciones + botón "Ver entrevista" (6.2/6.3)
-│   │       └── InterviewDetailPage.tsx   # transcripción + resultado del filtro de CV de una entrevista (6.3)
+│   │       └── InterviewDetailPage.tsx   # transcripción + resultado del filtro de CV + decisión pendiente/avanza/no_avanza (6.3/6.4)
 │   ├── context/
 │   │   └── AuthContext.tsx      # access token en memoria (nunca localStorage) + silent refresh al montar (P.7)
 │   ├── lib/
@@ -249,7 +249,9 @@ En producción (VPS de Contabo), **Nginx corre nativo en el host** (no dockeriza
 - `/` → `frontend` (puerto 8080)
 - `/socket.io/` → `ws-gateway` (puerto 3000, con headers de upgrade para WebSocket)
 - `/media/` → `backend` (puerto 8000, archivos de audio de TTS)
-- `/api/` → `backend` (puerto 8000) — **pendiente de agregar**, necesario desde Frontend Fase 5 (postulación/login le hablan a Django directo desde el navegador, no a través del gateway).
+- `/api/` → `backend` (puerto 8000, postulación/login/dashboard le hablan a Django directo desde el navegador, no a través del gateway)
+- `/admin/` → `backend` (puerto 8000, admin de Django)
+- `/static/` → `alias /srv/vacantia-static/` (estáticos del admin/DRF, generados por `collectstatic` y servidos directo por Nginx, sin pasar por Django — ver Infra Fase 4 en ROADMAP.md)
 
 El dominio (`vacantia.andymallcco.dev`) es obligatorio para el certificado real (Let's Encrypt no emite para una IP pelada) y para que el navegador permita `getUserMedia` (el micrófono no funciona fuera de un contexto seguro/HTTPS). Por esto, `VITE_GATEWAY_URL`/`VITE_API_URL` (frontend), `PUBLIC_DJANGO_URL` y `CORS_ORIGINS` (gateway) apuntan todos al mismo origen HTTPS del dominio en producción, en vez de a IPs/puertos sueltos — evita mezclar HTTP y HTTPS (mixed content), que el navegador bloquea. Ver [docs/DECISIONS.md](DECISIONS.md) (Infra Fase 2.3 y Fase 3).
 
@@ -259,7 +261,7 @@ El dominio (`vacantia.andymallcco.dev`) es obligatorio para el certificado real 
 
 ### `apps/interviews/models.py`
 
-- **`Interview`**: una sesión de entrevista. `user` (`ForeignKey` nullable a `settings.AUTH_USER_MODEL` — `None` en las entrevistas anteriores a Backend Fase 8, o en la demo anónima que sigue funcionando), `postulacion` (`ForeignKey` nullable a `apps.recruiting.models.Postulacion`, agregado en Fase 9.6 — se conecta automáticamente a la `Postulacion` aprobada del usuario autenticado al crear la `Interview`, y es lo que le da a Gaby el contexto del puesto real para armar preguntas relevantes en vez de genéricas), `created_at`, `status` (`in_progress` / `finished`, vía `models.TextChoices`).
+- **`Interview`**: una sesión de entrevista. `user` (`ForeignKey` nullable a `settings.AUTH_USER_MODEL` — `None` en las entrevistas anteriores a Backend Fase 8, o en la demo anónima que sigue funcionando), `postulacion` (`ForeignKey` nullable a `apps.recruiting.models.Postulacion`, agregado en Fase 9.6 — se conecta automáticamente a la `Postulacion` aprobada del usuario autenticado al crear la `Interview`, y es lo que le da a Gaby el contexto del puesto real para armar preguntas relevantes en vez de genéricas), `created_at`, `status` (`in_progress` / `finished`, vía `models.TextChoices`), `decision` (`pendiente` / `avanza` / `no_avanza`, vía `models.TextChoices`, agregado en 9.10 — decisión del reclutador tras revisar la entrevista; deliberadamente no `contratado`/`no_contratado`, ver DECISIONS.md: Vacantia cubre solo las primeras dos etapas de selección, no la entrevista técnica ni la decisión final de contratación).
 - **`Question`**: cada mensaje del usuario (escrito o transcripto) dentro de una entrevista. `ForeignKey` a `Interview` (`related_name="questions"`), `text`, `created_at`.
 - **`Answer`**: la respuesta del LLM a una pregunta puntual. `OneToOneField` a `Question` (`related_name="answer"`) — cada pregunta tiene exactamente una respuesta, nunca varias.
 
@@ -274,5 +276,6 @@ La memoria de conversación (Backend Fase 6.3) se arma consultando todas las `Qu
 
 ### `apps/recruiting/models.py`
 
-- **`Puesto`**: `titulo`, `descripcion`, `requisitos`, `creado_por` (`ForeignKey` a `settings.AUTH_USER_MODEL`, siempre un usuario del Group `Reclutador`), `estado` (`abierto`/`cerrado`).
+- **`Puesto`**: `titulo`, `descripcion`, `requisitos`, `funciones`, `requisitos_deseables`, `modalidad` (`remoto`/`presencial`/`hibrido`), `vacantes` (entero, 9.10), `categoria` (`ForeignKey` a `Categoria`), `creado_por` (`ForeignKey` a `settings.AUTH_USER_MODEL`, siempre un usuario del Group `Reclutador`), `estado` (`abierto`/`cerrado`).
+- **`Categoria`**: tabla propia (no `TextChoices`), `nombre` — sembrada por una migración de datos (mismo patrón que los Groups) para poder agregar categorías nuevas desde el admin sin deploy (ver DECISIONS.md, 9.9).
 - **`Postulacion`**: `puesto` (`ForeignKey`, `related_name="postulaciones"`), `nombre`/`email` (el candidato todavía no tiene cuenta al postular), `cv` (`FileField`, valida extensión `.pdf`), `estado` (`pendiente`/`rechazado`/`aprobado`), `resultado_filtro` (texto libre con la razón que da el LLM). Se crea sin autenticación (endpoint público); al guardarse dispara `screen_postulacion_task` (Celery), que extrae el texto del CV y le pide al LLM que decida el fit contra el `Puesto` (Backend Fase 9.3).
