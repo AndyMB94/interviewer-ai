@@ -143,8 +143,12 @@ export function PuestoDetailPage() {
           <Separator />
           <Seccion titulo="Requisitos deseables" texto={puesto.requisitos_deseables} />
 
-          {!showForm && (
-            <Button onClick={() => setShowForm(true)}>Postular a este puesto</Button>
+          {puesto.estado === "cerrado" ? (
+            <p className="text-sm text-muted-foreground">
+              Este puesto ya no está aceptando postulaciones.
+            </p>
+          ) : (
+            !showForm && <Button onClick={() => setShowForm(true)}>Postular a este puesto</Button>
           )}
         </CardContent>
       </Card>

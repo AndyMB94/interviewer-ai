@@ -38,8 +38,9 @@ export async function fetchPuestosAbiertos(categoriaId?: number): Promise<Puesto
   if (!response.ok) {
     throw new Error("No se pudieron cargar los puestos disponibles.");
   }
-  const puestos: Puesto[] = await response.json();
-  return puestos.filter((puesto) => puesto.estado === "abierto");
+  // El listado público del backend ya filtra por estado=abierto (Backend 9.11.2) — no hace falta
+  // repetir el filtro acá.
+  return response.json();
 }
 
 export async function fetchPuesto(id: number): Promise<Puesto> {
@@ -56,6 +57,45 @@ export async function fetchMisPuestos(token: string): Promise<Puesto[]> {
   });
   if (!response.ok) {
     throw new Error("No se pudieron cargar tus puestos.");
+  }
+  return response.json();
+}
+
+export interface PuestoFormPayload {
+  titulo: string;
+  descripcion: string;
+  funciones: string;
+  requisitos: string;
+  requisitos_deseables: string;
+  modalidad: Puesto["modalidad"];
+  vacantes: number;
+  categoria: number | null;
+}
+
+export async function createPuesto(token: string, payload: PuestoFormPayload): Promise<Puesto> {
+  const response = await fetch(`${API_URL}/api/puestos/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error("No se pudo crear el puesto.");
+  }
+  return response.json();
+}
+
+export async function updatePuesto(
+  token: string,
+  id: number,
+  payload: Partial<PuestoFormPayload> & { estado?: Puesto["estado"] },
+): Promise<Puesto> {
+  const response = await fetch(`${API_URL}/api/puestos/${id}/`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error("No se pudo actualizar el puesto.");
   }
   return response.json();
 }

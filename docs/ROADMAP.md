@@ -411,6 +411,21 @@ _Probado end-to-end en local: decisión pendiente por default, cambio a "avanza"
 - [ ] 6.6.4 Cablear `EmojiPickerButton` junto a `titulo`, `descripcion`, `funciones`, `requisitos`, `requisitos_deseables` en `PuestoFormPage.tsx` (Frontend 6.5).
 - [ ] 6.6.5 Verificación en el navegador: abrir el selector, insertar un emoji a la mitad de un texto ya escrito en cada uno de los 5 campos, confirmar que no se pisa lo existente, guardar el puesto y confirmar que el emoji se ve igual en `PuestoDetailPage`/`ApplyPage` (público) y en `PuestosPage` (dashboard).
 
+### Frontend 6.7: vista de detalle de solo lectura en el dashboard (agregado 2026-08-19)
+
+**Contexto:** al probar 9.11 end-to-end en el navegador, surgió que no hay forma de ver el detalle completo de un puesto de solo lectura desde el dashboard — `PuestosPage.tsx` solo muestra un resumen en la tabla, y "Editar" muestra todo en inputs editables, no como texto legible. Reusar la página pública `PuestoDetailPage.tsx` tal cual traería el botón "Postular a este puesto" a la vista del reclutador, que no tiene sentido — sería confuso, como si la app le sugiriera postularse a su propia oferta.
+
+**Decisión 1 — extraer `Seccion` a un componente compartido, no duplicarlo:** hoy vive privado dentro de `PuestoDetailPage.tsx` (el helper que renderiza título+texto de cada bloque, y no renderiza nada si el texto viene vacío). Se mueve a `components/PuestoSeccion.tsx`, reusado por la página pública **y** por la vista nueva del dashboard — evita tener el mismo bloque de JSX en dos archivos.
+
+**Decisión 2 — `Sheet` de shadcn, no `Dialog`:** el proyecto ya tiene `Sheet` instalado (lo usa el `Sidebar` responsive) y no tiene `Dialog` — un panel lateral además se siente más natural acá que un modal centrado, porque no tapa del todo la tabla de la que salió (mantiene el contexto de "estoy viendo mis puestos"). Se reusa el componente que ya existe en vez de instalar uno nuevo para esto.
+
+**Decisión 3 — se abre con click en la fila, no con un botón nuevo:** la columna "Acciones" ya tiene "Editar" y "Cerrar puesto"/"Reabrir puesto" — agregar un tercer botón la satura. En cambio, click en cualquier parte de la fila (con `cursor-pointer`) abre el `Sheet` de detalle; los botones de acción existentes cortan la propagación del click (`event.stopPropagation()`) para no disparar el Sheet sin querer al usarlos.
+
+- [ ] 6.7.1 Frontend: extraer `Seccion` de `PuestoDetailPage.tsx` a `components/PuestoSeccion.tsx` (mismo comportamiento exacto), actualizar `PuestoDetailPage.tsx` para importarlo desde ahí.
+- [ ] 6.7.2 Frontend: `PuestoDetailSheet.tsx` — `Sheet`/`SheetContent`/`SheetHeader`/`SheetTitle` de shadcn. Muestra título, badges de modalidad/categoría/estado, y las 4 secciones (`descripcion`/`funciones`/`requisitos`/`requisitos_deseables`) vía `PuestoSeccion` — sin botón de postular (Decisión 1) ni de editar (ya está en la tabla, no hace falta repetirlo adentro).
+- [ ] 6.7.3 Frontend: `PuestosPage.tsx` — `onClick` en cada `TableRow` (con `className="cursor-pointer"`) abre `PuestoDetailSheet` con el puesto de esa fila; los botones "Editar"/"Cerrar puesto"/"Reabrir puesto" llaman `event.stopPropagation()` en su propio `onClick` (Decisión 3).
+- [ ] 6.7.4 Verificación en el navegador: click en una fila abre el Sheet con el detalle correcto (secciones vacías no aparecen, igual que en la página pública); click en "Editar" o en "Cerrar puesto"/"Reabrir puesto" dentro de esa misma fila **no** abre el Sheet; cerrar el Sheet vuelve a la tabla sin perder el estado de la lista.
+
 ## Notas
 
 - El orden entre tracks importa: cada paso del gateway/frontend depende de que exista el paso equivalente del backend (por eso las referencias cruzadas, ej. "Backend Fase 1.2").

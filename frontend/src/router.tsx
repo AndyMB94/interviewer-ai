@@ -4,6 +4,7 @@ import { ApplyPage } from "./pages/ApplyPage";
 import { PuestoDetailPage } from "./pages/PuestoDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PuestosPage } from "./pages/dashboard/PuestosPage";
+import { PuestoFormPage } from "./pages/dashboard/PuestoFormPage";
 import { PostulacionesPage } from "./pages/dashboard/PostulacionesPage";
 import { InterviewDetailPage } from "./pages/dashboard/InterviewDetailPage";
 import { RequireAuth } from "./components/RequireAuth";
@@ -44,6 +45,8 @@ export const router = createBrowserRouter([
         ),
         children: [
           { index: true, element: <PuestosPage /> },
+          { path: "puestos/nuevo", element: <PuestoFormPage /> },
+          { path: "puestos/:id/editar", element: <PuestoFormPage /> },
           { path: "postulaciones", element: <PostulacionesPage /> },
           { path: "entrevistas/:id", element: <InterviewDetailPage /> },
         ],
