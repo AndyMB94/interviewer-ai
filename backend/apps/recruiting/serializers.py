@@ -56,6 +56,11 @@ class PostulacionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["estado", "resultado_filtro", "created_at"]
 
+    def validate_puesto(self, puesto):
+        if puesto.estado != Puesto.Estado.ABIERTO:
+            raise serializers.ValidationError("Este puesto ya no acepta postulaciones.")
+        return puesto
+
     def get_interview_id(self, obj):
         interview = next(iter(obj.interviews.all()), None)
         return interview.id if interview else None

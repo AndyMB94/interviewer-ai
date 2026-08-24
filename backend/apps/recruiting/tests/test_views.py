@@ -295,6 +295,73 @@ def test_puesto_default_vacantes_is_one(puesto):
     assert response.json()[0]["vacantes"] == 1
 
 
+@pytest.mark.django_db
+def test_creating_puesto_with_zero_vacantes_is_rejected(reclutador):
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.post(
+        "/api/puestos/",
+        {"titulo": "Test", "descripcion": "Test", "requisitos": "Test", "vacantes": 0},
+        format="json",
+    )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_public_list_excludes_puestos_cerrados(reclutador):
+    Puesto.objects.create(
+        titulo="Puesto cerrado",
+        descripcion="...",
+        requisitos="...",
+        creado_por=reclutador,
+        estado=Puesto.Estado.CERRADO,
+    )
+
+    client = APIClient()
+    response = client.get("/api/puestos/")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+@pytest.mark.django_db
+def test_mias_filter_includes_puestos_cerrados(reclutador):
+    puesto_cerrado = Puesto.objects.create(
+        titulo="Puesto cerrado",
+        descripcion="...",
+        requisitos="...",
+        creado_por=reclutador,
+        estado=Puesto.Estado.CERRADO,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/puestos/?mias=true")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == puesto_cerrado.id
+
+
+@pytest.mark.django_db
+def test_anyone_can_retrieve_a_puesto_cerrado(reclutador):
+    puesto_cerrado = Puesto.objects.create(
+        titulo="Puesto cerrado",
+        descripcion="...",
+        requisitos="...",
+        creado_por=reclutador,
+        estado=Puesto.Estado.CERRADO,
+    )
+
+    client = APIClient()
+    response = client.get(f"/api/puestos/{puesto_cerrado.id}/")
+
+    assert response.status_code == 200
+    assert response.json()["estado"] == "cerrado"
+
+
 def _postulacion_aprobada(puesto):
     return Postulacion.objects.create(
         puesto=puesto,

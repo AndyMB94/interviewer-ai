@@ -53,6 +53,22 @@ def test_anyone_can_postular_without_an_account(mock_delay, puesto):
 
 
 @pytest.mark.django_db
+def test_postular_to_a_puesto_cerrado_is_rejected(puesto):
+    puesto.estado = Puesto.Estado.CERRADO
+    puesto.save()
+
+    client = APIClient()
+    response = client.post(
+        "/api/postulaciones/",
+        {"puesto": puesto.id, "nombre": "Andy", "email": "andy@example.com", "cv": _fake_pdf()},
+        format="multipart",
+    )
+
+    assert response.status_code == 400
+    assert Postulacion.objects.count() == 0
+
+
+@pytest.mark.django_db
 def test_postular_with_non_pdf_file_fails(puesto):
     client = APIClient()
     archivo = SimpleUploadedFile("cv.txt", b"no es un pdf", content_type="text/plain")

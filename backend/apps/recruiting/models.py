@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
 
 
@@ -30,7 +30,7 @@ class Puesto(models.Model):
     requisitos = models.TextField()
     requisitos_deseables = models.TextField(blank=True)
     modalidad = models.CharField(max_length=10, choices=Modalidad.choices, default=Modalidad.PRESENCIAL)
-    vacantes = models.PositiveIntegerField(default=1)
+    vacantes = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
     categoria = models.ForeignKey(
         Categoria, on_delete=models.PROTECT, related_name="puestos", null=True, blank=True
     )

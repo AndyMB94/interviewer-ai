@@ -33,6 +33,11 @@ class PuestoViewSet(viewsets.ModelViewSet):
             if not self.request.user.is_authenticated:
                 return Puesto.objects.none()
             queryset = queryset.filter(creado_por=self.request.user)
+        elif self.action == "list":
+            # El listado público (grilla de ApplyPage) solo muestra puestos abiertos. El detalle
+            # (retrieve) no se filtra acá — PuestoDetailPage necesita poder cargar un puesto cerrado
+            # para mostrar el aviso de "ya no acepta postulaciones" (9.11.6), no un 404.
+            queryset = queryset.filter(estado=Puesto.Estado.ABIERTO)
         categoria_id = self.request.query_params.get("categoria")
         if categoria_id:
             queryset = queryset.filter(categoria_id=categoria_id)
