@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PuestoDetailSheet } from "@/components/PuestoDetailSheet";
 import { useAuth } from "@/context/AuthContext";
 import { fetchMisPuestos, updatePuesto, type Puesto } from "@/lib/api";
 
@@ -23,6 +24,7 @@ export function PuestosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [puestoParaCerrar, setPuestoParaCerrar] = useState<Puesto | null>(null);
+  const [puestoSeleccionado, setPuestoSeleccionado] = useState<Puesto | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -79,7 +81,11 @@ export function PuestosPage() {
           </TableHeader>
           <TableBody>
             {puestos.map((puesto) => (
-              <TableRow key={puesto.id}>
+              <TableRow
+                key={puesto.id}
+                className="cursor-pointer"
+                onClick={() => setPuestoSeleccionado(puesto)}
+              >
                 <TableCell>{puesto.titulo}</TableCell>
                 <TableCell>
                   <Badge variant={puesto.estado === "abierto" ? "default" : "secondary"}>
@@ -89,7 +95,7 @@ export function PuestosPage() {
                 <TableCell>{puesto.postulaciones_count}</TableCell>
                 <TableCell>{puesto.vacantes}</TableCell>
                 <TableCell>{puesto.preseleccionados}</TableCell>
-                <TableCell className="flex gap-2">
+                <TableCell className="flex gap-2" onClick={(event) => event.stopPropagation()}>
                   <Button
                     variant="outline"
                     size="sm"
@@ -134,6 +140,13 @@ export function PuestosPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PuestoDetailSheet
+        puesto={puestoSeleccionado}
+        onOpenChange={(open) => {
+          if (!open) setPuestoSeleccionado(null);
+        }}
+      />
     </div>
   );
 }

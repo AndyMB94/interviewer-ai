@@ -423,10 +423,12 @@ _Backend 9.11 + Frontend 6.5 completos — el reclutador ya puede crear, editar,
 
 **Decisión 3 — se abre con click en la fila, no con un botón nuevo:** la columna "Acciones" ya tiene "Editar" y "Cerrar puesto"/"Reabrir puesto" — agregar un tercer botón la satura. En cambio, click en cualquier parte de la fila (con `cursor-pointer`) abre el `Sheet` de detalle; los botones de acción existentes cortan la propagación del click (`event.stopPropagation()`) para no disparar el Sheet sin querer al usarlos.
 
-- [ ] 6.7.1 Frontend: extraer `Seccion` de `PuestoDetailPage.tsx` a `components/PuestoSeccion.tsx` (mismo comportamiento exacto), actualizar `PuestoDetailPage.tsx` para importarlo desde ahí.
-- [ ] 6.7.2 Frontend: `PuestoDetailSheet.tsx` — `Sheet`/`SheetContent`/`SheetHeader`/`SheetTitle` de shadcn. Muestra título, badges de modalidad/categoría/estado, y las 4 secciones (`descripcion`/`funciones`/`requisitos`/`requisitos_deseables`) vía `PuestoSeccion` — sin botón de postular (Decisión 1) ni de editar (ya está en la tabla, no hace falta repetirlo adentro).
-- [ ] 6.7.3 Frontend: `PuestosPage.tsx` — `onClick` en cada `TableRow` (con `className="cursor-pointer"`) abre `PuestoDetailSheet` con el puesto de esa fila; los botones "Editar"/"Cerrar puesto"/"Reabrir puesto" llaman `event.stopPropagation()` en su propio `onClick` (Decisión 3).
-- [ ] 6.7.4 Verificación en el navegador: click en una fila abre el Sheet con el detalle correcto (secciones vacías no aparecen, igual que en la página pública); click en "Editar" o en "Cerrar puesto"/"Reabrir puesto" dentro de esa misma fila **no** abre el Sheet; cerrar el Sheet vuelve a la tabla sin perder el estado de la lista.
+- [x] 6.7.1 Frontend: extraído `PuestoSeccion` (antes `Seccion`, privado de `PuestoDetailPage.tsx`) a `components/PuestoSeccion.tsx`, y `MODALIDAD_LABEL` a `lib/puesto.ts` (estaba duplicado entre `PuestoDetailPage.tsx` y `PuestoFormPage.tsx` — se aprovechó para unificarlo en un solo lugar). `PuestoDetailPage.tsx` actualizado para importar ambos.
+- [x] 6.7.2 Frontend: `PuestoDetailSheet.tsx` — `Sheet`/`SheetContent`/`SheetHeader`/`SheetTitle` de shadcn. Muestra título, badges de estado/modalidad/categoría, y las 4 secciones vía `PuestoSeccion` — sin botón de postular ni de editar.
+- [x] 6.7.3 Frontend: `PuestosPage.tsx` — `onClick` en cada `TableRow` (`cursor-pointer`) abre `PuestoDetailSheet` con el puesto de esa fila; la celda de "Acciones" corta la propagación en un solo `onClick` (`event.stopPropagation()`) en vez de repetirlo en cada botón.
+- [x] 6.7.4 Verificado en el navegador: click en la fila abre el Sheet con título, badges y las 4 secciones correctas; click en "Editar"/"Cerrar puesto"/"Reabrir puesto" no abre el Sheet.
+
+_Frontend 6.7 completo — el reclutador ya tiene una vista de solo lectura del puesto sin salir del dashboard ni ver el CTA de postular pensado para candidatos._
 
 ## Notas
 

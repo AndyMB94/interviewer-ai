@@ -9,23 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { PuestoSeccion } from "@/components/PuestoSeccion";
 import { fetchPuesto, postularA, type Puesto } from "@/lib/api";
-
-const MODALIDAD_LABEL: Record<Puesto["modalidad"], string> = {
-  presencial: "Presencial",
-  remoto: "Remoto",
-  hibrido: "Híbrido",
-};
-
-function Seccion({ titulo, texto }: { titulo: string; texto: string }) {
-  if (!texto) return null;
-  return (
-    <div className="space-y-1">
-      <h2 className="font-semibold">{titulo}</h2>
-      <p className="whitespace-pre-line text-sm text-muted-foreground">{texto}</p>
-    </div>
-  );
-}
+import { MODALIDAD_LABEL } from "@/lib/puesto";
 
 export function PuestoDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -135,13 +121,13 @@ export function PuestoDetailPage() {
           </Badge>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Seccion titulo="Descripción del empleo" texto={puesto.descripcion} />
+          <PuestoSeccion titulo="Descripción del empleo" texto={puesto.descripcion} />
           <Separator />
-          <Seccion titulo="Funciones" texto={puesto.funciones} />
+          <PuestoSeccion titulo="Funciones" texto={puesto.funciones} />
           {puesto.funciones && <Separator />}
-          <Seccion titulo="Requisitos" texto={puesto.requisitos} />
+          <PuestoSeccion titulo="Requisitos" texto={puesto.requisitos} />
           <Separator />
-          <Seccion titulo="Requisitos deseables" texto={puesto.requisitos_deseables} />
+          <PuestoSeccion titulo="Requisitos deseables" texto={puesto.requisitos_deseables} />
 
           {puesto.estado === "cerrado" ? (
             <p className="text-sm text-muted-foreground">
