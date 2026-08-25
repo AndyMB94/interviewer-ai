@@ -156,6 +156,36 @@ _Infra Fase 4 completa — producción corre con `DEBUG=False`, estáticos servi
 
 _Infra Fase 5 completa — `vacantia.andymallcco.dev` es el único dominio público del proyecto; `interviewer.andymallcco.dev` fue dado de baja del todo (Nginx, certificado, DNS), sin dejar redirect._
 
+**Fase 6 — Seguridad y anti-abuso (planificado 2026-08-25, a pedido explícito del usuario: "el repo es público, ¿no es peligroso?")**
+
+**Contexto:** una revisión del código (no solo suposiciones) encontró que **no hay ninguna protección contra abuso en ninguna capa**. Verificado directamente:
+- `grep` en todo `/etc/nginx/` del VPS por `limit_req`/`limit_conn`: nada. El `server` block de `vacantia.andymallcco.dev` no tiene ningún límite de tasa.
+- `REST_FRAMEWORK` en `settings.py` no tiene `DEFAULT_THROTTLE_CLASSES` ni nada de `django-ratelimit` en `requirements.txt`: nada tampoco del lado de Django.
+- Django ni siquiera ve la IP real del visitante — Nginx manda `X-Real-IP` pero no hay ningún `SECURE_PROXY_SSL_HEADER`/middleware que lo lea, así que `request.META['REMOTE_ADDR']` es siempre `127.0.0.1` (la IP de Nginx) para toda request. Cualquier límite "por IP" en el backend, tal como está hoy, sería inútil — vería todo el tráfico como si fuera un solo visitante.
+- El modelo `Postulacion` no tiene ninguna restricción de unicidad — se puede postular al mismo puesto con el mismo email cuantas veces se quiera, sin límite. Cada postulación dispara `screen_postulacion_task.delay()`, que llama de verdad a la API de DeepSeek — esto no es solo spam, es un vector real para gastarle plata al dueño del proyecto en un bucle.
+- El `FileField` de `cv` solo valida la extensión (`FileExtensionValidator(["pdf"])`), sin ningún límite de tamaño.
+- `SECRET_KEY` en `settings.py` tiene un valor de respaldo hardcodeado (`os.environ.get("SECRET_KEY", "django-insecure-...")`) — ahora público en el repo. Mientras el `.env` de producción lo sobreescriba no se usa, pero es una trampa: si ese `.env` alguna vez falta la variable, el servidor arrancaría en silencio con una clave que cualquiera puede ver en GitHub.
+- Revisado también, y confirmado que **está bien**: no hay secretos commiteados (`.env` siempre estuvo en `.gitignore`, nunca se subió; sin API keys hardcodeadas en ningún archivo trackeado), los permisos de `PuestoViewSet`/`PostulacionViewSet` (`IsOwnerReclutadorOrReadOnly`, `CanManagePostulacion`) están bien acotados, y la configuración de JWT/CORS/CSRF (tokens de vida corta, rotación, cookie `httpOnly`+`SameSite=Lax`, orígenes explícitos) ya es sólida desde el pivote de Fase 8.
+
+**Decisión 1 — límite de tasa en dos capas, Nginx primero.** Nginx rechaza el exceso de tráfico *antes* de que llegue a Django/Gunicorn (más barato, y es la única capa que hoy ve la IP real de cada visitante). DRF como segunda capa, más fina por endpoint — aceptando que, hasta que se resuelva la Decisión 2, cuenta "todo el tráfico anónimo" como si fuera una sola IP; sigue sirviendo como tope global aunque no distinga visitante por visitante.
+
+**Decisión 2 — arreglar que Django vea la IP real.** Nginx agrega `X-Forwarded-For $proxy_add_x_forwarded_for` (además del `X-Real-IP` que ya manda) en los `location` que hacen `proxy_pass`; Django lee ese header con un middleware chico propio (no hace falta una librería para esto) que sobreescribe `request.META['REMOTE_ADDR']` antes de que nada más lo use — necesario tanto para que el throttling de DRF tenga sentido como para que cualquier log/auditoría futura registre la IP real, no la de Nginx.
+
+**Decisión 3 — un email no puede postular dos veces al mismo puesto.** `UniqueConstraint` en el modelo `Postulacion` sobre `(puesto, email)`, más una migración, más una validación amigable en el serializer (`validate()` a nivel de objeto, no solo el error 500 de integridad que tiraría la constraint sola) — mensaje claro tipo "Ya postuló a este puesto con este email."
+
+**Decisión 4 — límite de tamaño de CV.** Validación en el serializer (tamaño máximo razonable para un CV en PDF, ej. 5MB) — rechaza antes de guardar el archivo o de gastar nada en el filtro de IA.
+
+**Decisión 5 — `SECRET_KEY` sin valor de respaldo.** `SECRET_KEY = os.environ["SECRET_KEY"]` (sin default) — la app falla al arrancar si falta, en vez de arrancar en silencio con un valor ahora público. Requiere confirmar antes que el `.env` real del VPS ya tiene su propio `SECRET_KEY` seteado (si no, hay que generarle uno nuevo ahí antes de este cambio, para no tirar abajo producción).
+
+- [ ] 6.1 VPS: confirmar qué `SECRET_KEY` tiene hoy el `.env` de producción (y generarle uno nuevo si por algún motivo no lo tiene, o si coincide con el valor de respaldo que ahora es público).
+- [ ] 6.2 Backend: `SECRET_KEY` sin default (Decisión 5). Verificado que arranca bien en local (con `.env` propio) y documentado el chequeo de 6.1 como paso obligatorio antes de desplegar esto a producción.
+- [ ] 6.3 Backend: middleware propio para leer `X-Forwarded-For` (Decisión 2).
+- [ ] 6.4 VPS: Nginx — agregar `X-Forwarded-For` a los `location` con `proxy_pass`, y `limit_req_zone`/`limit_req` (Decisión 1) en `/api/` como mínimo (el endpoint que cuesta plata real), evaluando si también hace falta en `/`, `/socket.io/` y `/admin/`.
+- [ ] 6.5 Backend: `DEFAULT_THROTTLE_CLASSES`/`DEFAULT_THROTTLE_RATES` en `REST_FRAMEWORK` (Decisión 1), con un límite más estricto puntual para el `create` de `PostulacionViewSet` (el endpoint que dispara el filtro de IA).
+- [ ] 6.6 Backend: `UniqueConstraint(puesto, email)` en `Postulacion` + migración + validación amigable en el serializer (Decisión 3), con su test.
+- [ ] 6.7 Backend: validación de tamaño máximo del CV en el serializer (Decisión 4), con su test.
+- [ ] 6.8 Verificación completa: tests del backend (local y en el VPS, como ya es costumbre), y probar a mano que postular dos veces al mismo puesto con el mismo email da un error claro, que un archivo gigante se rechaza, y que pasado el límite de tasa Nginx/DRF responden con el código esperado (429) en vez de dejar pasar todo.
+
 ## Mejoras post-lanzamiento (agregado 2026-08-05, no estaba previsto en el roadmap original)
 
 - [x] P.1 Reescribir el system prompt del LLM en español neutro (sin voseo rioplatense).
