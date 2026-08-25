@@ -51,9 +51,9 @@ export function Navbar() {
                   <AvatarFallback>{userEmail?.[0]?.toUpperCase() ?? "?"}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-64">
                 <DropdownMenuGroup>
-                  <DropdownMenuLabel className="font-normal text-muted-foreground">
+                  <DropdownMenuLabel className="truncate font-normal text-muted-foreground">
                     {userEmail}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
