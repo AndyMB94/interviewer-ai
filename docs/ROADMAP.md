@@ -231,6 +231,31 @@ _Infra Fase 5 completa — `vacantia.andymallcco.dev` es el único dominio públ
 _P.12 completo — toasts de éxito/error donde antes no había ninguna señal, el bug de `cambiarEstado` sin manejo de errores quedó arreglado, y los campos obligatorios están marcados visualmente._
 
 - [x] P.13 Hallazgo casual (2026-08-25, revisando P.12 en el navegador): el `DropdownMenu` de cuenta en `Navbar.tsx` no mostraba el email completo — Base UI hereda el ancho del popup del trigger (`w-(--anchor-width)`), y el trigger acá es el avatar circular chico, así que el `min-w-32` (128px) del componente compartido no alcanzaba para un email real. Mismo problema de fondo que ya se había resuelto en el `Select` de categorías de `ApplyPage` (Fase 9.9). Arreglado con `className="w-64"` en el `DropdownMenuContent` de `Navbar.tsx` (fix puntual, no se tocó el componente compartido — es el único lugar del proyecto que usa `DropdownMenu`) + `truncate` en el `DropdownMenuLabel` del email como resguardo para uno todavía más largo. Confirmado visualmente en el navegador.
+- [ ] P.14 Footer, navbar, transiciones y efectos visuales (agregado 2026-08-25, encontrado al revisar el pulido visual general — el candidato lo pidió explícitamente: "mejorar footer, navbar... transiciones, loaders, efectos del mouse"). Alcance: páginas públicas + login, sin tocar el dashboard.
+
+**Contexto:** `RootLayout.tsx` es hoy literalmente `<Navbar /><Outlet />` — no hay ningún footer en toda la app, ni en `ApplyPage` ni en ninguna otra pantalla. Como el proyecto es explícitamente de portafolio (ver README, "Por qué este proyecto"), no tener un link al repo en ningún lado es una pérdida real: alguien que llega a la demo no tiene forma de encontrar el código. Los otros puntos pedidos (fondo del login, transiciones, hover) son de pulido visual, no huecos funcionales — se evalúa cada uno con honestidad en vez de agregar decoración porque sí.
+
+**Decisión 1 — el footer va en un layout público nuevo, no en `RootLayout` directo:** `RootLayout` envuelve *todas* las rutas, incluido `/dashboard` (que después anida su propio `DashboardLayout` con sidebar) — meter el footer ahí lo mostraría también debajo del panel del reclutador, compitiendo con la sidebar sin aportar nada (el reclutador ya está "adentro" del producto, no navegando el portafolio). Se crea `PublicLayout.tsx` (mismo patrón que ya existe para `DashboardLayout`: un layout anidado para un subconjunto de rutas), con `<Outlet /><Footer />`, usado solo en `/`, `/puestos/:id` y `/login` — no en `/entrevista`, `/perfil` ni `/dashboard/*`.
+
+**Decisión 2 — el footer es informativo, no un menú de sitio:** un solo bloque simple con link al repo de GitHub (`github.com/AndyMB94/interviewer-ai`, el que ya usa el proyecto) y una línea corta ("Proyecto de portafolio — Andy Mallcco" o similar) — no se inventan secciones de "Sobre nosotros"/"Contacto"/redes que no existen todavía, sería relleno.
+
+**Decisión 3 — no hay carrusel: no hay contenido real para rotar.** Un carrusel necesita algo que tenga sentido mostrando varios ítems en rotación (testimonios, banners de puestos destacados) — hoy no existe ese concepto en el producto, y forzar uno vacío (o con los mismos puestos que ya se ven en la grilla) sería decoración sin sustancia. En su lugar: un tratamiento visual sutil (gradiente/blur con el color de marca, `bg-primary/10` ya se usa en el ícono del login) detrás de la card de `LoginPage` — mismo espíritu, sin inventar contenido que no existe.
+
+**Decisión 4 — transiciones: extender el patrón que ya existe, no traer una librería nueva.** `LoginPage` ya usa `animate-in fade-in-0 slide-in-from-bottom-2` (P.6/P.8.5) — Tailwind puro, sin dependencia nueva. Se aplica el mismo patrón a `ApplyPage`, `PuestoDetailPage` y las páginas del dashboard, y se le suma un stagger simple (delay incremental por índice) a las cards de la grilla de `ApplyPage`, para que entren una después de otra en vez de todas a la vez.
+
+**Decisión 5 — hover: revisar, no dar por hecho que falta.** `PuestoCard.tsx` ya tiene `transition-shadow hover:shadow-lg` (evaluado a fondo en P.8.4, que decidió a propósito no agregar hover a elementos no clickeables). Se evalúa si sumar un `hover:border-primary/50` sutil a `PuestoCard` únicamente — no se toca nada más, para no repetir el trabajo que P.8.4 ya hizo bien.
+
+**Hallazgo al revisar `PuestoCard.tsx` para esto:** tiene su propio `MODALIDAD_LABEL` duplicado — no usa el compartido `lib/puesto.ts` que se creó en 6.7.1 (esa extracción se hizo pensando en `PuestoDetailPage`/`PuestoFormPage`/`PuestoDetailSheet`, y se pasó por alto `PuestoCard`). Se corrige de paso.
+
+- [ ] P.14.1 `components/Footer.tsx` — link al repo de GitHub + línea de portafolio (Decisión 2).
+- [ ] P.14.2 `components/PublicLayout.tsx` — `<Outlet /><Footer />`, usado en `router.tsx` para `/`, `/puestos/:id`, `/login` (Decisión 1).
+- [ ] P.14.3 `Navbar.tsx` — `sticky top-0` + `backdrop-blur` al hacer scroll (toque sutil, no rediseño).
+- [ ] P.14.4 `LoginPage.tsx` — gradiente/blur sutil de marca detrás de la card (Decisión 3).
+- [ ] P.14.5 Transiciones de entrada (`animate-in fade-in-0 slide-in-from-bottom-2`) en `ApplyPage.tsx`, `PuestoDetailPage.tsx` y las páginas del dashboard; stagger por índice en las cards de `ApplyPage` (Decisión 4).
+- [ ] P.14.6 `PuestoCard.tsx` — evaluar `hover:border-primary/50` sutil; corregir el `MODALIDAD_LABEL` duplicado para que use `lib/puesto.ts` (hallazgo, ver arriba).
+- [ ] P.14.7 Verificación en el navegador: footer visible en `/`, `/puestos/:id`, `/login`, ausente en `/entrevista`/`/perfil`/`/dashboard`; navbar con blur al scrollear en una página larga; login con el detalle de fondo; entrada animada de las cards en `/`; hover del `PuestoCard` confirmado visualmente.
+
+_Pendiente aparte, explícitamente de más baja prioridad y para después de P.14: limpiar los puestos de prueba creados durante las pruebas manuales de esta sesión ("fefef 😀 ef 😀", "sd", "Puesto de prueba CRUD 1", etc.) antes de considerar la demo presentable._
 
 ## Pivote: plataforma de reclutamiento con IA (agregado 2026-08-06, reemplaza la sección "Autenticación" anterior)
 
