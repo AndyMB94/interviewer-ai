@@ -148,7 +148,7 @@ export function PerfilPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4 p-4 pt-8">
+      <div className="mx-auto w-full max-w-2xl space-y-4 p-4 pt-8">
         <Skeleton className="h-8 w-32" />
         <Skeleton className="h-96 w-full" />
       </div>
@@ -157,12 +157,12 @@ export function PerfilPage() {
 
   if (loadError) {
     return (
-      <p className="mx-auto max-w-2xl p-4 pt-8 text-center text-destructive">{loadError}</p>
+      <p className="mx-auto w-full max-w-2xl p-4 pt-8 text-center text-destructive">{loadError}</p>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl p-4 pt-8">
+    <div className="mx-auto w-full max-w-2xl p-4 pt-8">
       <Card>
         <CardHeader>
           <CardTitle>Mi perfil</CardTitle>

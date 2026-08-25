@@ -3,6 +3,7 @@ import { Bot } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AudioPlayer } from "@/components/AudioPlayer";
 import { useAuth } from "@/context/AuthContext";
 import type { ChatMessage } from "@/hooks/useSocket";
 
@@ -15,6 +16,7 @@ interface QuestionDisplayProps {
   isFinished: boolean;
   isWaitingForResponse: boolean;
   onFinish: () => void;
+  children?: React.ReactNode;
 }
 
 export function QuestionDisplay({
@@ -22,6 +24,7 @@ export function QuestionDisplay({
   isFinished,
   isWaitingForResponse,
   onFinish,
+  children,
 }: QuestionDisplayProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const { userEmail } = useAuth();
@@ -75,9 +78,7 @@ export function QuestionDisplay({
                   }`}
                 >
                   <p>{message.text}</p>
-                  {message.audioUrl && (
-                    <audio controls autoPlay src={message.audioUrl} className="mt-2 w-full" />
-                  )}
+                  {message.audioUrl && <AudioPlayer src={message.audioUrl} />}
                   <p
                     className={`mt-1 text-xs ${isAssistant ? "text-muted-foreground" : "text-primary-foreground/70"}`}
                   >
@@ -108,13 +109,15 @@ export function QuestionDisplay({
           <div ref={bottomRef} />
         </div>
 
+        {children && <div className="mt-3">{children}</div>}
+
         {isFinished ? (
           <p className="mt-4 text-sm text-muted-foreground">
             Gracias por su tiempo — sus respuestas quedaron registradas. Nos vamos a poner en
             contacto por email con los siguientes pasos.
           </p>
         ) : (
-          <Button className="mt-4" onClick={onFinish}>
+          <Button variant="outline" className="mt-4" onClick={onFinish}>
             Finalizar entrevista
           </Button>
         )}

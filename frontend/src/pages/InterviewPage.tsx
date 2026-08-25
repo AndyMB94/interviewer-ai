@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { fetchMisPostulacionesPendientes, type MiPostulacion } from "@/lib/api";
@@ -27,6 +28,7 @@ export function InterviewPage() {
   const [question, setQuestion] = useState("");
   const [isFinished, setIsFinished] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [confirmandoFinalizar, setConfirmandoFinalizar] = useState(false);
   const [postulacionesPendientes, setPostulacionesPendientes] = useState<MiPostulacion[]>([]);
   const [postulacionesRestantes, setPostulacionesRestantes] = useState<MiPostulacion[]>([]);
   const [postulacionElegida, setPostulacionElegida] = useState<MiPostulacion | null>(null);
@@ -94,8 +96,8 @@ export function InterviewPage() {
 
   if (!hasStarted && requiereElegirPuesto) {
     return (
-      <div className="mx-auto max-w-2xl p-4">
-        <Card>
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-4">
+        <Card className="w-full max-w-2xl animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
           <CardHeader>
             <CardTitle>¿Para cuál puesto quiere hacer la entrevista?</CardTitle>
             <CardDescription>
@@ -122,9 +124,12 @@ export function InterviewPage() {
 
   if (!hasStarted) {
     return (
-      <div className="mx-auto max-w-2xl p-4">
-        <Card>
-          <CardHeader>
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-4">
+        <Card className="w-full max-w-2xl animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+          <CardHeader className="items-center justify-items-center text-center">
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Bot className="h-6 w-6 text-primary" />
+            </div>
             <CardTitle>{miPostulacion ? `¡Hola, ${miPostulacion.nombre}!` : "¡Bienvenido!"}</CardTitle>
             <CardDescription>
               {miPostulacion
@@ -147,27 +152,27 @@ export function InterviewPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-4">
+    <div className="mx-auto w-full max-w-2xl space-y-6 p-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <QuestionDisplay
         messages={messages}
         isFinished={isFinished}
         isWaitingForResponse={isWaitingForResponse}
-        onFinish={handleFinish}
-      />
-
-      {!isFinished && (
-        <MessageComposer
-          question={question}
-          onQuestionChange={setQuestion}
-          onSubmit={handleSubmit}
-          stream={stream}
-          error={error}
-          requestPermission={requestPermission}
-          isRecording={isRecording}
-          startRecording={startRecording}
-          stopRecording={stopRecording}
-        />
-      )}
+        onFinish={() => setConfirmandoFinalizar(true)}
+      >
+        {!isFinished && (
+          <MessageComposer
+            question={question}
+            onQuestionChange={setQuestion}
+            onSubmit={handleSubmit}
+            stream={stream}
+            error={error}
+            requestPermission={requestPermission}
+            isRecording={isRecording}
+            startRecording={startRecording}
+            stopRecording={stopRecording}
+          />
+        )}
+      </QuestionDisplay>
 
       {isFinished && postulacionesRestantes.length > 0 && (
         <Card>
@@ -208,6 +213,29 @@ export function InterviewPage() {
               }}
             >
               Salir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmandoFinalizar} onOpenChange={setConfirmandoFinalizar}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Finalizar la entrevista?</AlertDialogTitle>
+            <AlertDialogDescription>
+              No va a poder responder más preguntas después de esto. Asegúrese de haber
+              contestado todo lo que quería antes de continuar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmandoFinalizar(false);
+                handleFinish();
+              }}
+            >
+              Finalizar entrevista
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

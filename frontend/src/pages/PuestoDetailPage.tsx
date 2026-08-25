@@ -107,7 +107,7 @@ export function PuestoDetailPage() {
     return (
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-4">
         <Card className="w-full max-w-md animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-          <CardHeader className="items-center text-center">
+          <CardHeader className="items-center justify-items-center text-center">
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
               <CheckCircle2 className="h-6 w-6 text-primary" />
             </div>
