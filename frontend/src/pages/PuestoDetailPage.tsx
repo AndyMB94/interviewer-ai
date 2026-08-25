@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ClipboardCheck, FileText, ListChecks, Star, Upload, X } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ClipboardCheck,
+  FileText,
+  ListChecks,
+  Star,
+  Upload,
+  X,
+} from "lucide-react";
 import { Link, useParams } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,9 +105,12 @@ export function PuestoDetailPage() {
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-md p-4 pt-8">
-        <Card>
-          <CardHeader>
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-4">
+        <Card className="w-full max-w-md animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+          <CardHeader className="items-center text-center">
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <CheckCircle2 className="h-6 w-6 text-primary" />
+            </div>
             <CardTitle>¡Postulación enviada!</CardTitle>
             <CardDescription className="min-w-0 wrap-break-word">
               Postuló a <span className="font-medium text-foreground">{puesto.titulo}</span>.
@@ -106,9 +118,9 @@ export function PuestoDetailPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
-              Un filtro con IA va a revisar su CV contra los requisitos del puesto. Si su perfil
-              encaja, le vamos a mandar un email a <span className="font-medium">{email}</span> con
-              los siguientes pasos.
+              Vamos a revisar su CV contra los requisitos del puesto. Si su perfil encaja, le
+              vamos a mandar un email a <span className="font-medium">{email}</span> con los
+              siguientes pasos.
             </p>
             <Button variant="outline" nativeButton={false} render={<Link to="/" />} className="self-start">
               Volver a vacantes

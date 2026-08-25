@@ -1,5 +1,6 @@
 import { Briefcase, Users } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router";
+import { NavbarActions } from "@/components/NavbarActions";
 import {
   Sidebar,
   SidebarContent,
@@ -51,8 +52,14 @@ export function DashboardLayout() {
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <div className="flex items-center gap-2 border-b border-border p-4">
-          <SidebarTrigger />
+        <div className="flex items-center justify-between gap-2 border-b border-border p-4">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <Link to="/dashboard" className="font-bold">
+              Vacantia
+            </Link>
+          </div>
+          <NavbarActions />
         </div>
         <div className="p-4">
           <Outlet />

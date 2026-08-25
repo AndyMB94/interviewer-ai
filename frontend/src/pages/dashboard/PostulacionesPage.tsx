@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PaginationControls } from "@/components/PaginationControls";
+import { PostulacionDetailSheet } from "@/components/PostulacionDetailSheet";
 import { useAuth } from "@/context/AuthContext";
 import { fetchMisPostulaciones, type Postulacion } from "@/lib/api";
 
@@ -21,6 +22,7 @@ export function PostulacionesPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [postulacionSeleccionada, setPostulacionSeleccionada] = useState<Postulacion | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -62,14 +64,18 @@ export function PostulacionesPage() {
           </TableHeader>
           <TableBody>
             {postulaciones.map((postulacion) => (
-              <TableRow key={postulacion.id}>
+              <TableRow
+                key={postulacion.id}
+                className="cursor-pointer"
+                onClick={() => setPostulacionSeleccionada(postulacion)}
+              >
                 <TableCell>{postulacion.nombre}</TableCell>
                 <TableCell>{postulacion.email}</TableCell>
                 <TableCell className="max-w-48 truncate">{postulacion.puesto_titulo}</TableCell>
                 <TableCell>
                   <Badge variant={ESTADO_VARIANT[postulacion.estado]}>{postulacion.estado}</Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={(event) => event.stopPropagation()}>
                   {postulacion.interview_id !== null && (
                     <Button
                       variant="outline"
@@ -88,6 +94,13 @@ export function PostulacionesPage() {
       )}
 
       {!loading && !error && <PaginationControls count={count} page={page} onPageChange={setPage} />}
+
+      <PostulacionDetailSheet
+        postulacion={postulacionSeleccionada}
+        onOpenChange={(open) => {
+          if (!open) setPostulacionSeleccionada(null);
+        }}
+      />
     </div>
   );
 }

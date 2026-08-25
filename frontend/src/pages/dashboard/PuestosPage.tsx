@@ -165,7 +165,7 @@ export function PuestosPage() {
             <AlertDialogTitle>¿Cerrar este puesto?</AlertDialogTitle>
             <AlertDialogDescription>
               "{puestoParaCerrar?.titulo}" dejará de aparecer en la postulación pública y de aceptar
-              CVs nuevos. Podés reabrirlo cuando quieras.
+              CVs nuevos. Puede reabrirlo cuando quiera.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
