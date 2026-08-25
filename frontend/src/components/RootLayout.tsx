@@ -7,7 +7,7 @@ export function RootLayout() {
     <TooltipProvider>
       <div className="flex min-h-screen flex-col">
         <Navbar />
-        <div className="flex flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
           <Outlet />
         </div>
       </div>

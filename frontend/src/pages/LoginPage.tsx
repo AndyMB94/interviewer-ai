@@ -32,7 +32,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-[calc(100vh-65px)] items-center justify-center overflow-hidden p-4">
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-4">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute top-1/2 left-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl"

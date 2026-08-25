@@ -10,20 +10,18 @@ interface PuestoCardProps {
 
 export function PuestoCard({ puesto }: PuestoCardProps) {
   return (
-    <Link to={`/puestos/${puesto.id}`} className="block">
-      <Card className="h-full transition-all hover:border-primary/50 hover:shadow-lg">
+    <Link to={`/puestos/${puesto.id}`} className="block h-full">
+      <Card className="h-full transition-all hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10">
         <CardHeader>
-          <div className="flex items-start justify-between gap-2">
-            <CardTitle className="text-lg">{puesto.titulo}</CardTitle>
-            {puesto.categoria_nombre && (
-              <Badge variant="secondary" className="shrink-0">
-                {puesto.categoria_nombre}
-              </Badge>
-            )}
-          </div>
-          <CardDescription className="line-clamp-2">{puesto.descripcion}</CardDescription>
+          {puesto.categoria_nombre && (
+            <div className="flex justify-end">
+              <Badge variant="secondary">{puesto.categoria_nombre}</Badge>
+            </div>
+          )}
+          <CardTitle className="line-clamp-2 wrap-break-word text-lg">{puesto.titulo}</CardTitle>
+          <CardDescription className="line-clamp-2 wrap-break-word">{puesto.descripcion}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="mt-auto">
           <Badge variant="outline">{MODALIDAD_LABEL[puesto.modalidad]}</Badge>
         </CardContent>
       </Card>

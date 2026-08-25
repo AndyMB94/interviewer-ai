@@ -21,6 +21,13 @@ export interface Puesto {
   preseleccionados: number;
 }
 
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 export async function fetchCategorias(): Promise<Categoria[]> {
   const response = await fetch(`${API_URL}/api/categorias/`);
   if (!response.ok) {
@@ -29,11 +36,15 @@ export async function fetchCategorias(): Promise<Categoria[]> {
   return response.json();
 }
 
-export async function fetchPuestosAbiertos(categoriaId?: number): Promise<Puesto[]> {
+export async function fetchPuestosAbiertos(
+  categoriaId?: number,
+  page = 1,
+): Promise<PaginatedResponse<Puesto>> {
   const url = new URL(`${API_URL}/api/puestos/`);
   if (categoriaId) {
     url.searchParams.set("categoria", String(categoriaId));
   }
+  url.searchParams.set("page", String(page));
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error("No se pudieron cargar los puestos disponibles.");
@@ -51,8 +62,11 @@ export async function fetchPuesto(id: number): Promise<Puesto> {
   return response.json();
 }
 
-export async function fetchMisPuestos(token: string): Promise<Puesto[]> {
-  const response = await fetch(`${API_URL}/api/puestos/?mias=true`, {
+export async function fetchMisPuestos(token: string, page = 1): Promise<PaginatedResponse<Puesto>> {
+  const url = new URL(`${API_URL}/api/puestos/`);
+  url.searchParams.set("mias", "true");
+  url.searchParams.set("page", String(page));
+  const response = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
@@ -177,8 +191,13 @@ export interface Postulacion {
   interview_id: number | null;
 }
 
-export async function fetchMisPostulaciones(token: string): Promise<Postulacion[]> {
-  const response = await fetch(`${API_URL}/api/postulaciones/`, {
+export async function fetchMisPostulaciones(
+  token: string,
+  page = 1,
+): Promise<PaginatedResponse<Postulacion>> {
+  const url = new URL(`${API_URL}/api/postulaciones/`);
+  url.searchParams.set("page", String(page));
+  const response = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {

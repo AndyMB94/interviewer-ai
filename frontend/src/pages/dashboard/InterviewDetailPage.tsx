@@ -97,8 +97,8 @@ export function InterviewDetailPage() {
       {!loading && !error && interview && (
         <>
           <div>
-            <h1 className="text-2xl font-bold">{interview.postulacion.nombre}</h1>
-            <p className="text-muted-foreground">{interview.postulacion.puesto_titulo}</p>
+            <h1 className="wrap-break-word text-2xl font-bold">{interview.postulacion.nombre}</h1>
+            <p className="wrap-break-word text-muted-foreground">{interview.postulacion.puesto_titulo}</p>
           </div>
 
           <Card>

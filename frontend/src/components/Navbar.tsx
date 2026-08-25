@@ -33,7 +33,7 @@ export function Navbar() {
       : "/";
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <nav className="sticky top-0 border-b border-border bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="mx-auto flex max-w-4xl items-center justify-between p-4">
         <Link to={logoDestination} className="font-bold">
           Vacantia

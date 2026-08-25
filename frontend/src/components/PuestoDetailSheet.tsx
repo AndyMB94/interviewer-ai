@@ -18,7 +18,7 @@ export function PuestoDetailSheet({
         {puesto && (
           <>
             <SheetHeader>
-              <SheetTitle>{puesto.titulo}</SheetTitle>
+              <SheetTitle className="wrap-break-word">{puesto.titulo}</SheetTitle>
               <div className="flex flex-wrap gap-2 pt-1">
                 <Badge variant={puesto.estado === "abierto" ? "default" : "secondary"}>
                   {puesto.estado}

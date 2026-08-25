@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationControls } from "@/components/PaginationControls";
 import { useAuth } from "@/context/AuthContext";
 import { fetchMisPostulaciones, type Postulacion } from "@/lib/api";
 
@@ -16,16 +17,21 @@ const ESTADO_VARIANT: Record<Postulacion["estado"], "outline" | "default" | "des
 export function PostulacionesPage() {
   const { accessToken } = useAuth();
   const [postulaciones, setPostulaciones] = useState<Postulacion[]>([]);
+  const [count, setCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
-    fetchMisPostulaciones(accessToken)
-      .then(setPostulaciones)
+    fetchMisPostulaciones(accessToken, page)
+      .then((data) => {
+        setPostulaciones(data.results);
+        setCount(data.count);
+      })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [accessToken]);
+  }, [accessToken, page]);
 
   return (
     <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
@@ -59,7 +65,7 @@ export function PostulacionesPage() {
               <TableRow key={postulacion.id}>
                 <TableCell>{postulacion.nombre}</TableCell>
                 <TableCell>{postulacion.email}</TableCell>
-                <TableCell>{postulacion.puesto_titulo}</TableCell>
+                <TableCell className="max-w-48 truncate">{postulacion.puesto_titulo}</TableCell>
                 <TableCell>
                   <Badge variant={ESTADO_VARIANT[postulacion.estado]}>{postulacion.estado}</Badge>
                 </TableCell>
@@ -80,6 +86,8 @@ export function PostulacionesPage() {
           </TableBody>
         </Table>
       )}
+
+      {!loading && !error && <PaginationControls count={count} page={page} onPageChange={setPage} />}
     </div>
   );
 }

@@ -3,8 +3,8 @@ import { Footer } from "@/components/Footer";
 
 export function PublicLayout() {
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="flex-1">
+    <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative min-w-0 flex-1">
         <Outlet />
       </div>
       <Footer />

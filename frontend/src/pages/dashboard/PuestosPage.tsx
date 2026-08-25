@@ -17,12 +17,15 @@ import { Spinner } from "@/components/ui/spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
 import { PuestoDetailSheet } from "@/components/PuestoDetailSheet";
+import { PaginationControls } from "@/components/PaginationControls";
 import { useAuth } from "@/context/AuthContext";
 import { fetchMisPuestos, updatePuesto, type Puesto } from "@/lib/api";
 
 export function PuestosPage() {
   const { accessToken } = useAuth();
   const [puestos, setPuestos] = useState<Puesto[]>([]);
+  const [count, setCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [puestoParaCerrar, setPuestoParaCerrar] = useState<Puesto | null>(null);
@@ -31,11 +34,14 @@ export function PuestosPage() {
 
   useEffect(() => {
     if (!accessToken) return;
-    fetchMisPuestos(accessToken)
-      .then(setPuestos)
+    fetchMisPuestos(accessToken, page)
+      .then((data) => {
+        setPuestos(data.results);
+        setCount(data.count);
+      })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [accessToken]);
+  }, [accessToken, page]);
 
   const cambiarEstado = async (puesto: Puesto, estado: Puesto["estado"]) => {
     if (!accessToken) return;
@@ -100,7 +106,7 @@ export function PuestosPage() {
                 className="cursor-pointer"
                 onClick={() => setPuestoSeleccionado(puesto)}
               >
-                <TableCell>{puesto.titulo}</TableCell>
+                <TableCell className="max-w-48 truncate">{puesto.titulo}</TableCell>
                 <TableCell>
                   <Badge variant={puesto.estado === "abierto" ? "default" : "secondary"}>
                     {puesto.estado}
@@ -145,6 +151,8 @@ export function PuestosPage() {
           </TableBody>
         </Table>
       )}
+
+      {!loading && !error && <PaginationControls count={count} page={page} onPageChange={setPage} />}
 
       <AlertDialog
         open={puestoParaCerrar !== null}
