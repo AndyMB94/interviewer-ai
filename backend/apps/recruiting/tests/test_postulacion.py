@@ -98,7 +98,7 @@ def test_reclutador_only_sees_postulaciones_of_their_own_puestos(puesto, recluta
     response = client.get("/api/postulaciones/")
 
     assert response.status_code == 200
-    assert len(response.json()) == 0
+    assert len(response.json()["results"]) == 0
 
 
 @pytest.mark.django_db
@@ -110,9 +110,10 @@ def test_owner_reclutador_sees_postulaciones_of_their_puesto(puesto, reclutador)
     response = client.get("/api/postulaciones/")
 
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]["puesto_titulo"] == puesto.titulo
-    assert response.json()[0]["interview_id"] is None
+    data = response.json()["results"]
+    assert len(data) == 1
+    assert data[0]["puesto_titulo"] == puesto.titulo
+    assert data[0]["interview_id"] is None
 
 
 @pytest.mark.django_db
@@ -129,4 +130,4 @@ def test_postulacion_list_includes_interview_id_when_it_has_one(puesto, reclutad
     response = client.get("/api/postulaciones/")
 
     assert response.status_code == 200
-    assert response.json()[0]["interview_id"] == interview.id
+    assert response.json()["results"][0]["interview_id"] == interview.id

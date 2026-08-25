@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from apps.interviews.models import Interview
 from apps.recruiting.models import Categoria, Postulacion, Puesto
+from apps.recruiting.pagination import StandardResultsPagination
 from apps.recruiting.permissions import CanManagePostulacion, IsOwnerReclutadorOrReadOnly
 from apps.recruiting.serializers import CategoriaSerializer, PostulacionSerializer, PuestoSerializer
 from apps.recruiting.services.postulacion_lookup import get_postulaciones_aprobadas_pendientes
@@ -20,6 +21,7 @@ class CategoriaViewSet(viewsets.ReadOnlyModelViewSet):
 class PuestoViewSet(viewsets.ModelViewSet):
     serializer_class = PuestoSerializer
     permission_classes = [IsOwnerReclutadorOrReadOnly]
+    pagination_class = StandardResultsPagination
 
     def get_queryset(self):
         queryset = Puesto.objects.select_related("categoria").annotate(
@@ -41,7 +43,10 @@ class PuestoViewSet(viewsets.ModelViewSet):
         categoria_id = self.request.query_params.get("categoria")
         if categoria_id:
             queryset = queryset.filter(categoria_id=categoria_id)
-        return queryset
+        # order_by explícito: el annotate() con Count() de arriba hace que Django pierda el
+        # ordenamiento implícito de Meta.ordering, y sin orden estable la paginación puede dar
+        # resultados inconsistentes entre páginas (filas repetidas o salteadas).
+        return queryset.order_by("-created_at")
 
     def perform_create(self, serializer):
         serializer.save(creado_por=self.request.user)
@@ -50,6 +55,7 @@ class PuestoViewSet(viewsets.ModelViewSet):
 class PostulacionViewSet(viewsets.ModelViewSet):
     serializer_class = PostulacionSerializer
     permission_classes = [CanManagePostulacion]
+    pagination_class = StandardResultsPagination
     http_method_names = ["get", "post", "head", "options"]  # sin update/destroy por ahora
 
     def get_queryset(self):

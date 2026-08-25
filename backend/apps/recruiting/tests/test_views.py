@@ -44,7 +44,7 @@ def test_anyone_can_list_puestos(puesto):
     response = client.get("/api/puestos/")
 
     assert response.status_code == 200
-    assert len(response.json()) == 1
+    assert len(response.json()["results"]) == 1
 
 
 @pytest.mark.django_db
@@ -127,7 +127,7 @@ def test_mias_filter_returns_only_the_reclutador_own_puestos(puesto, otro_reclut
     response = client.get("/api/puestos/?mias=true")
 
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["results"]
     assert len(data) == 1
     assert data[0]["id"] == puesto.id
 
@@ -138,7 +138,7 @@ def test_mias_filter_returns_empty_for_anonymous():
     response = client.get("/api/puestos/?mias=true")
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json()["results"] == []
 
 
 @pytest.mark.django_db
@@ -153,7 +153,7 @@ def test_puesto_list_includes_postulaciones_count(puesto):
     client = APIClient()
     response = client.get("/api/puestos/")
 
-    data = response.json()
+    data = response.json()["results"]
     assert data[0]["postulaciones_count"] == 1
 
 
@@ -240,6 +240,9 @@ def test_anyone_can_list_categorias():
     response = client.get("/api/categorias/")
 
     assert response.status_code == 200
+    # Regresión: a diferencia de Puesto/Postulacion (9.12), Categoria no lleva pagination_class a
+    # propósito — su listado sigue siendo un array plano, no {count, next, previous, results}.
+    assert isinstance(response.json(), list)
     nombres = [c["nombre"] for c in response.json()]
     assert "Categoría de prueba" in nombres
 
@@ -253,7 +256,7 @@ def test_puesto_includes_categoria_nombre_when_set(puesto):
     client = APIClient()
     response = client.get("/api/puestos/")
 
-    assert response.json()[0]["categoria_nombre"] == "Categoría de prueba"
+    assert response.json()["results"][0]["categoria_nombre"] == "Categoría de prueba"
 
 
 @pytest.mark.django_db
@@ -261,7 +264,7 @@ def test_puesto_categoria_nombre_is_null_without_categoria(puesto):
     client = APIClient()
     response = client.get("/api/puestos/")
 
-    assert response.json()[0]["categoria_nombre"] is None
+    assert response.json()["results"][0]["categoria_nombre"] is None
 
 
 @pytest.mark.django_db
@@ -282,7 +285,7 @@ def test_puestos_filter_by_categoria(puesto, reclutador):
     response = client.get(f"/api/puestos/?categoria={categoria_a.id}")
 
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["results"]
     assert len(data) == 1
     assert data[0]["id"] == puesto.id
 
@@ -292,7 +295,7 @@ def test_puesto_default_vacantes_is_one(puesto):
     client = APIClient()
     response = client.get("/api/puestos/")
 
-    assert response.json()[0]["vacantes"] == 1
+    assert response.json()["results"][0]["vacantes"] == 1
 
 
 @pytest.mark.django_db
@@ -322,7 +325,7 @@ def test_public_list_excludes_puestos_cerrados(reclutador):
     response = client.get("/api/puestos/")
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json()["results"] == []
 
 
 @pytest.mark.django_db
@@ -340,7 +343,7 @@ def test_mias_filter_includes_puestos_cerrados(reclutador):
     response = client.get("/api/puestos/?mias=true")
 
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["results"]
     assert len(data) == 1
     assert data[0]["id"] == puesto_cerrado.id
 
@@ -386,4 +389,28 @@ def test_puesto_counts_only_interviews_with_avanza_as_preseleccionados(puesto):
     client = APIClient()
     response = client.get("/api/puestos/")
 
-    assert response.json()[0]["preseleccionados"] == 1
+    assert response.json()["results"][0]["preseleccionados"] == 1
+
+
+@pytest.mark.django_db
+def test_puesto_list_is_paginated_with_more_than_one_page(reclutador):
+    for i in range(13):
+        Puesto.objects.create(
+            titulo=f"Puesto {i}", descripcion="...", requisitos="...", creado_por=reclutador
+        )
+
+    client = APIClient()
+    page_1 = client.get("/api/puestos/").json()
+    assert page_1["count"] == 13
+    assert len(page_1["results"]) == 12
+    assert page_1["next"] is not None
+    assert page_1["previous"] is None
+
+    page_2 = client.get("/api/puestos/?page=2").json()
+    assert len(page_2["results"]) == 1
+    assert page_2["next"] is None
+    assert page_2["previous"] is not None
+
+    ids_pagina_1 = {p["id"] for p in page_1["results"]}
+    ids_pagina_2 = {p["id"] for p in page_2["results"]}
+    assert ids_pagina_1.isdisjoint(ids_pagina_2)

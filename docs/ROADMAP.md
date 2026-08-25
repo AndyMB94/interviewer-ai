@@ -495,15 +495,15 @@ _Frontend 6.7 completo — el reclutador ya tiene una vista de solo lectura del 
 
 **Decisión 4 — el tipo de respuesta paginada se modela una sola vez.** `PaginatedResponse<T>` en `lib/api.ts` (`{count, next, previous, results: T[]}`), reusado por `fetchPuestosAbiertos`, `fetchMisPuestos` y `fetchMisPostulaciones` — las tres pasan a aceptar un `page` y devolver `PaginatedResponse<T>` en vez de `T[]` directo.
 
-- [ ] 9.12.1 Backend: `StandardResultsPagination(PageNumberPagination)` — `page_size = 12`, `page_size_query_param = "page_size"` (permite pedir más por página puntualmente si hiciera falta, sin forzarlo).
-- [ ] 9.12.2 Backend: `PuestoViewSet.pagination_class = StandardResultsPagination` — afecta tanto el listado público como `?mias=true` (comparten el mismo `get_queryset()`).
-- [ ] 9.12.3 Backend: `PostulacionViewSet.pagination_class = StandardResultsPagination`.
-- [ ] 9.12.4 Backend: confirmar que `CategoriaViewSet` no se toca (Decisión 2) — sigue sin `pagination_class`, sigue devolviendo el array plano.
+- [x] 9.12.1 Backend: `StandardResultsPagination(PageNumberPagination)` — `page_size = 12`, `page_size_query_param = "page_size"` (permite pedir más por página puntualmente si hiciera falta, sin forzarlo).
+- [x] 9.12.2 Backend: `PuestoViewSet.pagination_class = StandardResultsPagination` — afecta tanto el listado público como `?mias=true` (comparten el mismo `get_queryset()`). **Hallazgo real al correr los tests:** el `.annotate()` con `Count()` de `get_queryset()` le hace perder a Django el ordenamiento implícito de `Meta.ordering` (`UnorderedObjectListWarning` de Django, no de DRF) — sin orden estable, la paginación puede repetir o saltear filas entre páginas. Se agregó `.order_by("-created_at")` explícito al final de `get_queryset()`.
+- [x] 9.12.3 Backend: `PostulacionViewSet.pagination_class = StandardResultsPagination`.
+- [x] 9.12.4 Backend: confirmado que `CategoriaViewSet` no se toca (Decisión 2) — sigue sin `pagination_class`, sigue devolviendo el array plano.
 - [ ] 9.12.5 Frontend: `PaginatedResponse<T>` en `lib/api.ts`; `fetchPuestosAbiertos`, `fetchMisPuestos`, `fetchMisPostulaciones` actualizados para aceptar `page` y devolver `PaginatedResponse<T>`.
 - [ ] 9.12.6 Frontend: instalar `Pagination` de shadcn; `components/PaginationControls.tsx` (Decisión 3).
 - [ ] 9.12.7 Frontend: `ApplyPage.tsx` — estado `page`, `PaginationControls` debajo de la grilla; cambiar de categoría resetea `page` a 1 (si no, se puede quedar en una página que ya no existe para la categoría nueva).
 - [ ] 9.12.8 Frontend: `PuestosPage.tsx` y `PostulacionesPage.tsx` — mismo patrón, `PaginationControls` debajo de la tabla.
-- [ ] 9.12.9 Tests backend: `PuestoViewSet`/`PostulacionViewSet` devuelven la forma paginada (`count`/`next`/`previous`/`results`); con más de 12 puestos, `?page=2` trae el resto; test de regresión explícito confirmando que `CategoriaViewSet` sigue devolviendo un array plano (para no repetir en silencio el error que describe la Decisión 2).
+- [x] 9.12.9 Tests backend: actualizados los 14 tests existentes que asumían un array plano en `/api/puestos/`/`/api/postulaciones/` para leer `response.json()["results"]`; nuevo `test_puesto_list_is_paginated_with_more_than_one_page` (13 puestos → página 1 con 12 + `next`, página 2 con 1 + `previous`, sin ids repetidos entre páginas); `test_anyone_can_list_categorias` con aserción explícita de regresión (`isinstance(response.json(), list)`) para la Decisión 2. 116/116 tests del backend pasando.
 - [ ] 9.12.10 Verificación en el navegador: con más de 12 puestos (reusando los de prueba que ya hay + alguno extra si hace falta), confirmar los controles de paginación en `/`, `/dashboard` y `/dashboard/postulaciones`; cambiar de categoría en `/` vuelve a la página 1; el `<Select>` de categorías en `ApplyPage`/`PuestoFormPage` sigue funcionando sin romperse.
 
 ## Notas
