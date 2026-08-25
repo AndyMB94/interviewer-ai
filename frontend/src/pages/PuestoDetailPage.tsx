@@ -104,7 +104,7 @@ export function PuestoDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-4 pt-8">
+    <div className="mx-auto max-w-2xl space-y-4 p-4 pt-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <Button variant="outline" size="sm" nativeButton={false} render={<Link to="/" />}>
         <ArrowLeft />
         Volver a vacantes

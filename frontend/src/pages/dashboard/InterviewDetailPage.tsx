@@ -79,7 +79,7 @@ export function InterviewDetailPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <Button variant="outline" size="sm" nativeButton={false} render={<Link to="/dashboard/postulaciones" />}>
         <ArrowLeft />
         Volver a postulaciones

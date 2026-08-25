@@ -61,7 +61,7 @@ export function PuestosPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Mis puestos</h1>
         <Button nativeButton={false} render={<Link to="/dashboard/puestos/nuevo" />}>

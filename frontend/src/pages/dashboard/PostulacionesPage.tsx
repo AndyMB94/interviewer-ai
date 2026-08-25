@@ -28,7 +28,7 @@ export function PostulacionesPage() {
   }, [accessToken]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <h1 className="text-2xl font-bold">Postulaciones</h1>
 
       {loading && (

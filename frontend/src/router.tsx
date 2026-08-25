@@ -11,6 +11,7 @@ import { InterviewDetailPage } from "./pages/dashboard/InterviewDetailPage";
 import { RequireAuth } from "./components/RequireAuth";
 import { RequireRole } from "./components/RequireRole";
 import { RootLayout } from "./components/RootLayout";
+import { PublicLayout } from "./components/PublicLayout";
 import { DashboardLayout } from "./components/DashboardLayout";
 
 export const router = createBrowserRouter([
@@ -18,12 +19,21 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       {
-        path: "/",
-        element: <ApplyPage />,
-      },
-      {
-        path: "/puestos/:id",
-        element: <PuestoDetailPage />,
+        element: <PublicLayout />,
+        children: [
+          {
+            path: "/",
+            element: <ApplyPage />,
+          },
+          {
+            path: "/puestos/:id",
+            element: <PuestoDetailPage />,
+          },
+          {
+            path: "/login",
+            element: <LoginPage />,
+          },
+        ],
       },
       {
         path: "/entrevista",
@@ -32,10 +42,6 @@ export const router = createBrowserRouter([
             <InterviewPage />
           </RequireAuth>
         ),
-      },
-      {
-        path: "/login",
-        element: <LoginPage />,
       },
       {
         path: "/perfil",

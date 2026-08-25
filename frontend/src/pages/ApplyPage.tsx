@@ -33,7 +33,7 @@ export function ApplyPage() {
   }, [categoriaId]);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-4 pt-8">
+    <div className="mx-auto max-w-4xl space-y-8 p-4 pt-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <header className="space-y-2 text-center">
         <h1 className="text-3xl font-bold">Vacantes abiertas</h1>
         <p className="text-muted-foreground">
@@ -77,7 +77,15 @@ export function ApplyPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         {loadingPuestos
           ? Array.from({ length: 4 }).map((_, index) => <PuestoCardSkeleton key={index} />)
-          : puestos.map((puesto) => <PuestoCard key={puesto.id} puesto={puesto} />)}
+          : puestos.map((puesto, index) => (
+              <div
+                key={puesto.id}
+                className="animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-300"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <PuestoCard puesto={puesto} />
+              </div>
+            ))}
       </div>
     </div>
   );

@@ -138,7 +138,7 @@ export function PuestoFormPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <Card>
         <CardHeader>
           <CardTitle>{isEditing ? "Editar puesto" : "Nuevo puesto"}</CardTitle>

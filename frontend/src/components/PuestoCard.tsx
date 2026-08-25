@@ -2,12 +2,7 @@ import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { Puesto } from "@/lib/api";
-
-const MODALIDAD_LABEL: Record<Puesto["modalidad"], string> = {
-  presencial: "Presencial",
-  remoto: "Remoto",
-  hibrido: "Híbrido",
-};
+import { MODALIDAD_LABEL } from "@/lib/puesto";
 
 interface PuestoCardProps {
   puesto: Puesto;
@@ -16,7 +11,7 @@ interface PuestoCardProps {
 export function PuestoCard({ puesto }: PuestoCardProps) {
   return (
     <Link to={`/puestos/${puesto.id}`} className="block">
-      <Card className="h-full transition-shadow hover:shadow-lg">
+      <Card className="h-full transition-all hover:border-primary/50 hover:shadow-lg">
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="text-lg">{puesto.titulo}</CardTitle>

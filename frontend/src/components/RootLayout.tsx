@@ -5,9 +5,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 export function RootLayout() {
   return (
     <TooltipProvider>
-      <div className="min-h-screen">
+      <div className="flex min-h-screen flex-col">
         <Navbar />
-        <Outlet />
+        <div className="flex flex-1 flex-col">
+          <Outlet />
+        </div>
       </div>
     </TooltipProvider>
   );
