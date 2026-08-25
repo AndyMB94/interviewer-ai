@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { EmojiPickerButton } from "@/components/EmojiPickerButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
+import { useEmojiInsert } from "@/hooks/useEmojiInsert";
 import {
   createPuesto,
   fetchCategorias,
@@ -52,6 +54,19 @@ export function PuestoFormPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const { ref: tituloRef, insertEmoji: insertTituloEmoji } = useEmojiInsert<HTMLInputElement>(
+    titulo,
+    setTitulo,
+  );
+  const { ref: descripcionRef, insertEmoji: insertDescripcionEmoji } =
+    useEmojiInsert<HTMLTextAreaElement>(descripcion, setDescripcion);
+  const { ref: funcionesRef, insertEmoji: insertFuncionesEmoji } =
+    useEmojiInsert<HTMLTextAreaElement>(funciones, setFunciones);
+  const { ref: requisitosRef, insertEmoji: insertRequisitosEmoji } =
+    useEmojiInsert<HTMLTextAreaElement>(requisitos, setRequisitos);
+  const { ref: requisitosDeseablesRef, insertEmoji: insertRequisitosDeseablesEmoji } =
+    useEmojiInsert<HTMLTextAreaElement>(requisitosDeseables, setRequisitosDeseables);
 
   useEffect(() => {
     fetchCategorias()
@@ -128,9 +143,13 @@ export function PuestoFormPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="titulo">Título</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="titulo">Título</Label>
+                <EmojiPickerButton onSelect={insertTituloEmoji} />
+              </div>
               <Input
                 id="titulo"
+                ref={tituloRef}
                 value={titulo}
                 onChange={(event) => setTitulo(event.target.value)}
                 required
@@ -138,9 +157,13 @@ export function PuestoFormPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="descripcion">Descripción del empleo</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="descripcion">Descripción del empleo</Label>
+                <EmojiPickerButton onSelect={insertDescripcionEmoji} />
+              </div>
               <Textarea
                 id="descripcion"
+                ref={descripcionRef}
                 value={descripcion}
                 onChange={(event) => setDescripcion(event.target.value)}
                 required
@@ -148,18 +171,26 @@ export function PuestoFormPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="funciones">Funciones</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="funciones">Funciones</Label>
+                <EmojiPickerButton onSelect={insertFuncionesEmoji} />
+              </div>
               <Textarea
                 id="funciones"
+                ref={funcionesRef}
                 value={funciones}
                 onChange={(event) => setFunciones(event.target.value)}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="requisitos">Requisitos</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="requisitos">Requisitos</Label>
+                <EmojiPickerButton onSelect={insertRequisitosEmoji} />
+              </div>
               <Textarea
                 id="requisitos"
+                ref={requisitosRef}
                 value={requisitos}
                 onChange={(event) => setRequisitos(event.target.value)}
                 required
@@ -167,9 +198,13 @@ export function PuestoFormPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="requisitos-deseables">Requisitos deseables</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="requisitos-deseables">Requisitos deseables</Label>
+                <EmojiPickerButton onSelect={insertRequisitosDeseablesEmoji} />
+              </div>
               <Textarea
                 id="requisitos-deseables"
+                ref={requisitosDeseablesRef}
                 value={requisitosDeseables}
                 onChange={(event) => setRequisitosDeseables(event.target.value)}
               />
