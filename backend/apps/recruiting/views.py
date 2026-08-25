@@ -31,7 +31,8 @@ class PuestoViewSet(viewsets.ModelViewSet):
                 filter=Q(postulaciones__interviews__decision=Interview.Decision.AVANZA),
             ),
         )
-        if self.request.query_params.get("mias") == "true":
+        es_mias = self.request.query_params.get("mias") == "true"
+        if es_mias:
             if not self.request.user.is_authenticated:
                 return Puesto.objects.none()
             queryset = queryset.filter(creado_por=self.request.user)
@@ -43,6 +44,15 @@ class PuestoViewSet(viewsets.ModelViewSet):
         categoria_id = self.request.query_params.get("categoria")
         if categoria_id:
             queryset = queryset.filter(categoria_id=categoria_id)
+        if es_mias:
+            # Búsqueda y filtro de estado (Backend 9.13) solo tienen sentido en "Mis puestos": el
+            # listado público ya está fijo a abierto y no tiene UI de búsqueda.
+            search = self.request.query_params.get("search")
+            if search:
+                queryset = queryset.filter(titulo__icontains=search)
+            estado = self.request.query_params.get("estado")
+            if estado:
+                queryset = queryset.filter(estado=estado)
         # order_by explícito: el annotate() con Count() de arriba hace que Django pierda el
         # ordenamiento implícito de Meta.ordering, y sin orden estable la paginación puede dar
         # resultados inconsistentes entre páginas (filas repetidas o salteadas).
@@ -61,11 +71,18 @@ class PostulacionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if not self.request.user.is_authenticated:
             return Postulacion.objects.none()
-        return (
+        queryset = (
             Postulacion.objects.filter(puesto__creado_por=self.request.user)
             .select_related("puesto")
             .prefetch_related("interviews")
         )
+        search = self.request.query_params.get("search")
+        if search:
+            queryset = queryset.filter(Q(nombre__icontains=search) | Q(email__icontains=search))
+        estado = self.request.query_params.get("estado")
+        if estado:
+            queryset = queryset.filter(estado=estado)
+        return queryset
 
     def perform_create(self, serializer):
         postulacion = serializer.save()

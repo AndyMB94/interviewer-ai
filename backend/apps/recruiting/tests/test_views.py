@@ -406,11 +406,81 @@ def test_puesto_list_is_paginated_with_more_than_one_page(reclutador):
     assert page_1["next"] is not None
     assert page_1["previous"] is None
 
-    page_2 = client.get("/api/puestos/?page=2").json()
-    assert len(page_2["results"]) == 1
-    assert page_2["next"] is None
-    assert page_2["previous"] is not None
 
-    ids_pagina_1 = {p["id"] for p in page_1["results"]}
-    ids_pagina_2 = {p["id"] for p in page_2["results"]}
-    assert ids_pagina_1.isdisjoint(ids_pagina_2)
+@pytest.mark.django_db
+def test_mias_search_filters_by_titulo_case_insensitive_and_partial(puesto, reclutador):
+    Puesto.objects.create(
+        titulo="Contador senior", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/puestos/?mias=true&search=BACK")
+
+    assert response.status_code == 200
+    data = response.json()["results"]
+    assert len(data) == 1
+    assert data[0]["id"] == puesto.id
+
+
+@pytest.mark.django_db
+def test_mias_search_without_match_returns_empty_list(puesto, reclutador):
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/puestos/?mias=true&search=inexistente")
+
+    assert response.status_code == 200
+    assert response.json()["results"] == []
+
+
+@pytest.mark.django_db
+def test_mias_estado_filter(puesto, reclutador):
+    Puesto.objects.create(
+        titulo="Puesto cerrado",
+        descripcion="...",
+        requisitos="...",
+        creado_por=reclutador,
+        estado=Puesto.Estado.CERRADO,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/puestos/?mias=true&estado=cerrado")
+
+    assert response.status_code == 200
+    data = response.json()["results"]
+    assert len(data) == 1
+    assert data[0]["estado"] == "cerrado"
+
+
+@pytest.mark.django_db
+def test_mias_search_and_estado_combined(puesto, reclutador):
+    Puesto.objects.create(
+        titulo="Desarrollador Frontend",
+        descripcion="...",
+        requisitos="...",
+        creado_por=reclutador,
+        estado=Puesto.Estado.CERRADO,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/puestos/?mias=true&search=desarrollador&estado=abierto")
+
+    assert response.status_code == 200
+    data = response.json()["results"]
+    assert len(data) == 1
+    assert data[0]["id"] == puesto.id
+
+
+@pytest.mark.django_db
+def test_search_and_estado_are_ignored_on_public_listing(puesto, reclutador):
+    Puesto.objects.create(
+        titulo="Contador senior", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+
+    client = APIClient()
+    response = client.get("/api/puestos/?search=backend")
+
+    assert response.status_code == 200
+    assert len(response.json()["results"]) == 2

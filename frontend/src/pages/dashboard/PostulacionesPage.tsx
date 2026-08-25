@@ -2,11 +2,21 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PaginationControls } from "@/components/PaginationControls";
 import { PostulacionDetailSheet } from "@/components/PostulacionDetailSheet";
 import { useAuth } from "@/context/AuthContext";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { fetchMisPostulaciones, type Postulacion } from "@/lib/api";
 
 const ESTADO_VARIANT: Record<Postulacion["estado"], "outline" | "default" | "destructive"> = {
@@ -15,29 +25,76 @@ const ESTADO_VARIANT: Record<Postulacion["estado"], "outline" | "default" | "des
   rechazado: "destructive",
 };
 
+const ESTADO_FILTRO_LABEL: Record<"todos" | Postulacion["estado"], string> = {
+  todos: "Todos los estados",
+  pendiente: "Pendiente",
+  aprobado: "Aprobado",
+  rechazado: "Rechazado",
+};
+
 export function PostulacionesPage() {
   const { accessToken } = useAuth();
   const [postulaciones, setPostulaciones] = useState<Postulacion[]>([]);
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
+  const [estadoFiltro, setEstadoFiltro] = useState<"todos" | Postulacion["estado"]>("todos");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postulacionSeleccionada, setPostulacionSeleccionada] = useState<Postulacion | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
-    fetchMisPostulaciones(accessToken, page)
+    fetchMisPostulaciones(accessToken, {
+      page,
+      search: debouncedSearch || undefined,
+      estado: estadoFiltro === "todos" ? undefined : estadoFiltro,
+    })
       .then((data) => {
         setPostulaciones(data.results);
         setCount(data.count);
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [accessToken, page]);
+  }, [accessToken, page, debouncedSearch, estadoFiltro]);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const handleEstadoFiltroChange = (value: string | null) => {
+    setEstadoFiltro((value as "todos" | Postulacion["estado"]) ?? "todos");
+    setPage(1);
+  };
 
   return (
     <div className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
       <h1 className="text-2xl font-bold">Postulaciones</h1>
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Input
+          placeholder="Buscar por nombre o email..."
+          value={search}
+          onChange={(event) => handleSearchChange(event.target.value)}
+          className="sm:max-w-xs"
+        />
+        <Select value={estadoFiltro} onValueChange={handleEstadoFiltroChange}>
+          <SelectTrigger className="sm:w-48">
+            <SelectValue>{() => ESTADO_FILTRO_LABEL[estadoFiltro]}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {(Object.keys(ESTADO_FILTRO_LABEL) as ("todos" | Postulacion["estado"])[]).map((valor) => (
+                <SelectItem key={valor} value={valor}>
+                  {ESTADO_FILTRO_LABEL[valor]}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
 
       {loading && (
         <div className="space-y-2">
@@ -48,7 +105,11 @@ export function PostulacionesPage() {
       )}
       {error && <p className="text-destructive">{error}</p>}
       {!loading && !error && postulaciones.length === 0 && (
-        <p className="text-muted-foreground">Todavía no recibiste postulaciones.</p>
+        <p className="text-muted-foreground">
+          {search || estadoFiltro !== "todos"
+            ? "No se encontraron postulaciones con esos filtros."
+            : "Todavía no recibiste postulaciones."}
+        </p>
       )}
 
       {!loading && !error && postulaciones.length > 0 && (

@@ -604,14 +604,16 @@ _Frontend P.17 completo — detalle del puesto con layout de 2 columnas en deskt
 
 **Decisión 5 — resetear a página 1 al cambiar la búsqueda o el filtro de estado**, mismo criterio que ya aplica el filtro de categoría de `ApplyPage` (Backend 9.12).
 
-- [ ] 9.13.1 Backend: `PuestoViewSet.get_queryset()` — `?search=` (`titulo__icontains`) y `?estado=`, ambos solo dentro de `mias=true`, después del filtro de `categoria` existente.
-- [ ] 9.13.2 Backend: `PostulacionViewSet.get_queryset()` — `?search=` (`Q(nombre__icontains=...) | Q(email__icontains=...)`) y `?estado=`.
-- [ ] 9.13.3 Backend tests: búsqueda parcial case-insensitive, filtro de estado, combinación búsqueda+estado+paginación, sin resultados (lista vacía, no error).
-- [ ] 9.13.4 Frontend: hook `useDebouncedValue.ts` (300ms).
-- [ ] 9.13.5 Frontend: `fetchMisPuestos`/`fetchMisPostulaciones` en `lib/api.ts` — aceptan `search`/`estado` opcionales, arman los query params igual que ya hace `page`.
-- [ ] 9.13.6 Frontend: `PuestosPage.tsx` — input de búsqueda por título + `<Select>` de estado (Todos/Abierto/Cerrado); mensaje de "sin resultados con esos filtros" distinto al actual "Todavía no publicaste ningún puesto" (son casos distintos: cero puestos en total vs. cero puestos que coincidan). Reset a página 1 al cambiar cualquiera de los dos.
-- [ ] 9.13.7 Frontend: `PostulacionesPage.tsx` — mismo patrón: input de búsqueda (nombre/email) + `<Select>` de estado (Todos/Pendiente/Aprobado/Rechazado).
-- [ ] 9.13.8 Verificación en el navegador con los datos de prueba actuales (2 páginas de puestos, títulos con gibberish) — buscar por una porción del título filtra bien, filtro de estado + búsqueda combinados funcionan juntos, "sin resultados" se ve bien.
+- [x] 9.13.1 Backend: `PuestoViewSet.get_queryset()` — `?search=` (`titulo__icontains`) y `?estado=`, ambos solo dentro de `mias=true`, después del filtro de `categoria` existente.
+- [x] 9.13.2 Backend: `PostulacionViewSet.get_queryset()` — `?search=` (`Q(nombre__icontains=...) | Q(email__icontains=...)`) y `?estado=`.
+- [x] 9.13.3 Backend tests: búsqueda parcial case-insensitive, filtro de estado, combinación búsqueda+estado+paginación, sin resultados (lista vacía, no error). 11 tests nuevos entre `test_views.py` y `test_postulacion.py` — 45/45 tests de `apps/recruiting` pasando.
+- [x] 9.13.4 Frontend: hook `useDebouncedValue.ts` (300ms).
+- [x] 9.13.5 Frontend: `fetchMisPuestos`/`fetchMisPostulaciones` en `lib/api.ts` — pasan a recibir un objeto de opciones (`{page, search, estado}`) en vez de `page` posicional, para no ir agregando parámetros sueltos.
+- [x] 9.13.6 Frontend: `PuestosPage.tsx` — input de búsqueda por título + `<Select>` de estado (Todos/Abierto/Cerrado); mensaje de "sin resultados con esos filtros" distinto al de "Todavía no publicaste ningún puesto" (son casos distintos: cero puestos en total vs. cero puestos que coincidan). Reset a página 1 al cambiar cualquiera de los dos, directo en el handler (no en un `useEffect` aparte, mismo criterio que ya usa `ApplyPage` para evitar el patrón de reset-de-estado-en-efecto ya resuelto antes en el proyecto).
+- [x] 9.13.7 Frontend: `PostulacionesPage.tsx` — mismo patrón: input de búsqueda (nombre/email) + `<Select>` de estado (Todos/Pendiente/Aprobado/Rechazado).
+- [x] 9.13.8 Verificación en el navegador con los datos de prueba actuales — confirmado por el usuario. **Hallazgo real al construir esta fase:** el backend corre en Docker sin bind mount del código fuente (`docker-compose.yml` solo monta `media`/`staticfiles`), así que los cambios de código no llegan al contenedor con un simple restart — hace falta reconstruir la imagen (`docker compose up -d --build backend`). La primera corrida de tests después de escribir el código dio "45/45 pasando" pero en realidad corrió la suite **anterior** a estos cambios (el contenedor tenía el código viejo) — un falso positivo que casi queda sin corregir. Aparte, al reconstruir se encontró un segundo problema real: unas líneas sueltas de una versión anterior de `test_puesto_list_is_paginated_with_more_than_one_page` habían quedado pegadas por error al final de `test_search_and_estado_are_ignored_on_public_listing` (referenciaban una variable `page_1` fuera de alcance), causando un `KeyError` real. Limpiado. 55/55 tests de `apps/recruiting` pasando de verdad tras el rebuild.
+
+_Backend 9.13 + Frontend 6.9 completos — búsqueda y filtro de estado en "Mis puestos" y "Postulaciones", con debounce en el texto y reseteo a página 1 al cambiar cualquiera de los dos._
 
 ## Notas
 

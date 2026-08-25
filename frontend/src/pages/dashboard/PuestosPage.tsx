@@ -12,6 +12,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,13 +28,23 @@ import { toast } from "@/components/ui/toast";
 import { PuestoDetailSheet } from "@/components/PuestoDetailSheet";
 import { PaginationControls } from "@/components/PaginationControls";
 import { useAuth } from "@/context/AuthContext";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { fetchMisPuestos, updatePuesto, type Puesto } from "@/lib/api";
+
+const ESTADO_FILTRO_LABEL: Record<"todos" | Puesto["estado"], string> = {
+  todos: "Todos los estados",
+  abierto: "Abierto",
+  cerrado: "Cerrado",
+};
 
 export function PuestosPage() {
   const { accessToken } = useAuth();
   const [puestos, setPuestos] = useState<Puesto[]>([]);
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
+  const [estadoFiltro, setEstadoFiltro] = useState<"todos" | Puesto["estado"]>("todos");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [puestoParaCerrar, setPuestoParaCerrar] = useState<Puesto | null>(null);
@@ -34,14 +53,28 @@ export function PuestosPage() {
 
   useEffect(() => {
     if (!accessToken) return;
-    fetchMisPuestos(accessToken, page)
+    fetchMisPuestos(accessToken, {
+      page,
+      search: debouncedSearch || undefined,
+      estado: estadoFiltro === "todos" ? undefined : estadoFiltro,
+    })
       .then((data) => {
         setPuestos(data.results);
         setCount(data.count);
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [accessToken, page]);
+  }, [accessToken, page, debouncedSearch, estadoFiltro]);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const handleEstadoFiltroChange = (value: string | null) => {
+    setEstadoFiltro((value as "todos" | Puesto["estado"]) ?? "todos");
+    setPage(1);
+  };
 
   const cambiarEstado = async (puesto: Puesto, estado: Puesto["estado"]) => {
     if (!accessToken) return;
@@ -75,6 +108,29 @@ export function PuestosPage() {
         </Button>
       </div>
 
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Input
+          placeholder="Buscar por título..."
+          value={search}
+          onChange={(event) => handleSearchChange(event.target.value)}
+          className="sm:max-w-xs"
+        />
+        <Select value={estadoFiltro} onValueChange={handleEstadoFiltroChange}>
+          <SelectTrigger className="sm:w-48">
+            <SelectValue>{() => ESTADO_FILTRO_LABEL[estadoFiltro]}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {(Object.keys(ESTADO_FILTRO_LABEL) as ("todos" | Puesto["estado"])[]).map((valor) => (
+                <SelectItem key={valor} value={valor}>
+                  {ESTADO_FILTRO_LABEL[valor]}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+
       {loading && (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, index) => (
@@ -84,7 +140,11 @@ export function PuestosPage() {
       )}
       {error && <p className="text-destructive">{error}</p>}
       {!loading && !error && puestos.length === 0 && (
-        <p className="text-muted-foreground">Todavía no publicaste ningún puesto.</p>
+        <p className="text-muted-foreground">
+          {search || estadoFiltro !== "todos"
+            ? "No se encontraron puestos con esos filtros."
+            : "Todavía no publicaste ningún puesto."}
+        </p>
       )}
 
       {!loading && !error && puestos.length > 0 && (

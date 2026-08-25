@@ -131,3 +131,99 @@ def test_postulacion_list_includes_interview_id_when_it_has_one(puesto, reclutad
 
     assert response.status_code == 200
     assert response.json()["results"][0]["interview_id"] == interview.id
+
+
+@pytest.mark.django_db
+def test_search_matches_nombre_case_insensitive_and_partial(puesto, reclutador):
+    Postulacion.objects.create(puesto=puesto, nombre="Andy Mallcco", email="andy@example.com", cv=_fake_pdf())
+    Postulacion.objects.create(puesto=puesto, nombre="Carla Ruiz", email="carla@example.com", cv=_fake_pdf())
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/postulaciones/?search=MALLCCO")
+
+    assert response.status_code == 200
+    data = response.json()["results"]
+    assert len(data) == 1
+    assert data[0]["nombre"] == "Andy Mallcco"
+
+
+@pytest.mark.django_db
+def test_search_matches_email(puesto, reclutador):
+    Postulacion.objects.create(puesto=puesto, nombre="Andy Mallcco", email="andy@example.com", cv=_fake_pdf())
+    Postulacion.objects.create(puesto=puesto, nombre="Carla Ruiz", email="carla@example.com", cv=_fake_pdf())
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/postulaciones/?search=carla@example")
+
+    assert response.status_code == 200
+    data = response.json()["results"]
+    assert len(data) == 1
+    assert data[0]["email"] == "carla@example.com"
+
+
+@pytest.mark.django_db
+def test_search_without_match_returns_empty_list(puesto, reclutador):
+    Postulacion.objects.create(puesto=puesto, nombre="Andy Mallcco", email="andy@example.com", cv=_fake_pdf())
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/postulaciones/?search=inexistente")
+
+    assert response.status_code == 200
+    assert response.json()["results"] == []
+
+
+@pytest.mark.django_db
+def test_estado_filter(puesto, reclutador):
+    aprobada = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy Mallcco",
+        email="andy@example.com",
+        cv=_fake_pdf(),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Carla Ruiz",
+        email="carla@example.com",
+        cv=_fake_pdf(),
+        estado=Postulacion.Estado.RECHAZADO,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/postulaciones/?estado=aprobado")
+
+    assert response.status_code == 200
+    data = response.json()["results"]
+    assert len(data) == 1
+    assert data[0]["id"] == aprobada.id
+
+
+@pytest.mark.django_db
+def test_search_and_estado_combined(puesto, reclutador):
+    aprobada = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy Mallcco",
+        email="andy@example.com",
+        cv=_fake_pdf(),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy Rechazado",
+        email="andy2@example.com",
+        cv=_fake_pdf(),
+        estado=Postulacion.Estado.RECHAZADO,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get("/api/postulaciones/?search=andy&estado=aprobado")
+
+    assert response.status_code == 200
+    data = response.json()["results"]
+    assert len(data) == 1
+    assert data[0]["id"] == aprobada.id

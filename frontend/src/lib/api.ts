@@ -62,10 +62,16 @@ export async function fetchPuesto(id: number): Promise<Puesto> {
   return response.json();
 }
 
-export async function fetchMisPuestos(token: string, page = 1): Promise<PaginatedResponse<Puesto>> {
+export async function fetchMisPuestos(
+  token: string,
+  options: { page?: number; search?: string; estado?: Puesto["estado"] } = {},
+): Promise<PaginatedResponse<Puesto>> {
+  const { page = 1, search, estado } = options;
   const url = new URL(`${API_URL}/api/puestos/`);
   url.searchParams.set("mias", "true");
   url.searchParams.set("page", String(page));
+  if (search) url.searchParams.set("search", search);
+  if (estado) url.searchParams.set("estado", estado);
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -193,10 +199,13 @@ export interface Postulacion {
 
 export async function fetchMisPostulaciones(
   token: string,
-  page = 1,
+  options: { page?: number; search?: string; estado?: Postulacion["estado"] } = {},
 ): Promise<PaginatedResponse<Postulacion>> {
+  const { page = 1, search, estado } = options;
   const url = new URL(`${API_URL}/api/postulaciones/`);
   url.searchParams.set("page", String(page));
+  if (search) url.searchParams.set("search", search);
+  if (estado) url.searchParams.set("estado", estado);
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
