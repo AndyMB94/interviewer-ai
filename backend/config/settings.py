@@ -24,9 +24,10 @@ load_dotenv(BASE_DIR / ".env")
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY", "django-insecure-=!@*0*r5==(xfdvoi&l+6vb$%nc&&)mm@n43xwl_q#mzcotn)("
-)
+# Sin valor de respaldo a propósito: el valor por defecto que traía Django quedó público en el
+# repo (Infra Fase 6), así que ahora falla al arrancar en vez de usar en silencio una clave que
+# cualquiera puede ver en GitHub.
+SECRET_KEY = os.environ["SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False") == "True"
@@ -59,6 +60,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'config.middleware.RealIpMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -162,6 +164,17 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.AllowAny",
     ),
+    # Segunda capa además del limit_req de Nginx (Infra Fase 6) — Nginx ya distingue por
+    # endpoint (más estricto en /api/postulaciones/), así que acá alcanza con un tope global
+    # razonable como red de seguridad si algo llegara a evitar a Nginx.
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/minute",
+        "user": "120/minute",
+    },
 }
 
 SIMPLE_JWT = {

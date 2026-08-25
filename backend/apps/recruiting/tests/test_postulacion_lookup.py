@@ -19,12 +19,21 @@ def puesto(db):
     )
 
 
+@pytest.fixture
+def otro_puesto(puesto):
+    # Puesto distinto para simular a la misma persona postulando a más de un puesto con el mismo
+    # email -- desde Infra Fase 6 un email no puede postular dos veces al MISMO puesto.
+    return Puesto.objects.create(
+        titulo="Dev Frontend", descripcion="...", requisitos="...", creado_por=puesto.creado_por
+    )
+
+
 def _fake_pdf():
     return SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf")
 
 
 @pytest.mark.django_db
-def test_returns_the_most_recent_aprobada_postulacion(puesto):
+def test_returns_the_most_recent_aprobada_postulacion(puesto, otro_puesto):
     Postulacion.objects.create(
         puesto=puesto,
         nombre="Andy",
@@ -33,7 +42,7 @@ def test_returns_the_most_recent_aprobada_postulacion(puesto):
         estado=Postulacion.Estado.APROBADO,
     )
     mas_reciente = Postulacion.objects.create(
-        puesto=puesto,
+        puesto=otro_puesto,
         nombre="Andy",
         email="andy@example.com",
         cv=_fake_pdf(),
@@ -64,7 +73,7 @@ def test_returns_none_when_no_match():
 
 
 @pytest.mark.django_db
-def test_pendientes_excludes_postulaciones_that_already_have_an_interview(puesto):
+def test_pendientes_excludes_postulaciones_that_already_have_an_interview(puesto, otro_puesto):
     con_entrevista = Postulacion.objects.create(
         puesto=puesto,
         nombre="Andy",
@@ -74,7 +83,7 @@ def test_pendientes_excludes_postulaciones_that_already_have_an_interview(puesto
     )
     Interview.objects.create(postulacion=con_entrevista)
     sin_entrevista = Postulacion.objects.create(
-        puesto=puesto,
+        puesto=otro_puesto,
         nombre="Andy",
         email="andy@example.com",
         cv=_fake_pdf(),
@@ -87,7 +96,7 @@ def test_pendientes_excludes_postulaciones_that_already_have_an_interview(puesto
 
 
 @pytest.mark.django_db
-def test_pendientes_excludes_pendientes_y_rechazadas(puesto):
+def test_pendientes_excludes_pendientes_y_rechazadas(puesto, otro_puesto):
     Postulacion.objects.create(
         puesto=puesto,
         nombre="Andy",
@@ -96,7 +105,7 @@ def test_pendientes_excludes_pendientes_y_rechazadas(puesto):
         estado=Postulacion.Estado.PENDIENTE,
     )
     Postulacion.objects.create(
-        puesto=puesto,
+        puesto=otro_puesto,
         nombre="Andy",
         email="andy@example.com",
         cv=_fake_pdf(),
@@ -107,7 +116,7 @@ def test_pendientes_excludes_pendientes_y_rechazadas(puesto):
 
 
 @pytest.mark.django_db
-def test_pendientes_can_return_more_than_one(puesto):
+def test_pendientes_can_return_more_than_one(puesto, otro_puesto):
     p1 = Postulacion.objects.create(
         puesto=puesto,
         nombre="Andy",
@@ -116,7 +125,7 @@ def test_pendientes_can_return_more_than_one(puesto):
         estado=Postulacion.Estado.APROBADO,
     )
     p2 = Postulacion.objects.create(
-        puesto=puesto,
+        puesto=otro_puesto,
         nombre="Andy",
         email="andy@example.com",
         cv=_fake_pdf(),

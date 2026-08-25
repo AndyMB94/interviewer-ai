@@ -227,3 +227,96 @@ def test_search_and_estado_combined(puesto, reclutador):
     data = response.json()["results"]
     assert len(data) == 1
     assert data[0]["id"] == aprobada.id
+
+
+@pytest.mark.django_db
+@patch("apps.recruiting.views.screen_postulacion_task.delay")
+def test_cannot_postular_twice_to_the_same_puesto_with_the_same_email(mock_delay, puesto):
+    client = APIClient()
+    client.post(
+        "/api/postulaciones/",
+        {"puesto": puesto.id, "nombre": "Andy Mallcco", "email": "andy@example.com", "cv": _fake_pdf()},
+        format="multipart",
+    )
+
+    response = client.post(
+        "/api/postulaciones/",
+        {"puesto": puesto.id, "nombre": "Andy Mallcco", "email": "andy@example.com", "cv": _fake_pdf()},
+        format="multipart",
+    )
+
+    assert response.status_code == 400
+    assert "email" in response.json()
+    assert Postulacion.objects.count() == 1
+
+
+@pytest.mark.django_db
+@patch("apps.recruiting.views.screen_postulacion_task.delay")
+def test_email_is_normalized_so_case_cannot_bypass_the_duplicate_check(mock_delay, puesto):
+    client = APIClient()
+    client.post(
+        "/api/postulaciones/",
+        {"puesto": puesto.id, "nombre": "Andy Mallcco", "email": "Andy@Example.com", "cv": _fake_pdf()},
+        format="multipart",
+    )
+
+    response = client.post(
+        "/api/postulaciones/",
+        {"puesto": puesto.id, "nombre": "Andy Mallcco", "email": "andy@example.com", "cv": _fake_pdf()},
+        format="multipart",
+    )
+
+    assert response.status_code == 400
+    assert Postulacion.objects.count() == 1
+
+
+@pytest.mark.django_db
+@patch("apps.recruiting.views.screen_postulacion_task.delay")
+def test_same_email_can_postular_to_a_different_puesto(mock_delay, puesto, reclutador):
+    otro_puesto = Puesto.objects.create(
+        titulo="Otro puesto", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    client = APIClient()
+    r1 = client.post(
+        "/api/postulaciones/",
+        {"puesto": puesto.id, "nombre": "Andy", "email": "andy@example.com", "cv": _fake_pdf()},
+        format="multipart",
+    )
+    r2 = client.post(
+        "/api/postulaciones/",
+        {"puesto": otro_puesto.id, "nombre": "Andy", "email": "andy@example.com", "cv": _fake_pdf()},
+        format="multipart",
+    )
+
+    assert r1.status_code == 201
+    assert r2.status_code == 201
+
+
+@pytest.mark.django_db
+def test_cv_over_the_size_limit_is_rejected(puesto):
+    archivo_grande = SimpleUploadedFile(
+        "cv.pdf", b"0" * (5 * 1024 * 1024 + 1), content_type="application/pdf"
+    )
+    client = APIClient()
+    response = client.post(
+        "/api/postulaciones/",
+        {"puesto": puesto.id, "nombre": "Andy", "email": "andy@example.com", "cv": archivo_grande},
+        format="multipart",
+    )
+
+    assert response.status_code == 400
+    assert Postulacion.objects.count() == 0
+
+
+@pytest.mark.django_db
+@patch("apps.recruiting.views.screen_postulacion_task.delay")
+def test_cv_at_the_size_limit_is_accepted(mock_delay, puesto):
+    archivo_justo = SimpleUploadedFile("cv.pdf", b"0" * (5 * 1024 * 1024), content_type="application/pdf")
+    client = APIClient()
+    response = client.post(
+        "/api/postulaciones/",
+        {"puesto": puesto.id, "nombre": "Andy", "email": "andy@example.com", "cv": archivo_justo},
+        format="multipart",
+    )
+
+    assert response.status_code == 201

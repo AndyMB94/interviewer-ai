@@ -63,6 +63,9 @@ class Postulacion(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["puesto", "email"], name="unique_puesto_email"),
+        ]
 
     def __str__(self):
         return f"{self.nombre} → {self.puesto}"

@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -365,11 +367,13 @@ def test_anyone_can_retrieve_a_puesto_cerrado(reclutador):
     assert response.json()["estado"] == "cerrado"
 
 
-def _postulacion_aprobada(puesto):
+def _postulacion_aprobada(puesto, email=None):
+    # Email único por default (Infra Fase 6 -- un email no puede postular dos veces al mismo
+    # puesto), para que este helper se pueda llamar más de una vez con el mismo puesto sin chocar.
     return Postulacion.objects.create(
         puesto=puesto,
         nombre="Andy",
-        email="andy@example.com",
+        email=email or f"andy+{uuid.uuid4().hex[:8]}@example.com",
         cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
         estado=Postulacion.Estado.APROBADO,
     )
