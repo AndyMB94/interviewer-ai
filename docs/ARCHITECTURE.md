@@ -121,8 +121,8 @@ backend/
 │   │       └── interview_prompt_service.py  # arma el system_prompt contextual con el puesto (Fase 9.6.3)
 │   ├── accounts/                # autenticación y roles (Backend Fase 8)
 │   │   ├── models.py            # ApplicantProfile (perfil del postulante)
-│   │   ├── views.py             # login/refresh/logout (JWT híbrido, ver DECISIONS.md)
-│   │   ├── serializers.py       # CustomTokenObtainPairSerializer — agrega claims groups/email al JWT
+│   │   ├── views.py             # login/refresh/logout (JWT híbrido, ver DECISIONS.md), PerfilView (RetrieveUpdateAPIView, GET/PATCH /api/auth/perfil/, 8.5.2)
+│   │   ├── serializers.py       # CustomTokenObtainPairSerializer — agrega claims groups/email al JWT; ApplicantProfileSerializer (8.5.1)
 │   │   ├── permissions.py       # IsAdministrador/IsReclutador/IsPostulante (por Django Group)
 │   │   ├── admin.py
 │   │   ├── migrations/          # incluye una migración de datos que crea los 3 Groups
@@ -134,9 +134,9 @@ backend/
 │   │   └── tests/
 │   └── recruiting/              # puestos y postulaciones (Backend Fase 9)
 │       ├── models.py            # Puesto (9.1, categoria/funciones/requisitos_deseables/modalidad/vacantes desde 9.9-9.10), Postulacion (9.2), Categoria (tabla propia, seed vía migración de datos, 9.9)
-│       ├── views.py             # PuestoViewSet, PostulacionViewSet, CategoriaViewSet (ReadOnly) + mi_postulacion (9.6.4, lista desde 9.7.2)
+│       ├── views.py             # PuestoViewSet (CRUD completo del dueño, listado público filtra estado=abierto, 9.11.2), PostulacionViewSet, CategoriaViewSet (ReadOnly) + mi_postulacion (9.6.4, lista desde 9.7.2)
 │       ├── permissions.py       # permisos a nivel de objeto (dueño del puesto)
-│       ├── serializers.py       # PuestoSerializer (postulaciones_count, preseleccionados, categoria_nombre, vacantes), PostulacionSerializer (puesto_titulo, interview_id)
+│       ├── serializers.py       # PuestoSerializer (postulaciones_count, preseleccionados, categoria_nombre, vacantes), PostulacionSerializer (puesto_titulo, interview_id, rechaza con 400 si el puesto está cerrado, 9.11.3)
 │       ├── tasks.py             # screen_postulacion_task (9.3)
 │       ├── services/
 │       │   ├── cv_screening_service.py  # extrae texto del CV y evalúa el fit con el LLM
@@ -187,28 +187,34 @@ ws-gateway/
 frontend/
 ├── src/
 │   ├── components/
-│   │   ├── ui/                  # componentes de shadcn/ui (Button, Card, Table, Sidebar...), generados, no se editan a mano
+│   │   ├── ui/                  # componentes de shadcn/ui (Button, Card, Table, Sidebar, Toast...), generados, no se editan a mano — excepto `label.tsx`, que gana un prop `required` propio (P.12.4)
 │   │   ├── RootLayout.tsx       # Navbar + Outlet, envuelto en TooltipProvider (lo requiere Sidebar)
-│   │   ├── Navbar.tsx           # toggle de tema, dropdown de cuenta/logout (P.5/P.6)
+│   │   ├── Navbar.tsx           # toggle de tema, dropdown de cuenta/logout + "Mi perfil" para el rol Postulante (P.5/P.6/8.5.4)
 │   │   ├── DashboardLayout.tsx  # sidebar del panel de reclutador (Puestos/Postulaciones), Frontend 6.2
 │   │   ├── QuestionDisplay.tsx  # transcripción en vivo (candidato), con avatares/timestamps
 │   │   ├── MessageComposer.tsx  # composer de chat unificado (texto + mic, 3 estados), reemplaza VoiceRecorder/TextAnswerForm (P.10)
 │   │   ├── PuestoCard.tsx       # tarjeta de un puesto en ApplyPage/PuestoDetailPage
 │   │   ├── PuestoCardSkeleton.tsx
+│   │   ├── PuestoSeccion.tsx    # bloque título+texto reusado entre PuestoDetailPage y PuestoDetailSheet (6.7.1)
+│   │   ├── PuestoDetailSheet.tsx # vista de solo lectura de un puesto en un Sheet, sin CTA de postular (6.7)
+│   │   ├── EmojiPickerButton.tsx # botón + Popover con `emoji-picker-react`, usado en los campos de texto de PuestoFormPage (6.6)
 │   │   ├── RequireAuth.tsx      # wrapper de ruta: redirige a /login sin sesión (Frontend 5.4), espera el silent refresh (P.7)
-│   │   └── RequireRole.tsx      # RequireAuth + chequeo de rol (claim `groups` del JWT), usado por /dashboard (6.1)
+│   │   └── RequireRole.tsx      # RequireAuth + chequeo de rol (claim `groups` del JWT), usado por /dashboard (6.1) y /perfil (8.5.3)
 │   ├── hooks/
 │   │   ├── useSocket.ts         # conexión socket.io-client; askQuestion/sendAudio reciben un postulacionId opcional (9.7.4)
 │   │   ├── useMicrophone.ts     # permiso/grabación de audio del navegador
 │   │   ├── useTheme.ts          # tema claro/oscuro manual, persistido en localStorage (P.6.1)
+│   │   ├── useEmojiInsert.ts    # ref + inserción en la posición del cursor para un campo de texto (6.6.3)
 │   │   └── use-mobile.ts        # hook de shadcn (Sidebar responsive)
 │   ├── pages/                   # una pantalla por archivo (Frontend Fase 5, react-router)
 │   │   ├── InterviewPage.tsx    # sala de espera + selector de puesto si hay varias postulaciones pendientes (9.7.5/9.7.6) + chat, ruta /entrevista (protegida)
 │   │   ├── ApplyPage.tsx        # postulación pública (elegir puesto + filtro por categoría), ruta / (7.1/7.5)
 │   │   ├── PuestoDetailPage.tsx # detalle de un puesto + formulario de postulación con CV (9.9/7.5)
 │   │   ├── LoginPage.tsx        # login (postulante o reclutador, redirige según rol), ruta /login
+│   │   ├── PerfilPage.tsx       # perfil del postulante — DNI/teléfono/ubigeo en cascada, ruta /perfil (8.5.3)
 │   │   └── dashboard/           # panel de reclutador (Frontend Fase 6), rutas hijas de /dashboard
-│   │       ├── PuestosPage.tsx           # tabla de puestos propios + vacantes/preseleccionados (6.2/9.10)
+│   │       ├── PuestosPage.tsx           # tabla de puestos propios + vacantes/preseleccionados (6.2/9.10), acciones crear/editar/cerrar/reabrir (9.11.5) con toast y estado de carga por fila (P.12.2)
+│   │       ├── PuestoFormPage.tsx        # formulario de crear/editar un puesto, reusado por las dos rutas (9.11.4)
 │   │       ├── PostulacionesPage.tsx     # tabla de postulaciones + botón "Ver entrevista" (6.2/6.3)
 │   │       └── InterviewDetailPage.tsx   # transcripción + resultado del filtro de CV + decisión pendiente/avanza/no_avanza (6.3/6.4)
 │   ├── context/
@@ -216,9 +222,10 @@ frontend/
 │   ├── lib/
 │   │   ├── utils.ts             # helper `cn()` de shadcn/ui
 │   │   ├── jwt.ts               # decodeJwtPayload — lee roles/email del JWT sin librería externa
-│   │   └── api.ts               # llamadas REST a Django (puestos, postulaciones, auth, entrevistas) — no pasan por el gateway
+│   │   ├── puesto.ts            # `MODALIDAD_LABEL`, compartido entre PuestoDetailPage/PuestoFormPage/PuestoDetailSheet (6.7.1)
+│   │   └── api.ts               # llamadas REST a Django (puestos, postulaciones, auth, perfil, ubigeo, entrevistas) — no pasan por el gateway
 │   ├── router.tsx               # definición de rutas (createBrowserRouter)
-│   └── main.tsx                 # AuthProvider + RouterProvider
+│   └── main.tsx                 # `Toaster` (P.12.1) envolviendo AuthProvider + RouterProvider, para que sobreviva a la navegación entre rutas
 ├── public/
 │   └── favicon.svg              # ícono propio de Vacantia (P.6.4)
 ├── components.json               # config de shadcn/ui
@@ -271,11 +278,11 @@ La memoria de conversación (Backend Fase 6.3) se arma consultando todas las `Qu
 
 ### `apps/accounts/models.py`
 
-- **`ApplicantProfile`**: `OneToOneField` a `settings.AUTH_USER_MODEL`. Datos del postulante que no viven en el `User` default de Django: `tipo_documento`/`numero_documento` (DNI, Carné de Extranjería o Pasaporte — `UniqueConstraint` sobre el par, ignorando filas en blanco), `nacionalidad`, `fecha_nacimiento`, `sexo`, `telefono`, y `ubigeo_codigo`/`departamento`/`provincia`/`distrito` como `CharField` planos (no `ForeignKey` — no hay tabla `Ubigeo` local, se resuelven contra el servicio cacheado de `services/ubigeo_service.py`, ver DECISIONS.md). No se crea automáticamente vía señal `post_save`: cada flujo de alta de cuenta decide si corresponde un perfil (a mano desde el admin para Reclutador/Administrador; automático y vacío al aprobar una `Postulacion`, Backend Fase 9.4 — el postulante lo completa después, en un paso de frontend todavía no construido).
+- **`ApplicantProfile`**: `OneToOneField` a `settings.AUTH_USER_MODEL`. Datos del postulante que no viven en el `User` default de Django: `tipo_documento`/`numero_documento` (DNI, Carné de Extranjería o Pasaporte — `UniqueConstraint` sobre el par, ignorando filas en blanco), `nacionalidad`, `fecha_nacimiento`, `sexo`, `telefono`, y `ubigeo_codigo`/`departamento`/`provincia`/`distrito` como `CharField` planos (no `ForeignKey` — no hay tabla `Ubigeo` local, se resuelven contra el servicio cacheado de `services/ubigeo_service.py`, ver DECISIONS.md). No se crea automáticamente vía señal `post_save`: cada flujo de alta de cuenta decide si corresponde un perfil (a mano desde el admin para Reclutador/Administrador; automático y vacío al aprobar una `Postulacion`, Backend Fase 9.4 — el postulante lo completa después, de forma autoservicio y opcional, desde "Mi perfil" (`PerfilPage.tsx`, `GET/PATCH /api/auth/perfil/`, Backend 8.5 + Frontend 7.6).
 - **Roles**: no hay un modelo propio — se usan los `Group` default de Django (`Administrador`/`Reclutador`/`Postulante`), creados por una migración de datos (`0002_create_groups.py`).
 
 ### `apps/recruiting/models.py`
 
-- **`Puesto`**: `titulo`, `descripcion`, `requisitos`, `funciones`, `requisitos_deseables`, `modalidad` (`remoto`/`presencial`/`hibrido`), `vacantes` (entero, 9.10), `categoria` (`ForeignKey` a `Categoria`), `creado_por` (`ForeignKey` a `settings.AUTH_USER_MODEL`, siempre un usuario del Group `Reclutador`), `estado` (`abierto`/`cerrado`).
+- **`Puesto`**: `titulo`, `descripcion`, `requisitos`, `funciones`, `requisitos_deseables`, `modalidad` (`remoto`/`presencial`/`hibrido`), `vacantes` (entero, mínimo 1 vía `MinValueValidator`, 9.10/9.11.1), `categoria` (`ForeignKey` a `Categoria`), `creado_por` (`ForeignKey` a `settings.AUTH_USER_MODEL`, siempre un usuario del Group `Reclutador`), `estado` (`abierto`/`cerrado` — un puesto `cerrado` desaparece del listado público y deja de aceptar postulaciones nuevas, 9.11).
 - **`Categoria`**: tabla propia (no `TextChoices`), `nombre` — sembrada por una migración de datos (mismo patrón que los Groups) para poder agregar categorías nuevas desde el admin sin deploy (ver DECISIONS.md, 9.9).
 - **`Postulacion`**: `puesto` (`ForeignKey`, `related_name="postulaciones"`), `nombre`/`email` (el candidato todavía no tiene cuenta al postular), `cv` (`FileField`, valida extensión `.pdf`), `estado` (`pendiente`/`rechazado`/`aprobado`), `resultado_filtro` (texto libre con la razón que da el LLM). Se crea sin autenticación (endpoint público); al guardarse dispara `screen_postulacion_task` (Celery), que extrae el texto del CV y le pide al LLM que decida el fit contra el `Puesto` (Backend Fase 9.3).

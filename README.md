@@ -51,9 +51,9 @@ interviewer_ai/
 │   ├── ARCHITECTURE.md   # arquitectura, diagrama, patrones de diseño
 │   ├── ROADMAP.md        # fases de desarrollo, backend, gateway y frontend
 │   └── DECISIONS.md      # decisiones técnicas y por qué (ADRs cortos)
-├── backend/               # Django + Celery + Dockerfile — Fases 0-7 completas (LLM, STT, TTS, persistencia, memoria de conversación y patrones Strategy/Adapter); Fase 8 (auth/roles) y Fase 9 (puestos/postulaciones, filtro de CV con IA, panel de reclutador) completas
+├── backend/               # Django + Celery + Dockerfile — Fases 0-7 completas (LLM, STT, TTS, persistencia, memoria de conversación y patrones Strategy/Adapter); Fase 8 (auth/roles, incluido el perfil del postulante) y Fase 9 (puestos/postulaciones, filtro de CV con IA, CRUD completo de puestos, panel de reclutador) completas
 ├── ws-gateway/            # Node + Express + Socket.io + Dockerfile — Fases 0-4 completas (puente hacia Django, memoria de conversación por sesión) + Fase 5 (JWT y postulación elegida hasta Django)
-└── frontend/              # React + TypeScript + Dockerfile — Fases 0-7 completas (postulación pública, login, entrevista con selector de puesto, y panel de reclutador con dashboard/detalle de entrevista)
+└── frontend/              # React + TypeScript + Dockerfile — Fases 0-7 completas (postulación pública, login, entrevista con selector de puesto, panel de reclutador con CRUD de puestos y detalle de entrevista, perfil del postulante) + mejoras de UX (P.1-P.12: rediseño visual, toasts, manejo de errores)
 ```
 
 ## Requisitos
