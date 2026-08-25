@@ -395,7 +395,9 @@ _Backend 9.11 + Frontend 6.5 completos — el reclutador ya puede crear, editar,
 - [x] 8.5.3 Frontend: `PerfilPage.tsx`, ruta `/perfil` (protegida, `RequireRole` Postulante). Formulario con los campos de `ApplicantProfile` — `departamento`/`provincia`/`distrito` como 3 `Select` en cascada (cada uno se habilita/repuebla cuando el anterior cambia, consumiendo los 3 endpoints de ubigeo ya existentes desde 8.4). Al elegir un distrito se guarda también su `ubigeo_codigo` (viene en la misma respuesta de `/ubigeo/distritos/`).
 - [x] 8.5.4 Frontend: entrada "Mi perfil" en el `DropdownMenu` de cuenta de `Navbar.tsx`, visible solo para el rol Postulante.
 - [x] 8.5.5 Tests backend: `GET`/`PATCH` del propio perfil funciona (con creación automática del perfil en el primer acceso); un Reclutador no tiene acceso (403, `IsPostulante`); anónimo 401; actualizar con un `numero_documento` duplicado (mismo `tipo_documento`) devuelve 400, no 500 — confirmado que DRF ya genera el validador automáticamente para el `UniqueConstraint` condicional, sin necesitar código extra en el serializer. 28/28 tests de `apps/accounts` pasando.
-- [ ] 8.5.6 Verificación end-to-end en el navegador: loguearse como postulante, ir a "Mi perfil", completar DNI/teléfono/departamento→provincia→distrito en cascada, guardar, refrescar y confirmar que los datos persisten.
+- [x] 8.5.6 Verificado end-to-end en el navegador: "Mi perfil" desde el dropdown de cuenta, completado DNI/teléfono/nacionalidad/fecha de nacimiento/sexo/departamento→provincia→distrito en cascada (LIMA → LIMA → SAN MARTIN DE PORRES), guardado ("Perfil guardado."), y confirmado tras F5 que todo persiste.
+
+_Backend 8.5 + Frontend 7.6 completos — el postulante ya puede completar su perfil (DNI, teléfono, ubigeo) desde "Mi perfil", autoservicio y sin bloquear el acceso a la entrevista._
 
 ### Frontend 6.6: selector de emojis en el formulario de puesto (agregado 2026-08-19)
 
