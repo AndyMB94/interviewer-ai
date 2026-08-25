@@ -483,6 +483,29 @@ _Frontend 6.6 completo — el reclutador puede insertar emojis en cualquier camp
 
 _Frontend 6.7 completo — el reclutador ya tiene una vista de solo lectura del puesto sin salir del dashboard ni ver el CTA de postular pensado para candidatos._
 
+### Backend 9.12 + Frontend 6.8 + Frontend 7.7: paginación en los listados que pueden crecer sin límite (agregado 2026-08-25)
+
+**Contexto:** ninguno de los listados del proyecto está paginado — `REST_FRAMEWORK` en `settings.py` nunca tuvo `DEFAULT_PAGINATION_CLASS`. `/api/puestos/` (grilla pública de `ApplyPage` y `?mias=true` del dashboard), `/api/puestos/?mias=true` y `/api/postulaciones/` devuelven **todos** los registros en una sola respuesta, y el frontend renderiza todo lo que llega sin ningún control de página. No rompe con la cantidad de datos de hoy (decenas de puestos de prueba), pero degrada gradualmente con más volumen: la query de `PuestoViewSet` ya anota `postulaciones_count`/`preseleccionados` con `Count` (subqueries) por cada fila, y `ApplyPage`/`PuestosPage`/`PostulacionesPage` se convierten en una grilla/tabla cada vez más larga y pesada de renderizar.
+
+**Decisión 1 — `PageNumberPagination` de DRF, no cursor ni limit-offset.** Da `?page=N` y una respuesta `{count, next, previous, results}` — el patrón más simple para una UX de "página X de Y", que es exactamente lo que hace falta acá. `CursorPagination` es para feeds tipo red social (orden estable bajo escrituras concurrentes), no para esto; `LimitOffsetPagination` no aporta nada extra sobre `PageNumberPagination` para este caso y es menos directo de consumir del lado del frontend.
+
+**Decisión 2 — `pagination_class` explícito por `ViewSet`, no `DEFAULT_PAGINATION_CLASS` global.** Si se setea globalmente, **también paginaría `CategoriaViewSet`** sin querer — su listado se consume hoy como array plano en `fetchCategorias()` para el `<Select>` de categorías de `ApplyPage` y `PuestoFormPage`; paginarlo rompería esos dos lugares en silencio (el frontend intentaría iterar `{count, results}` como si fuera un array). Se declara `pagination_class` solo en `PuestoViewSet` y `PostulacionViewSet` — `CategoriaViewSet` se queda sin tocar a propósito, un catálogo chico y estable no necesita paginarse.
+
+**Decisión 3 — un solo tamaño de página (12) y un componente de paginación compartido, no tres implementaciones sueltas.** Se instala `Pagination` de shadcn (`npx shadcn@latest add pagination`) y se envuelve en `components/PaginationControls.tsx`, que recibe `{count, next, previous, page, onPageChange}` y renderiza "Anterior / Página X de Y / Siguiente" — reusado en `ApplyPage`, `PuestosPage` y `PostulacionesPage`. Anterior/Siguiente en vez de "cargar más": cambiar de página reemplaza los resultados actuales en vez de acumular una lista creciente en estado, más simple de mantener en los 3 lugares.
+
+**Decisión 4 — el tipo de respuesta paginada se modela una sola vez.** `PaginatedResponse<T>` en `lib/api.ts` (`{count, next, previous, results: T[]}`), reusado por `fetchPuestosAbiertos`, `fetchMisPuestos` y `fetchMisPostulaciones` — las tres pasan a aceptar un `page` y devolver `PaginatedResponse<T>` en vez de `T[]` directo.
+
+- [ ] 9.12.1 Backend: `StandardResultsPagination(PageNumberPagination)` — `page_size = 12`, `page_size_query_param = "page_size"` (permite pedir más por página puntualmente si hiciera falta, sin forzarlo).
+- [ ] 9.12.2 Backend: `PuestoViewSet.pagination_class = StandardResultsPagination` — afecta tanto el listado público como `?mias=true` (comparten el mismo `get_queryset()`).
+- [ ] 9.12.3 Backend: `PostulacionViewSet.pagination_class = StandardResultsPagination`.
+- [ ] 9.12.4 Backend: confirmar que `CategoriaViewSet` no se toca (Decisión 2) — sigue sin `pagination_class`, sigue devolviendo el array plano.
+- [ ] 9.12.5 Frontend: `PaginatedResponse<T>` en `lib/api.ts`; `fetchPuestosAbiertos`, `fetchMisPuestos`, `fetchMisPostulaciones` actualizados para aceptar `page` y devolver `PaginatedResponse<T>`.
+- [ ] 9.12.6 Frontend: instalar `Pagination` de shadcn; `components/PaginationControls.tsx` (Decisión 3).
+- [ ] 9.12.7 Frontend: `ApplyPage.tsx` — estado `page`, `PaginationControls` debajo de la grilla; cambiar de categoría resetea `page` a 1 (si no, se puede quedar en una página que ya no existe para la categoría nueva).
+- [ ] 9.12.8 Frontend: `PuestosPage.tsx` y `PostulacionesPage.tsx` — mismo patrón, `PaginationControls` debajo de la tabla.
+- [ ] 9.12.9 Tests backend: `PuestoViewSet`/`PostulacionViewSet` devuelven la forma paginada (`count`/`next`/`previous`/`results`); con más de 12 puestos, `?page=2` trae el resto; test de regresión explícito confirmando que `CategoriaViewSet` sigue devolviendo un array plano (para no repetir en silencio el error que describe la Decisión 2).
+- [ ] 9.12.10 Verificación en el navegador: con más de 12 puestos (reusando los de prueba que ya hay + alguno extra si hace falta), confirmar los controles de paginación en `/`, `/dashboard` y `/dashboard/postulaciones`; cambiar de categoría en `/` vuelve a la página 1; el `<Select>` de categorías en `ApplyPage`/`PuestoFormPage` sigue funcionando sin romperse.
+
 ## Notas
 
 - El orden entre tracks importa: cada paso del gateway/frontend depende de que exista el paso equivalente del backend (por eso las referencias cruzadas, ej. "Backend Fase 1.2").
