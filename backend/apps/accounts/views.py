@@ -1,5 +1,6 @@
 import requests
 from django.conf import settings
+from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -7,7 +8,9 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from apps.accounts.serializers import CustomTokenObtainPairSerializer
+from apps.accounts.models import ApplicantProfile
+from apps.accounts.permissions import IsPostulante
+from apps.accounts.serializers import ApplicantProfileSerializer, CustomTokenObtainPairSerializer
 from apps.accounts.services import ubigeo_service
 
 
@@ -106,3 +109,15 @@ def ubigeo_distritos(request):
         return Response(ubigeo_service.get_distritos(departamento, provincia))
     except requests.RequestException:
         return Response({"detail": "No se pudo obtener la lista de ubigeos."}, status=503)
+
+
+class PerfilView(generics.RetrieveUpdateAPIView):
+    """Perfil del propio postulante autenticado — siempre 'mi perfil', nunca el de otro (no
+    recibe un id por URL, ver DECISIONS.md)."""
+
+    serializer_class = ApplicantProfileSerializer
+    permission_classes = [IsPostulante]
+
+    def get_object(self):
+        profile, _ = ApplicantProfile.objects.get_or_create(user=self.request.user)
+        return profile

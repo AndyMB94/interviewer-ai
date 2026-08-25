@@ -9,4 +9,5 @@ urlpatterns = [
     path("ubigeo/departamentos/", views.ubigeo_departamentos, name="ubigeo_departamentos"),
     path("ubigeo/provincias/", views.ubigeo_provincias, name="ubigeo_provincias"),
     path("ubigeo/distritos/", views.ubigeo_distritos, name="ubigeo_distritos"),
+    path("perfil/", views.PerfilView.as_view(), name="perfil"),
 ]

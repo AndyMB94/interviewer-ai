@@ -1,4 +1,24 @@
+from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from apps.accounts.models import ApplicantProfile
+
+
+class ApplicantProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicantProfile
+        fields = [
+            "tipo_documento",
+            "numero_documento",
+            "nacionalidad",
+            "fecha_nacimiento",
+            "sexo",
+            "telefono",
+            "ubigeo_codigo",
+            "departamento",
+            "provincia",
+            "distrito",
+        ]
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):

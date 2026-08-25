@@ -251,3 +251,75 @@ export async function fetchMisPostulacionesPendientes(token: string): Promise<Mi
   }
   return response.json();
 }
+
+export interface ApplicantProfile {
+  tipo_documento: "" | "dni" | "ce" | "pasaporte";
+  numero_documento: string;
+  nacionalidad: string;
+  fecha_nacimiento: string | null;
+  sexo: "" | "m" | "f";
+  telefono: string;
+  ubigeo_codigo: string;
+  departamento: string;
+  provincia: string;
+  distrito: string;
+}
+
+export async function fetchPerfil(token: string): Promise<ApplicantProfile> {
+  const response = await fetch(`${API_URL}/api/auth/perfil/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    throw new Error("No se pudo cargar tu perfil.");
+  }
+  return response.json();
+}
+
+export async function updatePerfil(
+  token: string,
+  payload: Partial<ApplicantProfile>,
+): Promise<ApplicantProfile> {
+  const response = await fetch(`${API_URL}/api/auth/perfil/`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error("No se pudo guardar tu perfil.");
+  }
+  return response.json();
+}
+
+export async function fetchDepartamentos(): Promise<string[]> {
+  const response = await fetch(`${API_URL}/api/auth/ubigeo/departamentos/`);
+  if (!response.ok) {
+    throw new Error("No se pudo cargar la lista de departamentos.");
+  }
+  return response.json();
+}
+
+export async function fetchProvincias(departamento: string): Promise<string[]> {
+  const url = new URL(`${API_URL}/api/auth/ubigeo/provincias/`);
+  url.searchParams.set("departamento", departamento);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("No se pudo cargar la lista de provincias.");
+  }
+  return response.json();
+}
+
+export interface Distrito {
+  distrito: string;
+  ubigeo: string;
+}
+
+export async function fetchDistritos(departamento: string, provincia: string): Promise<Distrito[]> {
+  const url = new URL(`${API_URL}/api/auth/ubigeo/distritos/`);
+  url.searchParams.set("departamento", departamento);
+  url.searchParams.set("provincia", provincia);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("No se pudo cargar la lista de distritos.");
+  }
+  return response.json();
+}

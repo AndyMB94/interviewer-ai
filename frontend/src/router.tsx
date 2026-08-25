@@ -3,6 +3,7 @@ import { InterviewPage } from "./pages/InterviewPage";
 import { ApplyPage } from "./pages/ApplyPage";
 import { PuestoDetailPage } from "./pages/PuestoDetailPage";
 import { LoginPage } from "./pages/LoginPage";
+import { PerfilPage } from "./pages/PerfilPage";
 import { PuestosPage } from "./pages/dashboard/PuestosPage";
 import { PuestoFormPage } from "./pages/dashboard/PuestoFormPage";
 import { PostulacionesPage } from "./pages/dashboard/PostulacionesPage";
@@ -35,6 +36,14 @@ export const router = createBrowserRouter([
       {
         path: "/login",
         element: <LoginPage />,
+      },
+      {
+        path: "/perfil",
+        element: (
+          <RequireRole role="Postulante">
+            <PerfilPage />
+          </RequireRole>
+        ),
       },
       {
         path: "/dashboard",

@@ -57,6 +57,9 @@ export function Navbar() {
                     {userEmail}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {roles.includes("Postulante") && (
+                    <DropdownMenuItem render={<Link to="/perfil" />}>Mi perfil</DropdownMenuItem>
+                  )}
                   <DropdownMenuItem variant="destructive" onClick={handleLogout}>
                     Cerrar sesión
                   </DropdownMenuItem>
