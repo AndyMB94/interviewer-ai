@@ -16,6 +16,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/toast";
 import { useAuth } from "@/context/AuthContext";
 import { useEmojiInsert } from "@/hooks/useEmojiInsert";
 import {
@@ -110,8 +111,10 @@ export function PuestoFormPage() {
     try {
       if (isEditing) {
         await updatePuesto(accessToken, Number(id), payload);
+        toast.add({ type: "success", title: "Puesto actualizado" });
       } else {
         await createPuesto(accessToken, payload);
+        toast.add({ type: "success", title: "Puesto creado" });
       }
       navigate("/dashboard");
     } catch (error) {
@@ -144,7 +147,7 @@ export function PuestoFormPage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="titulo">Título</Label>
+                <Label htmlFor="titulo" required>Título</Label>
                 <EmojiPickerButton onSelect={insertTituloEmoji} />
               </div>
               <Input
@@ -158,7 +161,7 @@ export function PuestoFormPage() {
 
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="descripcion">Descripción del empleo</Label>
+                <Label htmlFor="descripcion" required>Descripción del empleo</Label>
                 <EmojiPickerButton onSelect={insertDescripcionEmoji} />
               </div>
               <Textarea
@@ -185,7 +188,7 @@ export function PuestoFormPage() {
 
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="requisitos">Requisitos</Label>
+                <Label htmlFor="requisitos" required>Requisitos</Label>
                 <EmojiPickerButton onSelect={insertRequisitosEmoji} />
               </div>
               <Textarea
@@ -258,7 +261,7 @@ export function PuestoFormPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="vacantes">Vacantes</Label>
+              <Label htmlFor="vacantes" required>Vacantes</Label>
               <Input
                 id="vacantes"
                 type="number"

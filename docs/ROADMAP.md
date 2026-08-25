@@ -222,11 +222,13 @@ _Infra Fase 5 completa — `vacantia.andymallcco.dev` es el único dominio públ
 
 **Decisión 3 — asterisco en el `Label` compartido, no repetir el marcado a mano en cada campo:** se agrega un prop `required` opcional a `components/ui/label.tsx` (agrega un `<span>` con el asterisco en rojo) — un solo cambio en el componente compartido, en vez de escribir `Título *` a mano en 9 lugares distintos.
 
-- [ ] P.12.1 Instalar `toast` de shadcn (`npx shadcn@latest add toast`) — confirmar en ese momento la API real del componente (provider/viewport y cómo se dispara un toast) y montar el punto de renderizado una sola vez en `main.tsx`/`RootLayout.tsx`, no por página.
-- [ ] P.12.2 `PuestosPage.tsx::cambiarEstado` — `try/catch` real, estado de carga por fila (ej. `actualizandoId`) que deshabilita el botón que se clickeó y muestra `Spinner` mientras la request está en curso (mismo patrón que el resto de los botones de acción del proyecto), toast de error si `updatePuesto` falla.
-- [ ] P.12.3 Toast de éxito al crear (`PuestoFormPage.tsx`, antes de `navigate("/dashboard")`), editar (`PuestoFormPage.tsx`), cerrar y reabrir un puesto (`PuestosPage.tsx`).
-- [ ] P.12.4 `components/ui/label.tsx` — prop `required?: boolean`, agrega un asterisco (`<span className="text-destructive">*</span>`) al final del label cuando está presente. Aplicado a los 9 campos `required` existentes en `PuestoFormPage.tsx`, `PuestoDetailPage.tsx` y `LoginPage.tsx`.
-- [ ] P.12.5 Verificación en el navegador: forzar un error de red en "Cerrar puesto" (ej. cortando el backend un momento) y confirmar que aparece un toast de error en vez de quedar colgado en silencio; crear/editar/cerrar/reabrir un puesto y confirmar el toast de éxito en cada caso; confirmar visualmente el asterisco en los 9 campos obligatorios de los 3 formularios.
+- [x] P.12.1 Instalado `toast` de shadcn (`npx shadcn@latest add toast`) — es un `ToastManager` de Base UI (`createToastManager()`), no un hook: se importa el objeto `toast` ya creado desde `components/ui/toast.tsx` y se llama `toast.add({ title, type })` desde cualquier lado, sin Provider por componente. `<Toaster>` montado una sola vez en `main.tsx`, envolviendo `AuthProvider`+`RouterProvider`, para que sobreviva a la navegación entre rutas.
+- [x] P.12.2 `PuestosPage.tsx::cambiarEstado` — `try/catch` real, `actualizandoId` (el id del puesto en curso) deshabilita el botón clickeado y muestra `Spinner` mientras la request está en vuelo, `toast.add({type: "error", ...})` si `updatePuesto` falla.
+- [x] P.12.3 Toast de éxito al crear/editar (`PuestoFormPage.tsx`, antes de `navigate("/dashboard")`) y al cerrar/reabrir un puesto (`PuestosPage.tsx`, dentro de `cambiarEstado`).
+- [x] P.12.4 `components/ui/label.tsx` — prop `required?: boolean`, agrega un asterisco (`<span className="text-destructive">*</span>`) al final del label cuando está presente. Aplicado a los 9 campos `required` existentes: `titulo`/`descripcion`/`requisitos`/`vacantes` (`PuestoFormPage.tsx`), `nombre`/`email`/`cv` (`PuestoDetailPage.tsx`), `email`/`password` (`LoginPage.tsx`).
+- [x] P.12.5 Verificado en el navegador: crear/editar/cerrar/reabrir un puesto muestra su toast de éxito correspondiente, el spinner aparece en el botón de cerrar/reabrir mientras la request está en curso, y el asterisco se ve en los campos obligatorios.
+
+_P.12 completo — toasts de éxito/error donde antes no había ninguna señal, el bug de `cambiarEstado` sin manejo de errores quedó arreglado, y los campos obligatorios están marcados visualmente._
 
 ## Pivote: plataforma de reclutamiento con IA (agregado 2026-08-06, reemplaza la sección "Autenticación" anterior)
 

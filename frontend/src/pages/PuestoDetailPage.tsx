@@ -148,7 +148,7 @@ export function PuestoDetailPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="nombre">Nombre completo</Label>
+                <Label htmlFor="nombre" required>Nombre completo</Label>
                 <Input
                   id="nombre"
                   autoComplete="name"
@@ -159,7 +159,7 @@ export function PuestoDetailPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" required>Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -171,7 +171,7 @@ export function PuestoDetailPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="cv">CV (PDF)</Label>
+                <Label htmlFor="cv" required>CV (PDF)</Label>
                 <Input
                   id="cv"
                   type="file"

@@ -13,7 +13,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "@/components/ui/toast";
 import { PuestoDetailSheet } from "@/components/PuestoDetailSheet";
 import { useAuth } from "@/context/AuthContext";
 import { fetchMisPuestos, updatePuesto, type Puesto } from "@/lib/api";
@@ -25,6 +27,7 @@ export function PuestosPage() {
   const [error, setError] = useState<string | null>(null);
   const [puestoParaCerrar, setPuestoParaCerrar] = useState<Puesto | null>(null);
   const [puestoSeleccionado, setPuestoSeleccionado] = useState<Puesto | null>(null);
+  const [actualizandoId, setActualizandoId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -36,8 +39,19 @@ export function PuestosPage() {
 
   const cambiarEstado = async (puesto: Puesto, estado: Puesto["estado"]) => {
     if (!accessToken) return;
-    const actualizado = await updatePuesto(accessToken, puesto.id, { estado });
-    setPuestos((actuales) => actuales.map((p) => (p.id === actualizado.id ? actualizado : p)));
+    setActualizandoId(puesto.id);
+    try {
+      const actualizado = await updatePuesto(accessToken, puesto.id, { estado });
+      setPuestos((actuales) => actuales.map((p) => (p.id === actualizado.id ? actualizado : p)));
+      toast.add({
+        type: "success",
+        title: estado === "cerrado" ? "Puesto cerrado" : "Puesto reabierto",
+      });
+    } catch (error) {
+      toast.add({ type: "error", title: (error as Error).message });
+    } finally {
+      setActualizandoId(null);
+    }
   };
 
   const confirmarCierre = async () => {
@@ -105,11 +119,23 @@ export function PuestosPage() {
                     Editar
                   </Button>
                   {puesto.estado === "abierto" ? (
-                    <Button variant="outline" size="sm" onClick={() => setPuestoParaCerrar(puesto)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={actualizandoId === puesto.id}
+                      onClick={() => setPuestoParaCerrar(puesto)}
+                    >
+                      {actualizandoId === puesto.id && <Spinner data-icon="inline-start" />}
                       Cerrar puesto
                     </Button>
                   ) : (
-                    <Button variant="outline" size="sm" onClick={() => cambiarEstado(puesto, "abierto")}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={actualizandoId === puesto.id}
+                      onClick={() => cambiarEstado(puesto, "abierto")}
+                    >
+                      {actualizandoId === puesto.id && <Spinner data-icon="inline-start" />}
                       Reabrir puesto
                     </Button>
                   )}
