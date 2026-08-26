@@ -1,6 +1,10 @@
 import { subscribeToTask } from "./redisSubscriber.js";
 
 const DJANGO_URL = process.env.DJANGO_URL || "http://localhost:8000";
+// Autentica al gateway ante Django (Infra Fase 7) -- estas llamadas son de servidor a servidor,
+// nunca traen el JWT de un usuario, así que Django necesita otra forma de confirmar que vienen
+// del gateway y no de cualquiera pegándole directo a la API.
+const GATEWAY_SHARED_SECRET = process.env.GATEWAY_SHARED_SECRET || "";
 
 export async function askQuestion(
   question: string,
@@ -16,7 +20,10 @@ export async function askQuestion(
     body.postulacion_id = postulacionId;
   }
 
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-Gateway-Secret": GATEWAY_SHARED_SECRET,
+  };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -41,6 +48,7 @@ export async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string>
 
   const transcribeResponse = await fetch(`${DJANGO_URL}/api/transcribe/`, {
     method: "POST",
+    headers: { "X-Gateway-Secret": GATEWAY_SHARED_SECRET },
     body: formData,
   });
   const { task_id } = await transcribeResponse.json();
@@ -55,13 +63,14 @@ export async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string>
 export async function finishInterview(interviewId: number): Promise<void> {
   await fetch(`${DJANGO_URL}/api/interviews/${interviewId}/finish/`, {
     method: "POST",
+    headers: { "X-Gateway-Secret": GATEWAY_SHARED_SECRET },
   });
 }
 
 export async function synthesizeSpeech(text: string): Promise<string> {
   const speakResponse = await fetch(`${DJANGO_URL}/api/speak/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-Gateway-Secret": GATEWAY_SHARED_SECRET },
     body: JSON.stringify({ text }),
   });
   const { task_id } = await speakResponse.json();

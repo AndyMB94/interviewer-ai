@@ -1,4 +1,5 @@
 import pytest
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from rest_framework.test import APIClient
 from unittest.mock import MagicMock, patch
@@ -6,6 +7,14 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.interviews.models import Answer, Interview, Question
 from apps.recruiting.models import Postulacion, Puesto
+
+
+def gateway_client():
+    # ask/transcribe/speak/finish son llamadas de servidor a servidor del ws-gateway (Infra Fase
+    # 7) -- necesitan el header del secreto compartido, no un usuario autenticado.
+    client = APIClient()
+    client.credentials(HTTP_X_GATEWAY_SECRET=settings.GATEWAY_SHARED_SECRET)
+    return client
 
 
 @pytest.mark.django_db
@@ -18,13 +27,23 @@ def test_health_returns_ok():
 
 
 @pytest.mark.django_db
+def test_ask_requires_gateway_secret():
+    client = APIClient()
+    response = client.post("/api/ask/", {"question": "hello"}, format="json")
+
+    # DRF da 401 (no 403) cuando la request no trae ningún JWT en absoluto, sin importar cuál
+    # permiso puntual falló -- ver DEFAULT_AUTHENTICATION_CLASSES en settings.py.
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
 @patch("apps.interviews.views.ask_llm_task.delay")
 def test_ask_returns_task_id(mock_delay):
     mock_result = MagicMock()
     mock_result.id = "fake-task-id"
     mock_delay.return_value = mock_result
 
-    client = APIClient()
+    client = gateway_client()
     response = client.post("/api/ask/", {"question": "hello"}, format="json")
 
     assert response.status_code == 202
@@ -40,7 +59,7 @@ def test_ask_without_authentication_creates_interview_without_user(mock_delay):
     mock_result.id = "fake-task-id"
     mock_delay.return_value = mock_result
 
-    client = APIClient()
+    client = gateway_client()
     response = client.post("/api/ask/", {"question": "hello"}, format="json")
 
     interview = Interview.objects.get(id=response.json()["interview_id"])
@@ -55,7 +74,7 @@ def test_ask_authenticated_creates_interview_with_user(mock_delay):
     mock_delay.return_value = mock_result
     user = User.objects.create_user("postulante1", password="testpass123")
 
-    client = APIClient()
+    client = gateway_client()
     client.force_authenticate(user=user)
     response = client.post("/api/ask/", {"question": "hello"}, format="json")
 
@@ -84,7 +103,7 @@ def test_ask_links_the_postulacion_id_sent_explicitly(mock_delay):
     )
     user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
 
-    client = APIClient()
+    client = gateway_client()
     client.force_authenticate(user=user)
     response = client.post(
         "/api/ask/", {"question": "hello", "postulacion_id": postulacion.id}, format="json"
@@ -115,7 +134,7 @@ def test_ask_without_postulacion_id_does_not_guess_it(mock_delay):
     )
     user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
 
-    client = APIClient()
+    client = gateway_client()
     client.force_authenticate(user=user)
     response = client.post("/api/ask/", {"question": "hello"}, format="json")
 
@@ -145,7 +164,7 @@ def test_ask_rejects_postulacion_that_already_has_an_interview(mock_delay):
     Interview.objects.create(postulacion=postulacion)
     user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
 
-    client = APIClient()
+    client = gateway_client()
     client.force_authenticate(user=user)
     response = client.post(
         "/api/ask/", {"question": "hello", "postulacion_id": postulacion.id}, format="json"
@@ -172,7 +191,7 @@ def test_ask_rejects_postulacion_id_that_does_not_belong_to_the_user():
         "otro@example.com", email="otro@example.com", password="testpass123"
     )
 
-    client = APIClient()
+    client = gateway_client()
     client.force_authenticate(user=otro_user)
     response = client.post(
         "/api/ask/", {"question": "hello", "postulacion_id": postulacion.id}, format="json"
@@ -183,7 +202,7 @@ def test_ask_rejects_postulacion_id_that_does_not_belong_to_the_user():
 
 @pytest.mark.django_db
 def test_ask_rejects_postulacion_id_when_anonymous():
-    client = APIClient()
+    client = gateway_client()
     response = client.post("/api/ask/", {"question": "hello", "postulacion_id": 99999}, format="json")
 
     assert response.status_code == 401
@@ -191,39 +210,19 @@ def test_ask_rejects_postulacion_id_when_anonymous():
 
 @pytest.mark.django_db
 def test_ask_requires_question():
-    client = APIClient()
+    client = gateway_client()
     response = client.post("/api/ask/", {}, format="json")
 
     assert response.status_code == 400
 
 
 @pytest.mark.django_db
-@patch("apps.interviews.views.AsyncResult")
-def test_ask_result_pending(mock_async_result_class):
-    mock_result = MagicMock()
-    mock_result.ready.return_value = False
-    mock_async_result_class.return_value = mock_result
-
+def test_transcribe_requires_gateway_secret():
+    audio_file = SimpleUploadedFile("audio.wav", b"fake-audio-bytes", content_type="audio/wav")
     client = APIClient()
-    response = client.get("/api/ask/some-task-id/")
+    response = client.post("/api/transcribe/", {"audio": audio_file}, format="multipart")
 
-    assert response.status_code == 200
-    assert response.json() == {"status": "pending"}
-
-
-@pytest.mark.django_db
-@patch("apps.interviews.views.AsyncResult")
-def test_ask_result_done(mock_async_result_class):
-    mock_result = MagicMock()
-    mock_result.ready.return_value = True
-    mock_result.result = "una respuesta"
-    mock_async_result_class.return_value = mock_result
-
-    client = APIClient()
-    response = client.get("/api/ask/some-task-id/")
-
-    assert response.status_code == 200
-    assert response.json() == {"status": "done", "answer": "una respuesta"}
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
@@ -235,7 +234,7 @@ def test_transcribe_returns_task_id(mock_delay):
 
     audio_file = SimpleUploadedFile("audio.wav", b"fake-audio-bytes", content_type="audio/wav")
 
-    client = APIClient()
+    client = gateway_client()
     response = client.post("/api/transcribe/", {"audio": audio_file}, format="multipart")
 
     assert response.status_code == 202
@@ -244,25 +243,18 @@ def test_transcribe_returns_task_id(mock_delay):
 
 @pytest.mark.django_db
 def test_transcribe_requires_audio_file():
-    client = APIClient()
+    client = gateway_client()
     response = client.post("/api/transcribe/", {}, format="multipart")
 
     assert response.status_code == 400
 
 
 @pytest.mark.django_db
-@patch("apps.interviews.views.AsyncResult")
-def test_transcribe_result_done(mock_async_result_class):
-    mock_result = MagicMock()
-    mock_result.ready.return_value = True
-    mock_result.result = "hola mundo"
-    mock_async_result_class.return_value = mock_result
-
+def test_speak_requires_gateway_secret():
     client = APIClient()
-    response = client.get("/api/transcribe/some-task-id/")
+    response = client.post("/api/speak/", {"text": "hola"}, format="json")
 
-    assert response.status_code == 200
-    assert response.json() == {"status": "done", "transcript": "hola mundo"}
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
@@ -272,7 +264,7 @@ def test_speak_returns_task_id(mock_delay):
     mock_result.id = "fake-task-id"
     mock_delay.return_value = mock_result
 
-    client = APIClient()
+    client = gateway_client()
     response = client.post("/api/speak/", {"text": "hola"}, format="json")
 
     assert response.status_code == 202
@@ -281,32 +273,26 @@ def test_speak_returns_task_id(mock_delay):
 
 @pytest.mark.django_db
 def test_speak_requires_text():
-    client = APIClient()
+    client = gateway_client()
     response = client.post("/api/speak/", {}, format="json")
 
     assert response.status_code == 400
 
 
 @pytest.mark.django_db
-@patch("apps.interviews.views.AsyncResult")
-def test_speak_result_done(mock_async_result_class):
-    mock_result = MagicMock()
-    mock_result.ready.return_value = True
-    mock_result.result = "/media/abc123.mp3"
-    mock_async_result_class.return_value = mock_result
-
+def test_finish_interview_requires_gateway_secret():
+    interview = Interview.objects.create()
     client = APIClient()
-    response = client.get("/api/speak/some-task-id/")
+    response = client.post(f"/api/interviews/{interview.id}/finish/")
 
-    assert response.status_code == 200
-    assert response.json() == {"status": "done", "audio_url": "/media/abc123.mp3"}
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
 def test_finish_interview_marks_status_as_finished():
     interview = Interview.objects.create()
 
-    client = APIClient()
+    client = gateway_client()
     response = client.post(f"/api/interviews/{interview.id}/finish/")
 
     assert response.status_code == 200
@@ -316,7 +302,7 @@ def test_finish_interview_marks_status_as_finished():
 
 @pytest.mark.django_db
 def test_finish_interview_404_for_unknown_id():
-    client = APIClient()
+    client = gateway_client()
     response = client.post("/api/interviews/99999/finish/")
 
     assert response.status_code == 404

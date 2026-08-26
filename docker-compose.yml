@@ -57,6 +57,7 @@ services:
       REDIS_URL: redis://redis:6379
       PUBLIC_DJANGO_URL: ${PUBLIC_DJANGO_URL:-http://localhost:8000}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
+      GATEWAY_SHARED_SECRET: ${GATEWAY_SHARED_SECRET}
     ports:
       - "3000:3000"
     depends_on:

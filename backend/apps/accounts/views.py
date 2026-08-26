@@ -30,6 +30,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
     """Login: devuelve el access token en el body, y el refresh token en una cookie httpOnly."""
 
     serializer_class = CustomTokenObtainPairSerializer
+    permission_classes = [AllowAny]
 
     def finalize_response(self, request, response, *args, **kwargs):
         if response.data.get("refresh"):
@@ -40,6 +41,8 @@ class CookieTokenObtainPairView(TokenObtainPairView):
 
 class CookieTokenRefreshView(TokenRefreshView):
     """Renueva el access token leyendo el refresh token de la cookie, no del body."""
+
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get(settings.JWT_AUTH_COOKIE)

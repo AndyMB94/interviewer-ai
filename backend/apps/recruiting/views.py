@@ -1,7 +1,7 @@
 from django.db.models import Count, Q
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.interviews.models import Interview
@@ -16,6 +16,7 @@ from apps.recruiting.tasks import screen_postulacion_task
 class CategoriaViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
+    permission_classes = [AllowAny]
 
 
 class PuestoViewSet(viewsets.ModelViewSet):

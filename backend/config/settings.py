@@ -29,6 +29,11 @@ load_dotenv(BASE_DIR / ".env")
 # cualquiera puede ver en GitHub.
 SECRET_KEY = os.environ["SECRET_KEY"]
 
+# Secreto compartido entre el ws-gateway y Django (Infra Fase 7) -- ver apps/interviews/permissions.py
+# (IsGateway). Mismo criterio que SECRET_KEY: sin default, falla al arrancar si falta en vez de
+# quedar sin protección en silencio.
+GATEWAY_SHARED_SECRET = os.environ["GATEWAY_SHARED_SECRET"]
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
@@ -161,8 +166,12 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    # Seguro por defecto (Infra Fase 7): cada endpoint público de verdad ya tiene su propio
+    # AllowAny/IsGateway explícito -- este cambio no le quita acceso a nada de lo que hoy
+    # funciona, pero deja protegido por error (no expuesto por error) cualquier endpoint nuevo
+    # que alguien agregue más adelante y se olvide de etiquetar.
     "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
     ),
     # Segunda capa además del limit_req de Nginx (Infra Fase 6) — Nginx ya distingue por
     # endpoint (más estricto en /api/postulaciones/), así que acá alcanza con un tope global

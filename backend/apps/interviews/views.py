@@ -1,23 +1,24 @@
 import base64
 
-from celery.result import AsyncResult
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.interviews.models import Interview, Question
-from apps.interviews.permissions import IsOwnerReclutadorOfInterview
+from apps.interviews.permissions import IsGateway, IsOwnerReclutadorOfInterview
 from apps.interviews.tasks import ask_llm_task, synthesize_speech_task, transcribe_audio_task
 from apps.recruiting.models import Postulacion
 
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def health(request):
     return Response({"status": "ok"})
 
 
 @api_view(["POST"])
+@permission_classes([IsGateway])
 def ask(request):
     question_text = request.data.get("question")
     if not question_text:
@@ -105,6 +106,7 @@ def update_interview_decision(request, interview_id):
 
 
 @api_view(["POST"])
+@permission_classes([IsGateway])
 def finish_interview(request, interview_id):
     interview = get_object_or_404(Interview, pk=interview_id)
     interview.status = Interview.Status.FINISHED
@@ -112,17 +114,8 @@ def finish_interview(request, interview_id):
     return Response({"status": interview.status})
 
 
-@api_view(["GET"])
-def ask_result(request, task_id):
-    result = AsyncResult(task_id)
-
-    if not result.ready():
-        return Response({"status": "pending"})
-
-    return Response({"status": "done", "answer": result.result})
-
-
 @api_view(["POST"])
+@permission_classes([IsGateway])
 def transcribe(request):
     audio_file = request.FILES.get("audio")
     if not audio_file:
@@ -133,17 +126,8 @@ def transcribe(request):
     return Response({"task_id": task.id}, status=202)
 
 
-@api_view(["GET"])
-def transcribe_result(request, task_id):
-    result = AsyncResult(task_id)
-
-    if not result.ready():
-        return Response({"status": "pending"})
-
-    return Response({"status": "done", "transcript": result.result})
-
-
 @api_view(["POST"])
+@permission_classes([IsGateway])
 def speak(request):
     text = request.data.get("text")
     if not text:
@@ -151,13 +135,3 @@ def speak(request):
 
     task = synthesize_speech_task.delay(text)
     return Response({"task_id": task.id}, status=202)
-
-
-@api_view(["GET"])
-def speak_result(request, task_id):
-    result = AsyncResult(task_id)
-
-    if not result.ready():
-        return Response({"status": "pending"})
-
-    return Response({"status": "done", "audio_url": result.result})
