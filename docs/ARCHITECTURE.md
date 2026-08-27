@@ -264,6 +264,62 @@ El dominio (`vacantia.andymallcco.dev`) es obligatorio para el certificado real 
 
 **`frontend/nginx.conf`** (dentro de la imagen del contenedor `frontend`, distinto del Nginx del host): tiene `try_files $uri $uri/ /index.html`, necesario para que las rutas de React Router (`/postular`, `/login`) no den 404 al navegarlas directo o refrescar — la config default de `nginx:alpine` no tiene ese fallback.
 
+## Seguridad
+
+Dos capas de defensa, una en Nginx (el borde público) y otra en Django (la aplicación) — pensadas para que un fallo en una no deje al sistema expuesto:
+
+```
+Internet
+    │
+    ▼
+┌─────────────────────────── Nginx (host, único punto de entrada) ───────────────────────────┐
+│                                                                                              │
+│   ¿Pasó el límite de tasa del endpoint?         ¿Pasó el límite de tamaño del archivo?      │
+│   (limit_req: api_general/api_postular/admin)   (client_max_body_size, solo postulaciones)  │
+│        │ no                    │ sí                   │ no                  │ sí            │
+│        ▼                       │                       ▼                     │              │
+│   429 + página propia          │                  413 + página propia        │              │
+│   (/_errors/429.html)          │                  (/_errors/413.html)        │              │
+│                                 └───────────────────────┴─────────────────────┘              │
+│                                                          │                                    │
+└──────────────────────────────────────────────────────────┼────────────────────────────────────┘
+                                                            ▼
+                                          ┌─────────────────────────────────── Django (DRF) ───┐
+                                          │  ¿Trae X-Gateway-Secret válido?   (ask/transcribe/  │
+                                          │       │ no          │ sí          speak/finish)     │
+                                          │       ▼              │                              │
+                                          │      401             ▼                              │
+                                          │                 ¿Trae JWT válido, si el endpoint    │
+                                          │                 lo exige?  (DEFAULT_PERMISSION_     │
+                                          │                 CLASSES: IsAuthenticated, salvo      │
+                                          │                 AllowAny explícito)                  │
+                                          │       │ no                    │ sí                   │
+                                          │       ▼                       ▼                      │
+                                          │      401                  se ejecuta la vista         │
+                                          └──────────────────────────────────────────────────────┘
+```
+
+Ninguna solicitud llega a Django si Nginx ya la cortó por tasa o tamaño; dentro de Django, cada vista decide con qué credencial exigirla (secreto de servidor a servidor para el canal de voz, JWT de usuario para todo lo demás que no sea público a propósito).
+
+### Autenticación y permisos
+
+- **JWT híbrido** (`apps/accounts/`): access token de vida corta (20 min) que el frontend guarda solo en memoria (`AuthContext.tsx`, nunca `localStorage`), refresh token (7 días) en cookie `httpOnly` + `SameSite=Lax`, rotado y blacklisteado en cada uso (`ROTATE_REFRESH_TOKENS`/`BLACKLIST_AFTER_ROTATION`). Evita que un XSS robe la sesión leyendo el DOM o `localStorage`.
+- **`DEFAULT_PERMISSION_CLASSES` seguro por defecto:** `IsAuthenticated` a nivel global en `REST_FRAMEWORK` (`config/settings.py`); cada endpoint público de verdad (postular sin cuenta, listar categorías, login, health check) tiene su propio `AllowAny` puesto a mano. Un endpoint nuevo que alguien agregue y se olvide de etiquetar queda protegido por error, no expuesto por error.
+- **`IsGateway` — secreto compartido entre el ws-gateway y Django** (`apps/interviews/permissions.py`): `ask`, `transcribe`, `speak` y `finish_interview` (el flujo completo de la entrevista de voz) exigen un header `X-Gateway-Secret`, comparado contra `GATEWAY_SHARED_SECRET` con `secrets.compare_digest` (comparación a tiempo constante, evita timing attacks). Nace de una auditoría real: como Nginx expone `/api/` completo al público, y el gateway le pegaba a esos endpoints sin ningún token, cualquiera en internet podía pegarle directo a `/api/transcribe/`/`/api/speak/` y gastar cuota real de Deepgram/ElevenLabs sin pasar por una entrevista. No se reutiliza JWT de usuario para esto — el gateway no es un usuario, es el propio backend hablando con otro proceso.
+- **`RealIpMiddleware`** (`config/middleware.py`): recupera la IP real del cliente detrás de Nginx leyendo `X-Forwarded-For` — toma el **último** valor de la lista (el que agrega Nginx, confiable porque los contenedores solo escuchan en `127.0.0.1`), nunca el primero (que un cliente malicioso podría falsificar mandando el header él mismo).
+
+### Anti-abuso en Nginx
+
+- **Rate limiting por endpoint** (`limit_req_zone`, definidas en `/etc/nginx/conf.d/rate-limit.conf` del VPS): zonas separadas para `/api/` en general, `/api/postulaciones/` (más estricta — es el único endpoint público sin login) y `/admin/`. `limit_req_status 429;` puesto explícito — el valor por defecto de Nginx para una solicitud cortada por `limit_req` es **503**, no 429; sin esta línea, el `error_page 429` nunca se dispara.
+- **`client_max_body_size`** acotado en el `location` de postulaciones (CVs), evitando que alguien mande archivos de cientos de MB para agotar disco/ancho de banda.
+- **Páginas de error propias** para 429/413 (`location ^~ /_errors/ { internal; ... }`, servidas directo por Nginx desde `/srv/vacantia-errors/`, fuera del alcance del backend) — con la identidad visual de la app en vez de la página cruda por defecto de Nginx.
+
+### A nivel de datos
+
+- **`UniqueConstraint`** en `Postulacion` (`puesto` + `email`) — evita que el mismo candidato spamee postulaciones duplicadas al mismo puesto.
+- **Validación de tamaño de CV** en el serializer (además del límite de Nginx, como segunda capa) y extensión restringida a `.pdf`.
+- **Secretos sin valor por defecto:** `SECRET_KEY` y `GATEWAY_SHARED_SECRET` se leen con `os.environ[...]` (no `.get()` con un fallback) — si faltan, Django falla al arrancar en vez de correr en silencio con una clave insegura. Nace de que el `SECRET_KEY` que trae Django por defecto había quedado público en el repo.
+
 ## Modelo de datos
 
 ### `apps/interviews/models.py`

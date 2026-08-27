@@ -19,6 +19,16 @@ Plataforma de reclutamiento con IA: un reclutador publica un puesto, un candidat
 
 Proyecto de portafolio pensado para demostrar, todo en un mismo sistema: WebSockets bidireccionales con datos binarios (audio), procesamiento asíncrono real (no solo `async def` decorativo), integración de múltiples APIs externas (STT, LLM, TTS) detrás de una arquitectura desacoplada, autenticación híbrida con roles (JWT + cookie httpOnly, Django Groups), un pipeline asíncrono de evaluación de candidatos con IA, y un panel multi-rol (candidato/reclutador) sobre la misma base de datos.
 
+## Seguridad
+
+- **Auth híbrida:** JWT de acceso en memoria del cliente (nunca `localStorage`) + refresh token en cookie `httpOnly` — un XSS no puede robar la sesión leyendo el DOM.
+- **Permisos seguros por defecto:** cualquier endpoint nuevo que alguien se olvide de etiquetar queda protegido por error, no expuesto por error (`DEFAULT_PERMISSION_CLASSES: IsAuthenticated`, con `AllowAny` explícito solo donde corresponde).
+- **Autenticación de servidor a servidor:** el canal de voz (transcripción/generación de audio) entre el gateway Node y el backend Django exige un secreto compartido propio, comparado a tiempo constante — nadie en internet puede pegarle directo a esos endpoints y gastar cuota de las APIs de IA sin pasar por una entrevista real.
+- **Anti-abuso en Nginx:** límite de tasa por endpoint (más estricto en postulaciones y en `/admin/`), límite de tamaño de archivo, y páginas de error propias (429/413) con la identidad visual de la app en vez de las crudas de Nginx.
+- **A nivel de datos:** un candidato no puede postular dos veces al mismo puesto con el mismo email; secretos (`SECRET_KEY`, credenciales de servicios) sin ningún valor por defecto — el sistema no arranca en silencio con una clave insegura.
+
+Detalle técnico completo en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#seguridad).
+
 ## Stack
 
 **Backend**

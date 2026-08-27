@@ -99,7 +99,7 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 **Contexto:** para Backend Fase 1 hace falta un proveedor de LLM. Se evaluaron Claude, GPT, Kimi y DeepSeek — el usuario no tenía cuenta creada en ninguno y quería empezar con algo barato para aprender la integración sin preocuparse por el costo.
 
-**Decisión:** DeepSeek (modelo `deepseek-v4-flash` para desarrollo, el más económico de sus dos tiers) vía su API compatible con el SDK de OpenAI (`base_url: https://api.deepseek.com`). Documentación de referencia copiada en `docs/AI/DeepSeek/`.
+**Decisión:** DeepSeek (modelo `deepseek-v4-flash` para desarrollo, el más económico de sus dos tiers) vía su API compatible con el SDK de OpenAI (`base_url: https://api.deepseek.com`). Documentación de referencia copiada en `docs/_reference/AI/DeepSeek/`.
 
 **Alternativas consideradas:** Claude y GPT — mejor documentados y más reconocibles en un portafolio, pero se pospone por ahora a favor del costo mínimo de DeepSeek mientras se aprende la integración. Kimi — descartado por soporte/documentación en inglés más limitado para un primer uso.
 
@@ -111,7 +111,7 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 **Contexto:** para Backend Fase 3 hace falta transcribir audio a texto. Se evaluaron Deepgram y Whisper API — según el roadmap actual (Frontend 2.3, Gateway 3.1, Backend 3.2), el audio siempre se graba completo y se manda entero, sin streaming en vivo.
 
-**Decisión:** Deepgram (modelo `nova-3`, vía su SDK propio `deepgram-sdk`). Documentación de referencia en `docs/AI/Deepgram/STT.md`.
+**Decisión:** Deepgram (modelo `nova-3`, vía su SDK propio `deepgram-sdk`). Documentación de referencia en `docs/_reference/AI/Deepgram/STT.md`.
 
 **Alternativas consideradas:** Whisper API — más simple y alcanza para el modelo actual "grabar completo y mandar" del roadmap, pero se prefirió Deepgram porque tiene soporte nativo de streaming en tiempo real, dejando la puerta abierta a agregar transcripción en vivo como mejora futura de portafolio (coherente con el objetivo del proyecto de mostrar WebSockets/tiempo real). Gracias al patrón Strategy/Adapter planeado (`STTProvider`, Fase 7), cambiar de proveedor más adelante no requeriría tocar el resto del sistema.
 
@@ -123,7 +123,7 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 **Contexto:** para Backend Fase 4 hace falta sintetizar voz a partir de texto. ElevenLabs era la opción de referencia desde el inicio del proyecto (ver README.md).
 
-**Decisión:** ElevenLabs (SDK propio `elevenlabs`, modelo `eleven_v3`, voz de ejemplo `"George"`). Documentación de referencia en `docs/AI/ElevenLabs/TTS.md`.
+**Decisión:** ElevenLabs (SDK propio `elevenlabs`, modelo `eleven_v3`, voz de ejemplo `"George"`). Documentación de referencia en `docs/_reference/AI/ElevenLabs/TTS.md`.
 
 **Alternativas consideradas:** no se evaluaron alternativas en profundidad — ElevenLabs es reconocido como el estándar de facto en naturalidad de voz, y el plan gratuito alcanzó sin problema para validar la integración.
 
@@ -264,7 +264,7 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 **Contexto:** Backend Fase 9.4 necesita mandar las credenciales generadas al postulante aprobado. Se evaluó Resend, SendGrid y Amazon SES.
 
-**Decisión:** Resend, integrado con `django-anymail[resend]` — reemplaza el `EMAIL_BACKEND` de Django para que `django.core.mail.send_mail`/`EmailMessage` (la API estándar de Django) hablen con Resend, sin aprender un SDK nuevo. Referencia completa copiada en `docs/Email/Resend/`. Mientras no se verifique un dominio propio, se manda desde el dominio de test de Resend (`onboarding@resend.dev`), que solo entrega a la dirección con la que se creó la cuenta — suficiente para desarrollo, hay que verificar un dominio propio antes de producción real.
+**Decisión:** Resend, integrado con `django-anymail[resend]` — reemplaza el `EMAIL_BACKEND` de Django para que `django.core.mail.send_mail`/`EmailMessage` (la API estándar de Django) hablen con Resend, sin aprender un SDK nuevo. Referencia completa copiada en `docs/_reference/Email/Resend/`. Mientras no se verifique un dominio propio, se manda desde el dominio de test de Resend (`onboarding@resend.dev`), que solo entrega a la dirección con la que se creó la cuenta — suficiente para desarrollo, hay que verificar un dominio propio antes de producción real.
 
 **Alternativas consideradas:** SendGrid y Amazon SES — ambos con tier gratuito, pero Resend se eligió por API/SDK más simple y por integrarse directo con la API de envío de emails que Django ya trae (vía Anymail), sin sumar conceptos nuevos al proyecto.
 
@@ -304,7 +304,7 @@ Registro corto de decisiones y el porqué (ADRs breves). Se agrega una entrada c
 
 **Contexto:** con el dominio de test de Resend (`onboarding@resend.dev`) solo se podía entregar al email de la cuenta de Resend — un candidato real con otro email nunca hubiera recibido sus credenciales. Era el bloqueante real para que Fase 9.4 sirviera en producción de verdad.
 
-**Decisión:** se verificó `mail.andymallcco.dev` como subdominio dedicado a email (siguiendo la recomendación de Resend de no usar el dominio raíz, ver `docs/Email/Resend/add_a_domain.md`), agregando los registros DKIM (TXT) y SPF (MX + TXT) en Porkbun — verificación en Resend en menos de 15 minutos. `DEFAULT_FROM_EMAIL` (`backend/config/settings.py`) pasó de `onboarding@resend.dev` a `Vacantia <no-reply@mail.andymallcco.dev>`. Confirmado con un envío real a una casilla externa (no la cuenta de Resend), entregado sin marcarse como spam.
+**Decisión:** se verificó `mail.andymallcco.dev` como subdominio dedicado a email (siguiendo la recomendación de Resend de no usar el dominio raíz, ver `docs/_reference/Email/Resend/add_a_domain.md`), agregando los registros DKIM (TXT) y SPF (MX + TXT) en Porkbun — verificación en Resend en menos de 15 minutos. `DEFAULT_FROM_EMAIL` (`backend/config/settings.py`) pasó de `onboarding@resend.dev` a `Vacantia <no-reply@mail.andymallcco.dev>`. Confirmado con un envío real a una casilla externa (no la cuenta de Resend), entregado sin marcarse como spam.
 
 **Alternativas consideradas:** ninguna — era un paso obligatorio ya decidido de antemano (ver decisión del 2026-08-06 sobre ubigeos/proveedor de email), solo pendiente de ejecutar.
 
