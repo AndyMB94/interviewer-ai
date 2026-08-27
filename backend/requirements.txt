@@ -59,3 +59,5 @@ vine==5.1.0
 wcwidth==0.8.2
 websockets==17.0
 wrapt==2.3.0
+
+whitenoise==6.12.0
