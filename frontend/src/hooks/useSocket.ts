@@ -18,15 +18,22 @@ export function useSocket(
   token: string | undefined,
   resumeInterviewId: number | null | undefined,
   initialMessages: ChatMessage[] = [],
+  initialCreatedAt?: string,
 ) {
   const socketRef = useRef<Socket | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  // Fase 10.7/10.8: siempre la hora real en que empezó la entrevista (nunca un cronómetro de
+  // JavaScript que arranca de cero al montar) -- así el tiempo restante se calcula correctamente
+  // incluso después de recargar la página.
+  const [interviewStartedAt, setInterviewStartedAt] = useState<Date | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
     if (resumeInterviewId === undefined) return;
 
     if (initialMessages.length > 0) setMessages(initialMessages);
+    if (initialCreatedAt) setInterviewStartedAt(new Date(initialCreatedAt));
 
     const auth: { token?: string; interviewId?: number } = {};
     if (token) auth.token = token;
@@ -39,9 +46,11 @@ export function useSocket(
       console.log("conectado");
     });
 
-    socket.on("ask", (response: string) => {
-      setMessages((prev) => [...prev, { role: "assistant", text: response, timestamp: new Date() }]);
+    socket.on("ask", (payload: { answer: string; createdAt?: string; timedOut?: boolean }) => {
+      setMessages((prev) => [...prev, { role: "assistant", text: payload.answer, timestamp: new Date() }]);
       setIsWaitingForResponse(false);
+      if (payload.createdAt) setInterviewStartedAt(new Date(payload.createdAt));
+      if (payload.timedOut) setTimedOut(true);
     });
 
     socket.on("audio-response", (url: string) => {
@@ -80,5 +89,13 @@ export function useSocket(
     socketRef.current?.emit("finish");
   }, []);
 
-  return { askQuestion, messages, sendAudio, isWaitingForResponse, finishInterview };
+  return {
+    askQuestion,
+    messages,
+    sendAudio,
+    isWaitingForResponse,
+    finishInterview,
+    interviewStartedAt,
+    timedOut,
+  };
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useBlocker } from "react-router";
 import { useSocket, type ChatMessage } from "../hooks/useSocket";
 import { useMicrophone } from "../hooks/useMicrophone";
@@ -18,7 +18,17 @@ import {
 import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { toast } from "@/components/ui/toast";
 import { fetchInterviewEnCurso, fetchMisPostulacionesPendientes, type MiPostulacion } from "@/lib/api";
+
+const DURACION_ENTREVISTA_SEGUNDOS = 30 * 60;
+const AVISO_MINUTOS_RESTANTES = 5;
+
+function formatTiempoRestante(segundos: number) {
+  const minutos = Math.floor(segundos / 60);
+  const restoSegundos = segundos % 60;
+  return `${minutos}:${restoSegundos.toString().padStart(2, "0")}`;
+}
 
 export function InterviewPage() {
   const { accessToken } = useAuth();
@@ -26,12 +36,17 @@ export function InterviewPage() {
   // significa "ya se comprobó, no hay ninguna"; un número es el interview_id a retomar.
   const [resumeInterviewId, setResumeInterviewId] = useState<number | null | undefined>(undefined);
   const [historialPrevio, setHistorialPrevio] = useState<ChatMessage[]>([]);
+  const [createdAtPrevio, setCreatedAtPrevio] = useState<string | undefined>(undefined);
   const [puestoEnCurso, setPuestoEnCurso] = useState<string | null>(null);
-  const { askQuestion, messages, sendAudio, isWaitingForResponse, finishInterview } = useSocket(
-    accessToken ?? undefined,
-    resumeInterviewId,
-    historialPrevio,
-  );
+  const {
+    askQuestion,
+    messages,
+    sendAudio,
+    isWaitingForResponse,
+    finishInterview,
+    interviewStartedAt,
+    timedOut,
+  } = useSocket(accessToken ?? undefined, resumeInterviewId, historialPrevio, createdAtPrevio);
   const [question, setQuestion] = useState("");
   const [isFinished, setIsFinished] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
@@ -63,6 +78,54 @@ export function InterviewPage() {
     setIsFinished(true);
     finishInterview();
   };
+
+  // Fase 10.7/10.8: cronómetro en tiempo real, calculado siempre contra la hora real del backend
+  // (interviewStartedAt) -- nunca un contador que arranque de cero al recargar la página.
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const avisoMostradoRef = useRef(false);
+
+  useEffect(() => {
+    if (!interviewStartedAt) {
+      setSecondsLeft(null);
+      return;
+    }
+    const tick = () => {
+      const transcurridos = (Date.now() - interviewStartedAt.getTime()) / 1000;
+      setSecondsLeft(Math.max(0, Math.round(DURACION_ENTREVISTA_SEGUNDOS - transcurridos)));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [interviewStartedAt]);
+
+  // Aviso único (toast, no un alert nativo) cuando quedan 5 minutos o menos.
+  useEffect(() => {
+    if (!hasStarted || secondsLeft === null || secondsLeft <= 0 || avisoMostradoRef.current) return;
+    if (secondsLeft <= AVISO_MINUTOS_RESTANTES * 60) {
+      avisoMostradoRef.current = true;
+      toast.add({
+        type: "warning",
+        title: `Le quedan ${AVISO_MINUTOS_RESTANTES} minutos para finalizar la entrevista.`,
+      });
+    }
+  }, [secondsLeft, hasStarted]);
+
+  // Fase 10.9: si el backend avisa que se acabó el tiempo (respaldo por si el cronómetro local
+  // no llegó a dispararse), la pantalla pasa a "finalizada" igual que con el botón manual.
+  useEffect(() => {
+    if (timedOut) setIsFinished(true);
+  }, [timedOut]);
+
+  // Fase 10.10: al llegar a cero, el propio frontend dispara "Finalizar entrevista" en vez de
+  // esperar a que el siguiente mensaje falle contra el corte del backend.
+  useEffect(() => {
+    if (secondsLeft === 0 && hasStarted && !isFinished) {
+      handleFinish();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleFinish no está memoizado;
+    // solo debe dispararse cuando el cronómetro llega exactamente a cero (o cuando hasStarted
+    // pasa a true si el tiempo ya se había agotado mientras esperaba en la confirmación).
+  }, [secondsLeft, hasStarted]);
 
   useEffect(() => {
     if (audioBlob) {
@@ -100,6 +163,7 @@ export function InterviewPage() {
           }
         }
         setHistorialPrevio(mensajes);
+        setCreatedAtPrevio(enCurso.created_at);
         setPuestoEnCurso(enCurso.puesto_titulo);
         setResumeInterviewId(enCurso.interview_id);
       })
@@ -216,6 +280,7 @@ export function InterviewPage() {
         isFinished={isFinished}
         isWaitingForResponse={isWaitingForResponse}
         onFinish={() => setConfirmandoFinalizar(true)}
+        tiempoRestante={!isFinished && secondsLeft !== null ? formatTiempoRestante(secondsLeft) : undefined}
       >
         {!isFinished && (
           <MessageComposer

@@ -284,6 +284,7 @@ export interface InterviewEnCurso {
   interview_id: number;
   postulacion_id: number | null;
   puesto_titulo: string | null;
+  created_at: string;
   questions: InterviewQuestion[];
 }
 

@@ -11,7 +11,7 @@ export async function askQuestion(
   interviewId?: number,
   token?: string,
   postulacionId?: number,
-): Promise<{ answer: string; interviewId: number }> {
+): Promise<{ answer: string; interviewId: number; createdAt?: string; timedOut?: boolean }> {
   const body: Record<string, unknown> = { question };
   if (interviewId) {
     body.interview_id = interviewId;
@@ -33,11 +33,19 @@ export async function askQuestion(
     headers,
     body: JSON.stringify(body),
   });
-  const { task_id, interview_id } = await askResponse.json();
+  const data = await askResponse.json();
+
+  // Fase 10.9: el backend corta la entrevista él mismo a los 30 minutos -- no hay task_id que
+  // esperar en ese caso, la respuesta ya viene con el mensaje de "se acabó el tiempo".
+  if (data.timed_out) {
+    return { answer: data.message, interviewId: data.interview_id, timedOut: true };
+  }
+
+  const { task_id, interview_id, created_at } = data;
 
   return new Promise((resolve) => {
     subscribeToTask(task_id, (answer) => {
-      resolve({ answer, interviewId: interview_id });
+      resolve({ answer, interviewId: interview_id, createdAt: created_at });
     });
   });
 }

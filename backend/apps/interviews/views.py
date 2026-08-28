@@ -1,6 +1,8 @@
 import base64
+from datetime import timedelta
 
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -9,6 +11,14 @@ from apps.interviews.models import Interview, Question
 from apps.interviews.permissions import IsGateway, IsOwnerReclutadorOfInterview
 from apps.interviews.tasks import ask_llm_task, synthesize_speech_task, transcribe_audio_task
 from apps.recruiting.models import Postulacion
+
+# Fase 10.5/10.9: duración máxima de una entrevista, calculada contra Interview.created_at --
+# nunca confiando en el cronómetro del frontend, que es solo para que se sienta transparente.
+DURACION_MAXIMA_ENTREVISTA = timedelta(minutes=30)
+MENSAJE_TIEMPO_AGOTADO = (
+    "Se acabó el tiempo disponible para esta entrevista. Gracias por su participación — "
+    "sus respuestas ya quedaron registradas."
+)
 
 
 @api_view(["GET"])
@@ -51,10 +61,23 @@ def ask(request):
 
         interview = Interview.objects.create(user=user, postulacion=postulacion)
 
+    if (
+        interview.status == Interview.Status.IN_PROGRESS
+        and timezone.now() - interview.created_at > DURACION_MAXIMA_ENTREVISTA
+    ):
+        interview.status = Interview.Status.FINISHED
+        interview.save(update_fields=["status"])
+        return Response(
+            {"timed_out": True, "interview_id": interview.id, "message": MENSAJE_TIEMPO_AGOTADO}
+        )
+
     question = Question.objects.create(interview=interview, text=question_text)
 
     task = ask_llm_task.delay(question.id)
-    return Response({"task_id": task.id, "interview_id": interview.id}, status=202)
+    return Response(
+        {"task_id": task.id, "interview_id": interview.id, "created_at": interview.created_at},
+        status=202,
+    )
 
 
 @api_view(["GET"])
@@ -87,6 +110,7 @@ def interview_en_curso(request):
             "interview_id": interview.id,
             "postulacion_id": interview.postulacion_id,
             "puesto_titulo": interview.postulacion.puesto.titulo if interview.postulacion else None,
+            "created_at": interview.created_at,
             "questions": questions,
         }
     )

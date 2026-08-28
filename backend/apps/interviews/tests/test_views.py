@@ -284,6 +284,63 @@ def test_ask_requires_question():
 
 
 @pytest.mark.django_db
+@patch("apps.interviews.views.ask_llm_task.delay")
+def test_ask_includes_created_at_when_not_timed_out(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
+
+    client = gateway_client()
+    response = client.post("/api/ask/", {"question": "hello"}, format="json")
+
+    assert response.status_code == 202
+    assert "created_at" in response.json()
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.ask_llm_task.delay")
+def test_ask_returns_timed_out_after_30_minutes(mock_delay):
+    interview = Interview.objects.create()
+    Interview.objects.filter(pk=interview.id).update(
+        created_at=timezone.now() - timedelta(minutes=31)
+    )
+
+    client = gateway_client()
+    response = client.post(
+        "/api/ask/", {"question": "hello", "interview_id": interview.id}, format="json"
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["timed_out"] is True
+    interview.refresh_from_db()
+    assert interview.status == Interview.Status.FINISHED
+    mock_delay.assert_not_called()
+    assert Question.objects.filter(interview=interview).count() == 0
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.ask_llm_task.delay")
+def test_ask_within_30_minutes_is_not_timed_out(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
+
+    interview = Interview.objects.create()
+    Interview.objects.filter(pk=interview.id).update(
+        created_at=timezone.now() - timedelta(minutes=10)
+    )
+
+    client = gateway_client()
+    response = client.post(
+        "/api/ask/", {"question": "hello", "interview_id": interview.id}, format="json"
+    )
+
+    assert response.status_code == 202
+    assert "timed_out" not in response.json()
+
+
+@pytest.mark.django_db
 def test_transcribe_requires_gateway_secret():
     audio_file = SimpleUploadedFile("audio.wav", b"fake-audio-bytes", content_type="audio/wav")
     client = APIClient()
@@ -415,6 +472,7 @@ def test_interview_en_curso_returns_history_when_one_is_in_progress():
     assert data["interview_id"] == interview.id
     assert data["postulacion_id"] == postulacion.id
     assert data["puesto_titulo"] == "Dev Backend"
+    assert "created_at" in data
     assert len(data["questions"]) == 2
     assert data["questions"][0]["question"] == "¿Su experiencia con Django?"
     assert data["questions"][0]["answer"] == "Cinco años."

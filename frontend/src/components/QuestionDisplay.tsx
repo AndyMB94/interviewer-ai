@@ -17,6 +17,9 @@ interface QuestionDisplayProps {
   isWaitingForResponse: boolean;
   onFinish: () => void;
   children?: React.ReactNode;
+  // Fase 10.8: mm:ss calculado en InterviewPage.tsx contra la hora real de inicio, no un
+  // cronómetro propio de este componente.
+  tiempoRestante?: string;
 }
 
 export function QuestionDisplay({
@@ -25,6 +28,7 @@ export function QuestionDisplay({
   isWaitingForResponse,
   onFinish,
   children,
+  tiempoRestante,
 }: QuestionDisplayProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const { userEmail } = useAuth();
@@ -35,8 +39,13 @@ export function QuestionDisplay({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{isFinished ? "Entrevista finalizada" : "Entrevista"}</CardTitle>
+        {tiempoRestante && (
+          <span className="text-sm text-muted-foreground" aria-label="Tiempo restante">
+            {tiempoRestante}
+          </span>
+        )}
       </CardHeader>
       <CardContent>
         <div className="flex max-h-112 flex-col gap-3 overflow-y-auto">

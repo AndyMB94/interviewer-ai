@@ -31,7 +31,7 @@ export function registerInterviewSocket(io: Server) {
       console.log("pregunta recibida:", question);
       const result = await askQuestion(question, interviewId, token, postulacionId);
       interviewId = result.interviewId;
-      socket.emit("ask", result.answer);
+      socket.emit("ask", { answer: result.answer, createdAt: result.createdAt, timedOut: result.timedOut });
     });
 
     socket.on("audio", async (buffer: ArrayBuffer, postulacionId?: number) => {
@@ -45,7 +45,10 @@ export function registerInterviewSocket(io: Server) {
         const result = await askQuestion(transcript, interviewId, token, postulacionId);
         interviewId = result.interviewId;
         console.log("respuesta del LLM:", result.answer, "| interview_id:", interviewId);
-        socket.emit("ask", result.answer);
+        socket.emit("ask", { answer: result.answer, createdAt: result.createdAt, timedOut: result.timedOut });
+
+        // Fase 10.9: no vale la pena sintetizar voz para el aviso de "se acabó el tiempo".
+        if (result.timedOut) return;
 
         const audioUrl = await synthesizeSpeech(result.answer);
         console.log("audio de respuesta:", audioUrl);
