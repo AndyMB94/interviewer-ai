@@ -6,11 +6,15 @@
   </head>
   <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
     <h1>¡Felicidades, {{ nombre }}!</h1>
-    <p>Tu postulación a <strong>{{ puesto }}</strong> pasó el filtro inicial. El siguiente paso es una entrevista técnica con nuestro entrevistador de IA.</p>
-    <p>Usá estas credenciales para ingresar:</p>
+    <p>Su postulación a <strong>{{ puesto }}</strong> pasó el filtro inicial. El siguiente paso es una entrevista técnica con nuestro entrevistador de IA.</p>
+    <p>Use estas credenciales para ingresar:</p>
     <p>
       Usuario: <strong>{{ username }}</strong><br />
       Contraseña temporal: <strong>{{ password_temporal }}</strong>
     </p>
+    <p>Tiene hasta el <strong>{{ fecha_limite_entrevista }}</strong> para completar su entrevista.</p>
+    {% if es_reset %}
+    <p>Si tiene correos de credenciales de postulaciones anteriores, esas contraseñas ya no son válidas — use únicamente la de este correo para ingresar.</p>
+    {% endif %}
   </body>
 </html>

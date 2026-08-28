@@ -18,11 +18,12 @@ def _generar_password_temporal(length=12):
 def provision_applicant_account(postulacion):
     """Crea la cuenta del postulante si no existe, o le resetea la contraseña si ya existía
     (de una postulación aprobada anterior) — así nunca depende de que recuerde una contraseña vieja.
-    Devuelve (user, password_temporal)."""
+    Devuelve (user, password_temporal, es_reset) -- es_reset es True cuando la cuenta ya existía
+    de antes (Fase 10.3, para avisarle en el email que sus contraseñas previas ya no valen)."""
     group = Group.objects.get(name=POSTULANTE_GROUP_NAME)
     password_temporal = _generar_password_temporal()
 
-    user, _ = User.objects.get_or_create(
+    user, created = User.objects.get_or_create(
         username=postulacion.email,
         defaults={"email": postulacion.email},
     )
@@ -32,10 +33,10 @@ def provision_applicant_account(postulacion):
 
     ApplicantProfile.objects.get_or_create(user=user)
 
-    return user, password_temporal
+    return user, password_temporal, not created
 
 
-def enviar_email_credenciales(postulacion, password_temporal):
+def enviar_email_credenciales(postulacion, password_temporal, es_reset):
     html_content = render_to_string(
         "emails/credenciales_postulante.html",
         {
@@ -43,10 +44,12 @@ def enviar_email_credenciales(postulacion, password_temporal):
             "puesto": postulacion.puesto.titulo,
             "username": postulacion.email,
             "password_temporal": password_temporal,
+            "fecha_limite_entrevista": postulacion.fecha_limite_entrevista.strftime("%d/%m/%Y"),
+            "es_reset": es_reset,
         },
     )
     message = EmailMessage(
-        subject=f"¡Tu postulación a {postulacion.puesto.titulo} fue aprobada! — Vacantia",
+        subject=f"¡Su postulación a {postulacion.puesto.titulo} fue aprobada! — Vacantia",
         body=html_content,
         to=[postulacion.email],
     )
@@ -55,6 +58,6 @@ def enviar_email_credenciales(postulacion, password_temporal):
 
 
 def procesar_aprobacion(postulacion):
-    user, password_temporal = provision_applicant_account(postulacion)
-    enviar_email_credenciales(postulacion, password_temporal)
+    user, password_temporal, es_reset = provision_applicant_account(postulacion)
+    enviar_email_credenciales(postulacion, password_temporal, es_reset)
     return user
