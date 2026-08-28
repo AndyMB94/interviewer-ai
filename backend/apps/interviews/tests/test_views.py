@@ -512,6 +512,35 @@ def test_interview_en_curso_requires_authentication():
     assert response.status_code == 401
 
 
+@pytest.mark.django_db
+def test_interview_en_curso_self_heals_an_abandoned_interview():
+    # Fase 10.11: si nadie manda un mensaje nuevo, nada dispara el corte automático de `ask` --
+    # esto verifica que igual se detecta y se cierra al consultar el endpoint, no solo al chatear.
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
+    interview = Interview.objects.create(user=user, postulacion=postulacion)
+    Interview.objects.filter(pk=interview.id).update(created_at=timezone.now() - timedelta(minutes=31))
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.get("/api/interviews/en-curso/")
+
+    assert response.status_code == 204
+    interview.refresh_from_db()
+    assert interview.status == Interview.Status.FINISHED
+
+
 @pytest.fixture
 def interview_con_postulacion():
     reclutador = User.objects.create_user("reclutador1", password="testpass123")
@@ -549,6 +578,23 @@ def test_interview_detail_owner_reclutador_sees_full_transcript(interview_con_po
     assert len(data["questions"]) == 1
     assert data["questions"][0]["question"] == "¿Cuál es tu experiencia con Django?"
     assert data["questions"][0]["answer"] == "Cinco años."
+
+
+@pytest.mark.django_db
+def test_interview_detail_self_heals_an_abandoned_interview(interview_con_postulacion):
+    # Fase 10.11: el reclutador no debería ver "en progreso" para siempre una entrevista que el
+    # candidato abandonó hace días sin volver a mandar ningún mensaje.
+    reclutador, interview = interview_con_postulacion
+    Interview.objects.filter(pk=interview.id).update(created_at=timezone.now() - timedelta(minutes=31))
+
+    client = APIClient()
+    client.force_authenticate(user=reclutador)
+    response = client.get(f"/api/interviews/{interview.id}/")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == Interview.Status.FINISHED
+    interview.refresh_from_db()
+    assert interview.status == Interview.Status.FINISHED
 
 
 @pytest.mark.django_db

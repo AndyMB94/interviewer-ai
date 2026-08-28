@@ -21,6 +21,21 @@ MENSAJE_TIEMPO_AGOTADO = (
 )
 
 
+def finalizar_si_vencida(interview):
+    """Fase 10.11: mismo chequeo perezoso de siempre, evaluado en cualquier lugar que lea o
+    toque la entrevista -- no solo cuando llega un mensaje nuevo (`ask`). Cubre el caso de
+    alguien que cierra el navegador a los 30 minutos y nunca vuelve: sin esto, esa entrevista
+    quedaría "en progreso" para siempre, tanto para el candidato como en el panel del reclutador."""
+    if (
+        interview.status == Interview.Status.IN_PROGRESS
+        and timezone.now() - interview.created_at > DURACION_MAXIMA_ENTREVISTA
+    ):
+        interview.status = Interview.Status.FINISHED
+        interview.save(update_fields=["status"])
+        return True
+    return False
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def health(request):
@@ -61,12 +76,7 @@ def ask(request):
 
         interview = Interview.objects.create(user=user, postulacion=postulacion)
 
-    if (
-        interview.status == Interview.Status.IN_PROGRESS
-        and timezone.now() - interview.created_at > DURACION_MAXIMA_ENTREVISTA
-    ):
-        interview.status = Interview.Status.FINISHED
-        interview.save(update_fields=["status"])
+    if finalizar_si_vencida(interview):
         return Response(
             {"timed_out": True, "interview_id": interview.id, "message": MENSAJE_TIEMPO_AGOTADO}
         )
@@ -93,6 +103,9 @@ def interview_en_curso(request):
         .first()
     )
     if interview is None:
+        return Response(status=204)
+
+    if finalizar_si_vencida(interview):
         return Response(status=204)
 
     questions = [
@@ -124,6 +137,8 @@ def interview_detail(request, interview_id):
     )
     if not IsOwnerReclutadorOfInterview().has_object_permission(request, None, interview):
         return Response({"detail": "No tiene permiso para ver esta entrevista."}, status=403)
+
+    finalizar_si_vencida(interview)
 
     questions = [
         {
