@@ -31,7 +31,7 @@ function formatTiempoRestante(segundos: number) {
 }
 
 export function InterviewPage() {
-  const { accessToken } = useAuth();
+  const { accessToken, logout } = useAuth();
   // undefined mientras se comprueba si hay una entrevista sin terminar (Fase 10.4/10.5); null
   // significa "ya se comprobó, no hay ninguna"; un número es el interview_id a retomar.
   const [resumeInterviewId, setResumeInterviewId] = useState<number | null | undefined>(undefined);
@@ -172,12 +172,19 @@ export function InterviewPage() {
 
   // Al terminar, se vuelve a consultar por si quedan otras postulaciones pendientes de
   // entrevistar -- sin esto, no hay forma visual de enterarse que hay que volver (Frontend 9.7.6).
+  // Fase 10.12: si no le queda ninguna, la sesión se cierra de verdad (logout real, no solo
+  // visual) -- la cuenta del postulante ya cumplió su propósito, no debería quedar abierta.
   useEffect(() => {
     if (!isFinished || !accessToken) return;
     fetchMisPostulacionesPendientes(accessToken)
-      .then(setPostulacionesRestantes)
+      .then((restantes) => {
+        setPostulacionesRestantes(restantes);
+        if (restantes.length === 0) {
+          logout();
+        }
+      })
       .catch(() => setPostulacionesRestantes([]));
-  }, [isFinished, accessToken]);
+  }, [isFinished, accessToken, logout]);
 
   // Bloquea salir de una entrevista activa sin terminar (Frontend Fase 7.3) — evita perder el
   // progreso por un click accidental en el logo u otro link, ya que salir desconecta el socket.
