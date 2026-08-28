@@ -1,8 +1,13 @@
+from datetime import timedelta
+
 from celery import shared_task
+from django.utils import timezone
 
 from apps.accounts.services.account_provisioning import procesar_aprobacion
 from apps.recruiting.models import Postulacion
 from apps.recruiting.services.cv_screening_service import extract_text_from_pdf, screen_candidate
+
+DIAS_LIMITE_ENTREVISTA = 3
 
 
 @shared_task
@@ -20,12 +25,13 @@ def screen_postulacion_task(postulacion_id):
     decision = resultado.get("decision")
     if decision == Postulacion.Estado.APROBADO:
         postulacion.estado = Postulacion.Estado.APROBADO
+        postulacion.fecha_limite_entrevista = timezone.now() + timedelta(days=DIAS_LIMITE_ENTREVISTA)
     elif decision == Postulacion.Estado.RECHAZADO:
         postulacion.estado = Postulacion.Estado.RECHAZADO
     # si la decisión no vino en un formato reconocible, se deja en "pendiente" (default del modelo)
 
     postulacion.resultado_filtro = resultado.get("razon", "")
-    postulacion.save(update_fields=["estado", "resultado_filtro"])
+    postulacion.save(update_fields=["estado", "resultado_filtro", "fecha_limite_entrevista"])
 
     if postulacion.estado == Postulacion.Estado.APROBADO:
         procesar_aprobacion(postulacion)

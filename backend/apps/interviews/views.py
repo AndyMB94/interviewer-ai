@@ -44,6 +44,10 @@ def ask(request):
                 return Response({"error": "postulacion not found"}, status=404)
             if postulacion.interviews.exists():
                 return Response({"error": "this postulacion already has an interview"}, status=409)
+            if postulacion.entrevista_vencida:
+                return Response(
+                    {"error": "the deadline to start this interview has passed"}, status=410
+                )
 
         interview = Interview.objects.create(user=user, postulacion=postulacion)
 

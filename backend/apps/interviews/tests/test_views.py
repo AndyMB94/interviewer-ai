@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.utils import timezone
 from rest_framework.test import APIClient
 from unittest.mock import MagicMock, patch
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -171,6 +174,70 @@ def test_ask_rejects_postulacion_that_already_has_an_interview(mock_delay):
     )
 
     assert response.status_code == 409
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.ask_llm_task.delay")
+def test_ask_rejects_postulacion_with_expired_deadline(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
+
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+        fecha_limite_entrevista=timezone.now() - timedelta(days=1),
+    )
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
+
+    client = gateway_client()
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/ask/", {"question": "hello", "postulacion_id": postulacion.id}, format="json"
+    )
+
+    assert response.status_code == 410
+    assert not Interview.objects.filter(postulacion=postulacion).exists()
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.views.ask_llm_task.delay")
+def test_ask_allows_postulacion_with_future_deadline(mock_delay):
+    mock_result = MagicMock()
+    mock_result.id = "fake-task-id"
+    mock_delay.return_value = mock_result
+
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+        fecha_limite_entrevista=timezone.now() + timedelta(days=1),
+    )
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
+
+    client = gateway_client()
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/ask/", {"question": "hello", "postulacion_id": postulacion.id}, format="json"
+    )
+
+    assert response.status_code == 202
+    assert Interview.objects.filter(postulacion=postulacion).exists()
 
 
 @pytest.mark.django_db

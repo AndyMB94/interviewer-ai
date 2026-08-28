@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 
 
 class Categoria(models.Model):
@@ -59,6 +60,9 @@ class Postulacion(models.Model):
     cv = models.FileField(upload_to="cvs/", validators=[FileExtensionValidator(["pdf"])])
     estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.PENDIENTE)
     resultado_filtro = models.TextField(blank=True)  # razonamiento del filtro de IA, se llena en Fase 9.3
+    # Fecha límite para completar la entrevista (aprobación + 3 días, Fase 10.1) -- null en
+    # postulaciones sin aprobar y en las aprobadas antes de que existiera este campo.
+    fecha_limite_entrevista = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -69,3 +73,11 @@ class Postulacion(models.Model):
 
     def __str__(self):
         return f"{self.nombre} → {self.puesto}"
+
+    @property
+    def entrevista_vencida(self):
+        """Se calcula al vuelo contra la hora actual, sin ningún job en segundo plano que la
+        marque -- mismo principio con el que ya expira el JWT en este proyecto (Fase 10.2)."""
+        if self.fecha_limite_entrevista is None:
+            return False
+        return timezone.now() > self.fecha_limite_entrevista

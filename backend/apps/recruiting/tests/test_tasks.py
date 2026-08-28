@@ -1,11 +1,13 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 
 from apps.recruiting.models import Postulacion, Puesto
-from apps.recruiting.tasks import screen_postulacion_task
+from apps.recruiting.tasks import DIAS_LIMITE_ENTREVISTA, screen_postulacion_task
 
 
 @pytest.fixture
@@ -34,6 +36,8 @@ def test_task_marks_postulacion_as_aprobado(mock_screen, mock_extract, postulaci
     postulacion.refresh_from_db()
     assert postulacion.estado == Postulacion.Estado.APROBADO
     assert postulacion.resultado_filtro == "Buen fit."
+    esperado = timezone.now() + timedelta(days=DIAS_LIMITE_ENTREVISTA)
+    assert abs((postulacion.fecha_limite_entrevista - esperado).total_seconds()) < 5
 
 
 @pytest.mark.django_db
@@ -46,6 +50,7 @@ def test_task_marks_postulacion_as_rechazado(mock_screen, mock_extract, postulac
 
     postulacion.refresh_from_db()
     assert postulacion.estado == Postulacion.Estado.RECHAZADO
+    assert postulacion.fecha_limite_entrevista is None
 
 
 @pytest.mark.django_db

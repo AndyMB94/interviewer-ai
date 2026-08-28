@@ -1,8 +1,10 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.recruiting.models import Postulacion, Puesto
@@ -34,6 +36,41 @@ def puesto(reclutador):
 
 def _fake_pdf(nombre="cv.pdf"):
     return SimpleUploadedFile(nombre, b"contenido de prueba", content_type="application/pdf")
+
+
+@pytest.mark.django_db
+def test_entrevista_vencida_is_false_when_no_deadline_set(puesto):
+    postulacion = Postulacion.objects.create(
+        puesto=puesto, nombre="Andy", email="andy@example.com", cv=_fake_pdf()
+    )
+
+    assert postulacion.entrevista_vencida is False
+
+
+@pytest.mark.django_db
+def test_entrevista_vencida_is_true_after_deadline(puesto):
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=_fake_pdf(),
+        fecha_limite_entrevista=timezone.now() - timedelta(days=1),
+    )
+
+    assert postulacion.entrevista_vencida is True
+
+
+@pytest.mark.django_db
+def test_entrevista_vencida_is_false_before_deadline(puesto):
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=_fake_pdf(),
+        fecha_limite_entrevista=timezone.now() + timedelta(days=1),
+    )
+
+    assert postulacion.entrevista_vencida is False
 
 
 @pytest.mark.django_db
