@@ -59,6 +59,41 @@ def ask(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+def interview_en_curso(request):
+    """Fase 10.4: detecta si el postulante autenticado ya tiene una entrevista sin terminar
+    (ej. cerró el navegador a medio camino) para poder retomarla con su historial real -- sin
+    esto, el intento de crear una entrevista nueva choca contra la que ya existe (409 en `ask`)."""
+    interview = (
+        Interview.objects.filter(user=request.user, status=Interview.Status.IN_PROGRESS)
+        .select_related("postulacion__puesto")
+        .order_by("-created_at")
+        .first()
+    )
+    if interview is None:
+        return Response(status=204)
+
+    questions = [
+        {
+            "question": question.text,
+            "created_at": question.created_at,
+            "answer": question.answer.text if hasattr(question, "answer") else None,
+            "answered_at": question.answer.created_at if hasattr(question, "answer") else None,
+        }
+        for question in interview.questions.select_related("answer").order_by("created_at")
+    ]
+
+    return Response(
+        {
+            "interview_id": interview.id,
+            "postulacion_id": interview.postulacion_id,
+            "puesto_titulo": interview.postulacion.puesto.titulo if interview.postulacion else None,
+            "questions": questions,
+        }
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def interview_detail(request, interview_id):
     interview = get_object_or_404(
         Interview.objects.select_related("postulacion__puesto"), pk=interview_id

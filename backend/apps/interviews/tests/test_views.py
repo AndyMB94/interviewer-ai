@@ -375,6 +375,85 @@ def test_finish_interview_404_for_unknown_id():
     assert response.status_code == 404
 
 
+@pytest.mark.django_db
+def test_interview_en_curso_returns_null_when_none_in_progress():
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.get("/api/interviews/en-curso/")
+
+    assert response.status_code == 204
+
+
+@pytest.mark.django_db
+def test_interview_en_curso_returns_history_when_one_is_in_progress():
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
+    interview = Interview.objects.create(user=user, postulacion=postulacion)
+    pregunta_respondida = Question.objects.create(interview=interview, text="¿Su experiencia con Django?")
+    Answer.objects.create(question=pregunta_respondida, text="Cinco años.")
+    Question.objects.create(interview=interview, text="¿Y con Celery?")
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.get("/api/interviews/en-curso/")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["interview_id"] == interview.id
+    assert data["postulacion_id"] == postulacion.id
+    assert data["puesto_titulo"] == "Dev Backend"
+    assert len(data["questions"]) == 2
+    assert data["questions"][0]["question"] == "¿Su experiencia con Django?"
+    assert data["questions"][0]["answer"] == "Cinco años."
+    assert data["questions"][1]["question"] == "¿Y con Celery?"
+    assert data["questions"][1]["answer"] is None
+
+
+@pytest.mark.django_db
+def test_interview_en_curso_ignores_finished_interviews():
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
+    Interview.objects.create(user=user, postulacion=postulacion, status=Interview.Status.FINISHED)
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.get("/api/interviews/en-curso/")
+
+    assert response.status_code == 204
+
+
+@pytest.mark.django_db
+def test_interview_en_curso_requires_authentication():
+    client = APIClient()
+    response = client.get("/api/interviews/en-curso/")
+
+    assert response.status_code == 401
+
+
 @pytest.fixture
 def interview_con_postulacion():
     reclutador = User.objects.create_user("reclutador1", password="testpass123")
