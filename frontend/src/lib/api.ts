@@ -280,6 +280,27 @@ export async function fetchMisPostulacionesPendientes(token: string): Promise<Mi
   return response.json();
 }
 
+export interface InterviewEnCurso {
+  interview_id: number;
+  postulacion_id: number | null;
+  puesto_titulo: string | null;
+  questions: InterviewQuestion[];
+}
+
+// Fase 10.4/10.5: si el candidato cerró el navegador a medio camino, esto detecta la entrevista
+// sin terminar para poder retomarla -- null cuando no tiene ninguna (204 No Content del backend).
+export async function fetchInterviewEnCurso(token: string): Promise<InterviewEnCurso | null> {
+  const response = await fetch(`${API_URL}/api/interviews/en-curso/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (response.status === 204) return null;
+  if (!response.ok) {
+    throw new Error("No se pudo verificar si tiene una entrevista en curso.");
+  }
+  return response.json();
+}
+
 export interface ApplicantProfile {
   tipo_documento: "" | "dni" | "ce" | "pasaporte";
   numero_documento: string;

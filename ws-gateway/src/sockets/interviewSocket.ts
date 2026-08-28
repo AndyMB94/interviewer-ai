@@ -15,7 +15,10 @@ export function registerInterviewSocket(io: Server) {
     // si la Interview queda con user=None o con el usuario del token (ver Backend Fase 9.5).
     const token = socket.handshake.auth?.token as string | undefined;
 
-    let interviewId: number | undefined;
+    // Fase 10.5/10.6: si el cliente ya sabe que está retomando una entrevista en curso (detectada
+    // vía GET /api/interviews/en-curso/), manda su id acá para reengancharse en vez de que el
+    // backend intente crear una entrevista nueva y choque con la que ya existe (409).
+    let interviewId: number | undefined = socket.handshake.auth?.interviewId as number | undefined;
 
     socket.on("echo", (message) => {
       console.log("mensaje recibido:", message);

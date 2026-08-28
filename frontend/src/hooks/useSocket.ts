@@ -10,13 +10,29 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-export function useSocket(token?: string) {
+// resumeInterviewId: undefined mientras todavía no se sabe si hay una entrevista para retomar
+// (Fase 10.4/10.5) -- el socket espera a que se resuelva antes de conectar, para no arrancar una
+// conexión "en blanco" y tener que reconectar apenas se sepa. null significa "ya se comprobó, no
+// hay ninguna que retomar"; un número es el interview_id real a retomar.
+export function useSocket(
+  token: string | undefined,
+  resumeInterviewId: number | null | undefined,
+  initialMessages: ChatMessage[] = [],
+) {
   const socketRef = useRef<Socket | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
 
   useEffect(() => {
-    const socket = io(GATEWAY_URL, token ? { auth: { token } } : undefined);
+    if (resumeInterviewId === undefined) return;
+
+    if (initialMessages.length > 0) setMessages(initialMessages);
+
+    const auth: { token?: string; interviewId?: number } = {};
+    if (token) auth.token = token;
+    if (resumeInterviewId) auth.interviewId = resumeInterviewId;
+
+    const socket = io(GATEWAY_URL, Object.keys(auth).length > 0 ? { auth } : undefined);
     socketRef.current = socket;
 
     socket.on("connect", () => {
@@ -45,7 +61,9 @@ export function useSocket(token?: string) {
     return () => {
       socket.disconnect();
     };
-  }, [token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialMessages se lee una sola vez,
+    // al resolverse resumeInterviewId; no debe disparar una reconexión si cambia de referencia.
+  }, [token, resumeInterviewId]);
 
   const askQuestion = useCallback((question: string, postulacionId?: number) => {
     setMessages((prev) => [...prev, { role: "user", text: question, timestamp: new Date() }]);

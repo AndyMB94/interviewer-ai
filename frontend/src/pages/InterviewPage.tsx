@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useBlocker } from "react-router";
-import { useSocket } from "../hooks/useSocket";
+import { useSocket, type ChatMessage } from "../hooks/useSocket";
 import { useMicrophone } from "../hooks/useMicrophone";
 import { QuestionDisplay } from "../components/QuestionDisplay";
 import { MessageComposer } from "../components/MessageComposer";
@@ -18,12 +18,19 @@ import {
 import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { fetchMisPostulacionesPendientes, type MiPostulacion } from "@/lib/api";
+import { fetchInterviewEnCurso, fetchMisPostulacionesPendientes, type MiPostulacion } from "@/lib/api";
 
 export function InterviewPage() {
   const { accessToken } = useAuth();
+  // undefined mientras se comprueba si hay una entrevista sin terminar (Fase 10.4/10.5); null
+  // significa "ya se comprobó, no hay ninguna"; un número es el interview_id a retomar.
+  const [resumeInterviewId, setResumeInterviewId] = useState<number | null | undefined>(undefined);
+  const [historialPrevio, setHistorialPrevio] = useState<ChatMessage[]>([]);
+  const [puestoEnCurso, setPuestoEnCurso] = useState<string | null>(null);
   const { askQuestion, messages, sendAudio, isWaitingForResponse, finishInterview } = useSocket(
     accessToken ?? undefined,
+    resumeInterviewId,
+    historialPrevio,
   );
   const [question, setQuestion] = useState("");
   const [isFinished, setIsFinished] = useState(false);
@@ -70,6 +77,35 @@ export function InterviewPage() {
       .catch(() => setPostulacionesPendientes([]));
   }, [accessToken]);
 
+  // Fase 10.4/10.5: si cerró el navegador a medio camino, esto detecta la entrevista sin
+  // terminar y arma el historial real para retomarla -- en vez de que el socket, sin saberlo,
+  // intente crear una entrevista nueva y choque con la que ya existe.
+  useEffect(() => {
+    if (!accessToken) return;
+    fetchInterviewEnCurso(accessToken)
+      .then((enCurso) => {
+        if (!enCurso) {
+          setResumeInterviewId(null);
+          return;
+        }
+        const mensajes: ChatMessage[] = [];
+        for (const q of enCurso.questions) {
+          mensajes.push({ role: "user", text: q.question, timestamp: new Date(q.created_at) });
+          if (q.answer !== null) {
+            mensajes.push({
+              role: "assistant",
+              text: q.answer,
+              timestamp: new Date(q.answered_at ?? q.created_at),
+            });
+          }
+        }
+        setHistorialPrevio(mensajes);
+        setPuestoEnCurso(enCurso.puesto_titulo);
+        setResumeInterviewId(enCurso.interview_id);
+      })
+      .catch(() => setResumeInterviewId(null));
+  }, [accessToken]);
+
   // Al terminar, se vuelve a consultar por si quedan otras postulaciones pendientes de
   // entrevistar -- sin esto, no hay forma visual de enterarse que hay que volver (Frontend 9.7.6).
   useEffect(() => {
@@ -93,6 +129,28 @@ export function InterviewPage() {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [entrevistaActivaSinTerminar]);
+
+  if (!hasStarted && resumeInterviewId) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-4">
+        <Card className="w-full max-w-2xl animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+          <CardHeader>
+            <CardTitle>¿Desea continuar con su entrevista en curso?</CardTitle>
+            <CardDescription>
+              Tiene una entrevista sin terminar
+              {puestoEnCurso ? ` para el puesto de ${puestoEnCurso}` : ""}. Al continuar, retoma
+              exactamente donde la dejó — no se pierde nada de lo ya conversado.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => setHasStarted(true)} className="self-start">
+              Continuar entrevista
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!hasStarted && requiereElegirPuesto) {
     return (
