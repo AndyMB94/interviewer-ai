@@ -314,8 +314,10 @@ def test_creating_puesto_with_zero_vacantes_is_rejected(reclutador):
 
 
 @pytest.mark.django_db
-def test_public_list_excludes_puestos_cerrados(reclutador):
-    Puesto.objects.create(
+def test_public_list_includes_puestos_cerrados(reclutador):
+    # Fase 10.15/Decisión 9: un puesto cerrado se sigue mostrando en el catálogo público (con
+    # badge en el frontend), no desaparece del todo -- mismo criterio que LinkedIn/Indeed.
+    puesto_cerrado = Puesto.objects.create(
         titulo="Puesto cerrado",
         descripcion="...",
         requisitos="...",
@@ -327,7 +329,10 @@ def test_public_list_excludes_puestos_cerrados(reclutador):
     response = client.get("/api/puestos/")
 
     assert response.status_code == 200
-    assert response.json()["results"] == []
+    data = response.json()["results"]
+    assert len(data) == 1
+    assert data[0]["id"] == puesto_cerrado.id
+    assert data[0]["acepta_postulaciones"] is False
 
 
 @pytest.mark.django_db

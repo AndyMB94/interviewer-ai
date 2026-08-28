@@ -74,6 +74,42 @@ def test_entrevista_vencida_is_false_before_deadline(puesto):
 
 
 @pytest.mark.django_db
+def test_puesto_acepta_postulaciones_by_default(puesto):
+    assert puesto.limite_postulaciones == 50
+    assert puesto.acepta_postulaciones is True
+
+
+@pytest.mark.django_db
+def test_puesto_stops_accepting_once_it_reaches_the_limit(puesto):
+    puesto.limite_postulaciones = 1
+    puesto.save()
+    Postulacion.objects.create(puesto=puesto, nombre="Andy", email="andy@example.com", cv=_fake_pdf())
+
+    assert puesto.acepta_postulaciones is False
+
+
+@pytest.mark.django_db
+def test_puesto_accepts_again_after_raising_the_limit(puesto):
+    puesto.limite_postulaciones = 1
+    puesto.save()
+    Postulacion.objects.create(puesto=puesto, nombre="Andy", email="andy@example.com", cv=_fake_pdf())
+    assert puesto.acepta_postulaciones is False
+
+    puesto.limite_postulaciones = 2
+    puesto.save()
+
+    assert puesto.acepta_postulaciones is True
+
+
+@pytest.mark.django_db
+def test_puesto_cerrado_does_not_accept_postulaciones_even_under_the_limit(puesto):
+    puesto.estado = Puesto.Estado.CERRADO
+    puesto.save()
+
+    assert puesto.acepta_postulaciones is False
+
+
+@pytest.mark.django_db
 @patch("apps.recruiting.views.screen_postulacion_task.delay")
 def test_anyone_can_postular_without_an_account(mock_delay, puesto):
     client = APIClient()
@@ -103,6 +139,24 @@ def test_postular_to_a_puesto_cerrado_is_rejected(puesto):
 
     assert response.status_code == 400
     assert Postulacion.objects.count() == 0
+
+
+@pytest.mark.django_db
+@patch("apps.recruiting.views.screen_postulacion_task.delay")
+def test_postular_after_reaching_the_limit_is_rejected(mock_delay, puesto):
+    puesto.limite_postulaciones = 1
+    puesto.save()
+    Postulacion.objects.create(puesto=puesto, nombre="Andy", email="andy@example.com", cv=_fake_pdf())
+
+    client = APIClient()
+    response = client.post(
+        "/api/postulaciones/",
+        {"puesto": puesto.id, "nombre": "Carla", "email": "carla@example.com", "cv": _fake_pdf()},
+        format="multipart",
+    )
+
+    assert response.status_code == 400
+    assert Postulacion.objects.count() == 1
 
 
 @pytest.mark.django_db

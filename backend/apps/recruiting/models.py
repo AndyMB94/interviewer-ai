@@ -39,6 +39,11 @@ class Puesto(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="puestos_creados"
     )
     estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.ABIERTO)
+    # Fase 10.13: distinto de `vacantes` (cuántas personas se van a contratar) -- esto es cuántas
+    # postulaciones como máximo se van a evaluar con el filtro de IA (control de costo/volumen).
+    # El reclutador lo puede subir en cualquier momento; no hace falta "reabrir" el puesto aparte,
+    # `acepta_postulaciones` se calcula al vuelo contra el valor actual.
+    limite_postulaciones = models.PositiveIntegerField(default=50)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -46,6 +51,10 @@ class Puesto(models.Model):
 
     def __str__(self):
         return self.titulo
+
+    @property
+    def acepta_postulaciones(self):
+        return self.estado == self.Estado.ABIERTO and self.postulaciones.count() < self.limite_postulaciones
 
 
 class Postulacion(models.Model):

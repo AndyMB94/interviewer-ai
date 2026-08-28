@@ -51,6 +51,7 @@ export function PuestoFormPage() {
   const [requisitosDeseables, setRequisitosDeseables] = useState("");
   const [modalidad, setModalidad] = useState<Puesto["modalidad"]>("presencial");
   const [vacantes, setVacantes] = useState(1);
+  const [limitePostulaciones, setLimitePostulaciones] = useState(50);
   const [categoriaId, setCategoriaId] = useState<string>("ninguna");
 
   const [submitting, setSubmitting] = useState(false);
@@ -86,6 +87,7 @@ export function PuestoFormPage() {
         setRequisitosDeseables(puesto.requisitos_deseables);
         setModalidad(puesto.modalidad);
         setVacantes(puesto.vacantes);
+        setLimitePostulaciones(puesto.limite_postulaciones);
         setCategoriaId(puesto.categoria ? String(puesto.categoria) : "ninguna");
       })
       .catch((error: Error) => setLoadError(error.message))
@@ -106,6 +108,7 @@ export function PuestoFormPage() {
       requisitos_deseables: requisitosDeseables,
       modalidad,
       vacantes,
+      limite_postulaciones: limitePostulaciones,
       categoria: categoriaId === "ninguna" ? null : Number(categoriaId),
     };
     try {
@@ -270,6 +273,23 @@ export function PuestoFormPage() {
                 onChange={(event) => setVacantes(Number(event.target.value))}
                 required
               />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="limite-postulaciones" required>Límite de postulaciones</Label>
+              <Input
+                id="limite-postulaciones"
+                type="number"
+                min={1}
+                value={limitePostulaciones}
+                onChange={(event) => setLimitePostulaciones(Number(event.target.value))}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Cuántas postulaciones como máximo se evalúan con el filtro de IA — distinto de
+                "Vacantes" (cuántas personas se van a contratar). Al llegar al límite, el puesto
+                deja de aceptar postulaciones nuevas hasta que lo suba.
+              </p>
             </div>
 
             {submitError && <p className="text-sm text-destructive">{submitError}</p>}

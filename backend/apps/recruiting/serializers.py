@@ -13,6 +13,7 @@ class PuestoSerializer(serializers.ModelSerializer):
     postulaciones_count = serializers.IntegerField(read_only=True, default=0)
     preseleccionados = serializers.IntegerField(read_only=True, default=0)
     categoria_nombre = serializers.CharField(source="categoria.nombre", read_only=True, default=None)
+    acepta_postulaciones = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Puesto
@@ -28,6 +29,8 @@ class PuestoSerializer(serializers.ModelSerializer):
             "categoria",
             "categoria_nombre",
             "estado",
+            "limite_postulaciones",
+            "acepta_postulaciones",
             "creado_por",
             "created_at",
             "postulaciones_count",
@@ -65,7 +68,9 @@ class PostulacionSerializer(serializers.ModelSerializer):
         validators = []
 
     def validate_puesto(self, puesto):
-        if puesto.estado != Puesto.Estado.ABIERTO:
+        # Cubre tanto un puesto cerrado a mano como uno que llegó a su límite de postulaciones
+        # (Fase 10.13) -- mismo mensaje para los dos casos, sin distinguir el motivo (Decisión 9).
+        if not puesto.acepta_postulaciones:
             raise serializers.ValidationError("Este puesto ya no acepta postulaciones.")
         return puesto
 

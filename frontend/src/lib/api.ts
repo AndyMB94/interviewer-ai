@@ -17,6 +17,8 @@ export interface Puesto {
   categoria: number | null;
   categoria_nombre: string | null;
   estado: "abierto" | "cerrado";
+  limite_postulaciones: number;
+  acepta_postulaciones: boolean;
   postulaciones_count: number;
   preseleccionados: number;
 }
@@ -90,6 +92,7 @@ export interface PuestoFormPayload {
   modalidad: Puesto["modalidad"];
   vacantes: number;
   categoria: number | null;
+  limite_postulaciones: number;
 }
 
 export async function createPuesto(token: string, payload: PuestoFormPayload): Promise<Puesto> {

@@ -21,8 +21,11 @@ export function PuestoCard({ puesto }: PuestoCardProps) {
           <CardTitle className="line-clamp-2 wrap-break-word text-lg">{puesto.titulo}</CardTitle>
           <CardDescription className="line-clamp-2 wrap-break-word">{puesto.descripcion}</CardDescription>
         </CardHeader>
-        <CardContent className="mt-auto">
+        <CardContent className="mt-auto flex flex-wrap gap-2">
           <Badge variant="outline">{MODALIDAD_LABEL[puesto.modalidad]}</Badge>
+          {!puesto.acepta_postulaciones && (
+            <Badge variant="secondary">Ya no se aceptan postulaciones</Badge>
+          )}
         </CardContent>
       </Card>
     </Link>

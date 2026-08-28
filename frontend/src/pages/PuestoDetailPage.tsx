@@ -146,9 +146,16 @@ export function PuestoDetailPage() {
             </div>
           )}
           <CardTitle className="min-w-0 wrap-break-word text-2xl">{puesto.titulo}</CardTitle>
-          <Badge variant="outline" className="w-fit">
-            {MODALIDAD_LABEL[puesto.modalidad]}
-          </Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="w-fit">
+              {MODALIDAD_LABEL[puesto.modalidad]}
+            </Badge>
+            {!puesto.acepta_postulaciones && (
+              <Badge variant="secondary" className="w-fit">
+                Ya no se aceptan postulaciones
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <PuestoSeccion icon={FileText} titulo="Descripción del empleo" texto={puesto.descripcion} />
@@ -159,7 +166,7 @@ export function PuestoDetailPage() {
           <Separator />
           <PuestoSeccion icon={Star} titulo="Requisitos deseables" texto={puesto.requisitos_deseables} />
 
-          {puesto.estado === "cerrado" ? (
+          {!puesto.acepta_postulaciones ? (
             <p className="text-sm text-muted-foreground">
               Este puesto ya no está aceptando postulaciones.
             </p>
@@ -175,7 +182,7 @@ export function PuestoDetailPage() {
     </div>
   );
 
-  if (puesto.estado === "cerrado") {
+  if (!puesto.acepta_postulaciones) {
     return (
       <div className="mx-auto max-w-2xl p-4 pt-8 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
         {detalle}
