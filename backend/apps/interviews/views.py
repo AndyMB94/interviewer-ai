@@ -54,25 +54,36 @@ def ask(request):
         interview = Interview.objects.filter(pk=interview_id).first()
         if interview is None:
             return Response({"error": "interview not found"}, status=404)
+        # Fase 11.4: sin esto, un interview_id adivinado (son autoincrementales) dejaba mandar
+        # mensajes a la conversación de otra persona -- no alcanza con que sea un interview_id
+        # válido, tiene que ser el propio.
+        if not request.user.is_authenticated:
+            return Response({"error": "authentication required"}, status=401)
+        if interview.user_id != request.user.id:
+            return Response({"error": "this interview does not belong to you"}, status=403)
     else:
-        user = request.user if request.user.is_authenticated else None
-        postulacion_id = request.data.get("postulacion_id")
+        # Fase 11.2/11.3: se acabó el camino de "entrevista genérica sin dueño" -- era un
+        # remanente de la demo pública de antes del pivote (Backend 9.5), nunca cerrado del
+        # todo. Ahora hace falta estar autenticado y traer una postulación real, siempre.
+        if not request.user.is_authenticated:
+            return Response({"error": "authentication required to start an interview"}, status=401)
+        user = request.user
 
-        postulacion = None
-        if postulacion_id:
-            if user is None:
-                return Response({"error": "authentication required to select a postulacion"}, status=401)
-            postulacion = Postulacion.objects.filter(
-                pk=postulacion_id, email=user.email, estado=Postulacion.Estado.APROBADO
-            ).first()
-            if postulacion is None:
-                return Response({"error": "postulacion not found"}, status=404)
-            if postulacion.interviews.exists():
-                return Response({"error": "this postulacion already has an interview"}, status=409)
-            if postulacion.entrevista_vencida:
-                return Response(
-                    {"error": "the deadline to start this interview has passed"}, status=410
-                )
+        postulacion_id = request.data.get("postulacion_id")
+        if not postulacion_id:
+            return Response({"error": "postulacion_id is required"}, status=400)
+
+        postulacion = Postulacion.objects.filter(
+            pk=postulacion_id, email=user.email, estado=Postulacion.Estado.APROBADO
+        ).first()
+        if postulacion is None:
+            return Response({"error": "postulacion not found"}, status=404)
+        if postulacion.interviews.exists():
+            return Response({"error": "this postulacion already has an interview"}, status=409)
+        if postulacion.entrevista_vencida:
+            return Response(
+                {"error": "the deadline to start this interview has passed"}, status=410
+            )
 
         interview = Interview.objects.create(user=user, postulacion=postulacion)
 
@@ -187,6 +198,12 @@ def update_interview_decision(request, interview_id):
 @permission_classes([IsGateway])
 def finish_interview(request, interview_id):
     interview = get_object_or_404(Interview, pk=interview_id)
+    # Fase 11.5: mismo motivo que 11.4 en `ask` -- sin esto, cualquiera podía finalizar la
+    # entrevista de otra persona adivinando el interview_id.
+    if not request.user.is_authenticated:
+        return Response({"error": "authentication required"}, status=401)
+    if interview.user_id != request.user.id:
+        return Response({"error": "this interview does not belong to you"}, status=403)
     interview.status = Interview.Status.FINISHED
     interview.save(update_fields=["status"])
     return Response({"status": interview.status})

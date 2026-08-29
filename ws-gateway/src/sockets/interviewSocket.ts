@@ -71,7 +71,7 @@ export function registerInterviewSocket(io: Server) {
     socket.on("finish", async () => {
       if (interviewId) {
         console.log("finalizando entrevista:", interviewId);
-        await finishInterview(interviewId);
+        await finishInterview(interviewId, token);
       }
     });
   });

@@ -46,8 +46,25 @@ def test_ask_returns_task_id(mock_delay):
     mock_result.id = "fake-task-id"
     mock_delay.return_value = mock_result
 
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
+
     client = gateway_client()
-    response = client.post("/api/ask/", {"question": "hello"}, format="json")
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/ask/", {"question": "hello", "postulacion_id": postulacion.id}, format="json"
+    )
 
     assert response.status_code == 202
     data = response.json()
@@ -56,33 +73,27 @@ def test_ask_returns_task_id(mock_delay):
 
 
 @pytest.mark.django_db
-@patch("apps.interviews.views.ask_llm_task.delay")
-def test_ask_without_authentication_creates_interview_without_user(mock_delay):
-    mock_result = MagicMock()
-    mock_result.id = "fake-task-id"
-    mock_delay.return_value = mock_result
-
+def test_ask_without_authentication_is_rejected():
+    # Fase 11.2: se acabó el camino de "entrevista genérica sin dueño" -- era un remanente de
+    # la demo pública de antes del pivote, nunca cerrado del todo del lado de Django.
     client = gateway_client()
     response = client.post("/api/ask/", {"question": "hello"}, format="json")
 
-    interview = Interview.objects.get(id=response.json()["interview_id"])
-    assert interview.user is None
+    assert response.status_code == 401
+    assert not Interview.objects.exists()
 
 
 @pytest.mark.django_db
-@patch("apps.interviews.views.ask_llm_task.delay")
-def test_ask_authenticated_creates_interview_with_user(mock_delay):
-    mock_result = MagicMock()
-    mock_result.id = "fake-task-id"
-    mock_delay.return_value = mock_result
-    user = User.objects.create_user("postulante1", password="testpass123")
+def test_ask_requires_postulacion_id_when_authenticated():
+    # Fase 11.3: postulacion_id pasa a ser obligatorio -- ya no hay entrevista "sin puesto".
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
 
     client = gateway_client()
     client.force_authenticate(user=user)
     response = client.post("/api/ask/", {"question": "hello"}, format="json")
 
-    interview = Interview.objects.get(id=response.json()["interview_id"])
-    assert interview.user == user
+    assert response.status_code == 400
+    assert not Interview.objects.exists()
 
 
 @pytest.mark.django_db
@@ -114,35 +125,6 @@ def test_ask_links_the_postulacion_id_sent_explicitly(mock_delay):
 
     interview = Interview.objects.get(id=response.json()["interview_id"])
     assert interview.postulacion == postulacion
-
-
-@pytest.mark.django_db
-@patch("apps.interviews.views.ask_llm_task.delay")
-def test_ask_without_postulacion_id_does_not_guess_it(mock_delay):
-    mock_result = MagicMock()
-    mock_result.id = "fake-task-id"
-    mock_delay.return_value = mock_result
-
-    reclutador = User.objects.create_user("reclutador1", password="testpass123")
-    reclutador.groups.add(Group.objects.get(name="Reclutador"))
-    puesto = Puesto.objects.create(
-        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
-    )
-    Postulacion.objects.create(
-        puesto=puesto,
-        nombre="Andy",
-        email="andy@example.com",
-        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
-        estado=Postulacion.Estado.APROBADO,
-    )
-    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
-
-    client = gateway_client()
-    client.force_authenticate(user=user)
-    response = client.post("/api/ask/", {"question": "hello"}, format="json")
-
-    interview = Interview.objects.get(id=response.json()["interview_id"])
-    assert interview.postulacion is None
 
 
 @pytest.mark.django_db
@@ -276,6 +258,36 @@ def test_ask_rejects_postulacion_id_when_anonymous():
 
 
 @pytest.mark.django_db
+def test_ask_rejects_continuing_an_interview_of_another_user():
+    # Fase 11.4: los interview_id son autoincrementales y fáciles de adivinar -- sin esto,
+    # alguien podía mandar mensajes a la conversación de otra persona con solo probar números.
+    dueño = User.objects.create_user("dueño@example.com", password="testpass123")
+    otro_user = User.objects.create_user("otro@example.com", password="testpass123")
+    interview = Interview.objects.create(user=dueño)
+
+    client = gateway_client()
+    client.force_authenticate(user=otro_user)
+    response = client.post(
+        "/api/ask/", {"question": "hello", "interview_id": interview.id}, format="json"
+    )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_ask_rejects_continuing_an_interview_when_anonymous():
+    dueño = User.objects.create_user("dueño@example.com", password="testpass123")
+    interview = Interview.objects.create(user=dueño)
+
+    client = gateway_client()
+    response = client.post(
+        "/api/ask/", {"question": "hello", "interview_id": interview.id}, format="json"
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
 def test_ask_requires_question():
     client = gateway_client()
     response = client.post("/api/ask/", {}, format="json")
@@ -290,8 +302,25 @@ def test_ask_includes_created_at_when_not_timed_out(mock_delay):
     mock_result.id = "fake-task-id"
     mock_delay.return_value = mock_result
 
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+    )
+    user = User.objects.create_user("andy@example.com", email="andy@example.com", password="testpass123")
+
     client = gateway_client()
-    response = client.post("/api/ask/", {"question": "hello"}, format="json")
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/ask/", {"question": "hello", "postulacion_id": postulacion.id}, format="json"
+    )
 
     assert response.status_code == 202
     assert "created_at" in response.json()
@@ -300,12 +329,14 @@ def test_ask_includes_created_at_when_not_timed_out(mock_delay):
 @pytest.mark.django_db
 @patch("apps.interviews.views.ask_llm_task.delay")
 def test_ask_returns_timed_out_after_30_minutes(mock_delay):
-    interview = Interview.objects.create()
+    user = User.objects.create_user("andy@example.com", password="testpass123")
+    interview = Interview.objects.create(user=user)
     Interview.objects.filter(pk=interview.id).update(
         created_at=timezone.now() - timedelta(minutes=31)
     )
 
     client = gateway_client()
+    client.force_authenticate(user=user)
     response = client.post(
         "/api/ask/", {"question": "hello", "interview_id": interview.id}, format="json"
     )
@@ -326,12 +357,14 @@ def test_ask_within_30_minutes_is_not_timed_out(mock_delay):
     mock_result.id = "fake-task-id"
     mock_delay.return_value = mock_result
 
-    interview = Interview.objects.create()
+    user = User.objects.create_user("andy@example.com", password="testpass123")
+    interview = Interview.objects.create(user=user)
     Interview.objects.filter(pk=interview.id).update(
         created_at=timezone.now() - timedelta(minutes=10)
     )
 
     client = gateway_client()
+    client.force_authenticate(user=user)
     response = client.post(
         "/api/ask/", {"question": "hello", "interview_id": interview.id}, format="json"
     )
@@ -414,9 +447,11 @@ def test_finish_interview_requires_gateway_secret():
 
 @pytest.mark.django_db
 def test_finish_interview_marks_status_as_finished():
-    interview = Interview.objects.create()
+    user = User.objects.create_user("andy@example.com", password="testpass123")
+    interview = Interview.objects.create(user=user)
 
     client = gateway_client()
+    client.force_authenticate(user=user)
     response = client.post(f"/api/interviews/{interview.id}/finish/")
 
     assert response.status_code == 200
@@ -426,10 +461,40 @@ def test_finish_interview_marks_status_as_finished():
 
 @pytest.mark.django_db
 def test_finish_interview_404_for_unknown_id():
+    user = User.objects.create_user("andy@example.com", password="testpass123")
     client = gateway_client()
+    client.force_authenticate(user=user)
     response = client.post("/api/interviews/99999/finish/")
 
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_finish_interview_rejects_another_users_interview():
+    # Fase 11.5: mismo motivo que 11.4 en `ask` -- sin esto, cualquiera podía finalizar la
+    # entrevista de otra persona adivinando el interview_id.
+    dueño = User.objects.create_user("dueño@example.com", password="testpass123")
+    otro_user = User.objects.create_user("otro@example.com", password="testpass123")
+    interview = Interview.objects.create(user=dueño)
+
+    client = gateway_client()
+    client.force_authenticate(user=otro_user)
+    response = client.post(f"/api/interviews/{interview.id}/finish/")
+
+    assert response.status_code == 403
+    interview.refresh_from_db()
+    assert interview.status == Interview.Status.IN_PROGRESS
+
+
+@pytest.mark.django_db
+def test_finish_interview_rejects_anonymous():
+    dueño = User.objects.create_user("dueño@example.com", password="testpass123")
+    interview = Interview.objects.create(user=dueño)
+
+    client = gateway_client()
+    response = client.post(f"/api/interviews/{interview.id}/finish/")
+
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db

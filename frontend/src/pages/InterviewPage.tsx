@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useBlocker } from "react-router";
+import { useBlocker, useNavigate } from "react-router";
 import { useSocket, type ChatMessage } from "../hooks/useSocket";
 import { useMicrophone } from "../hooks/useMicrophone";
 import { QuestionDisplay } from "../components/QuestionDisplay";
@@ -32,6 +32,10 @@ function formatTiempoRestante(segundos: number) {
 
 export function InterviewPage() {
   const { accessToken, logout } = useAuth();
+  const navigate = useNavigate();
+  // Fase 11.6: distingue "todavía no se sabe" de "ya se comprobó y no tiene ninguna" -- sin
+  // esto no se puede decidir con seguridad cuándo redirigir sin postulaciones reales.
+  const [postulacionesCargadas, setPostulacionesCargadas] = useState(false);
   // undefined mientras se comprueba si hay una entrevista sin terminar (Fase 10.4/10.5); null
   // significa "ya se comprobó, no hay ninguna"; un número es el interview_id a retomar.
   const [resumeInterviewId, setResumeInterviewId] = useState<number | null | undefined>(undefined);
@@ -137,8 +141,23 @@ export function InterviewPage() {
     if (!accessToken) return;
     fetchMisPostulacionesPendientes(accessToken)
       .then(setPostulacionesPendientes)
-      .catch(() => setPostulacionesPendientes([]));
+      .catch(() => setPostulacionesPendientes([]))
+      .finally(() => setPostulacionesCargadas(true));
   }, [accessToken]);
+
+  // Fase 11.6: sin ninguna postulación real (ni pendiente de entrevistar, ni una en curso para
+  // retomar), esta pantalla no tiene nada legítimo que ofrecer -- antes mostraba una bienvenida
+  // genérica que ya no puede funcionar (Fase 11.3, `ask` exige postulacion_id siempre).
+  useEffect(() => {
+    if (hasStarted || !postulacionesCargadas || resumeInterviewId === undefined) return;
+    if (postulacionesPendientes.length === 0 && !resumeInterviewId) {
+      toast.add({
+        type: "error",
+        title: "No tiene ninguna postulación aprobada pendiente de entrevistar.",
+      });
+      navigate("/");
+    }
+  }, [hasStarted, postulacionesCargadas, resumeInterviewId, postulacionesPendientes, navigate]);
 
   // Fase 10.4/10.5: si cerró el navegador a medio camino, esto detecta la entrevista sin
   // terminar y arma el historial real para retomarla -- en vez de que el socket, sin saberlo,

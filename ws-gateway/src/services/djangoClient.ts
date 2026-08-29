@@ -68,10 +68,16 @@ export async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string>
   });
 }
 
-export async function finishInterview(interviewId: number): Promise<void> {
+export async function finishInterview(interviewId: number, token?: string): Promise<void> {
+  // Fase 11.5: Django ahora exige que la entrevista sea del usuario autenticado -- antes esta
+  // llamada nunca mandaba el JWT, lo que habría roto "Finalizar entrevista" para todo el mundo.
+  const headers: Record<string, string> = { "X-Gateway-Secret": GATEWAY_SHARED_SECRET };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
   await fetch(`${DJANGO_URL}/api/interviews/${interviewId}/finish/`, {
     method: "POST",
-    headers: { "X-Gateway-Secret": GATEWAY_SHARED_SECRET },
+    headers,
   });
 }
 
