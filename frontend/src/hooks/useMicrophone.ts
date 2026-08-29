@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useMicrophone() {
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -45,6 +45,21 @@ export function useMicrophone() {
     setIsRecording(false);
   };
 
+  // Detener la grabación (MediaRecorder) no suelta el permiso del micrófono en sí -- el
+  // navegador sigue mostrando el ícono de "grabando" hasta que se llama .stop() en cada track
+  // del MediaStream. Sin esto, el micrófono queda activo indefinidamente (incluso después de
+  // finalizar la entrevista o cerrar sesión) hasta que se cierra la pestaña del todo.
+  const releaseMicrophone = () => {
+    stream?.getTracks().forEach((track) => track.stop());
+    setStream(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      stream?.getTracks().forEach((track) => track.stop());
+    };
+  }, [stream]);
+
   return {
     stream,
     error,
@@ -53,5 +68,6 @@ export function useMicrophone() {
     audioBlob,
     startRecording,
     stopRecording,
+    releaseMicrophone,
   };
 }

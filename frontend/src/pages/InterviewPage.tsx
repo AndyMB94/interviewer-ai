@@ -70,6 +70,7 @@ export function InterviewPage() {
     audioBlob,
     startRecording,
     stopRecording,
+    releaseMicrophone,
   } = useMicrophone();
 
   const handleSubmit = () => {
@@ -119,6 +120,15 @@ export function InterviewPage() {
   useEffect(() => {
     if (timedOut) setIsFinished(true);
   }, [timedOut]);
+
+  // Suelta el micrófono apenas termina la entrevista (manual o por tiempo) -- ya no se puede
+  // grabar nada más, no tiene sentido dejarlo activo mientras se decide si vuelve al selector
+  // o se cierra la sesión.
+  useEffect(() => {
+    if (isFinished) releaseMicrophone();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- releaseMicrophone no está
+    // memoizada; solo debe dispararse cuando isFinished cambia, no en cada render.
+  }, [isFinished]);
 
   // Fase 10.10: al llegar a cero, el propio frontend dispara "Finalizar entrevista" en vez de
   // esperar a que el siguiente mensaje falle contra el corte del backend.
