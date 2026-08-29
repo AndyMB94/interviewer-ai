@@ -11,8 +11,10 @@ export function registerInterviewSocket(io: Server) {
     console.log("cliente conectado:", socket.id);
 
     // JWT de acceso, mandado por el cliente en el handshake (io(URL, { auth: { token } })).
-    // Sin token (demo pública / usuario no logueado), sigue funcionando anónimo — Django decide
-    // si la Interview queda con user=None o con el usuario del token (ver Backend Fase 9.5).
+    // Fase 11.1: sin token, ni `ask` ni `audio` se procesan -- antes seguían funcionando
+    // anónimo (remanente de la demo pública de antes del pivote), lo que dejaba abierto un
+    // canal para gastar cuota real de Deepgram/DeepSeek/ElevenLabs sin pasar por el sitio en
+    // absoluto (conectándose directo al WebSocket público, sin loguearse nunca).
     const token = socket.handshake.auth?.token as string | undefined;
 
     // Fase 10.5/10.6: si el cliente ya sabe que está retomando una entrevista en curso (detectada
@@ -28,6 +30,10 @@ export function registerInterviewSocket(io: Server) {
     // postulacionId solo viaja en el primer mensaje (todavía sin interviewId) -- es la postulación
     // elegida en la sala de espera (Frontend 9.7.5). Backend 9.7.3 la usa para crear la Interview.
     socket.on("ask", async (question: string, postulacionId?: number) => {
+      if (!token) {
+        socket.emit("error", "auth-required");
+        return;
+      }
       console.log("pregunta recibida:", question);
       const result = await askQuestion(question, interviewId, token, postulacionId);
       interviewId = result.interviewId;
@@ -35,6 +41,10 @@ export function registerInterviewSocket(io: Server) {
     });
 
     socket.on("audio", async (buffer: ArrayBuffer, postulacionId?: number) => {
+      if (!token) {
+        socket.emit("error", "auth-required");
+        return;
+      }
       console.log("audio recibido:", buffer.byteLength, "bytes");
 
       try {

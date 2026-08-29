@@ -773,7 +773,7 @@ _Backend 9.13 + Frontend 6.9 completos — búsqueda y filtro de estado en "Mis 
 
 **Decisión 5 — frontend: sin ninguna postulación real, `/entrevista` no se queda en un callejón sin salida.** Hoy, sin postulaciones pendientes, `InterviewPage.tsx` muestra una bienvenida genérica que invita a "empezar" — con la Decisión 4, ese botón pasaría a fallar siempre. Se reemplaza por una redirección a `/` con un aviso (`toast`) explicando que no tiene ninguna postulación aprobada pendiente de entrevistar.
 
-- [ ] 11.1 Gateway: `interviewSocket.ts` — los handlers `ask` y `audio` verifican que `token` esté presente antes de hacer nada; si no, emiten un evento de error al cliente (ej. `socket.emit("error", "auth-required")`) y no llaman a `askQuestion`/`transcribeAudio` (Decisión 1).
+- [x] 11.1 Gateway: `interviewSocket.ts` — los handlers `ask` y `audio` verifican que `token` esté presente antes de hacer nada; sin él, emiten `socket.emit("error", "auth-required")` y no llaman a `askQuestion`/`transcribeAudio`. Verificado con un cliente de prueba (`socket.io-client` conectándose sin `auth.token`) — recibe el error, nunca una respuesta real (Decisión 1).
 - [ ] 11.2 Backend: `ask` — en la rama sin `interview_id` (entrevista nueva), si `not request.user.is_authenticated`, `401` antes de seguir (Decisión 2).
 - [ ] 11.3 Backend: `ask` — en esa misma rama, `postulacion_id` pasa a ser obligatorio; sin él, `400`. Se borra la creación de `Interview` con `postulacion=None` sin más (Decisión 4).
 - [ ] 11.4 Backend: `ask` — en la rama **con** `interview_id`, se agrega `if interview.user_id != request.user.id: 403` (Decisión 3).
