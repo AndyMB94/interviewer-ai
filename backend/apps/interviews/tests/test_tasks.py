@@ -87,3 +87,37 @@ def test_ask_llm_task_with_postulacion_uses_contextual_prompt(mock_publish, mock
     _, kwargs = mock_llm_class.return_value.ask.call_args
     assert "Dev Backend" in kwargs["system_prompt"]
     assert "Python, Django." in kwargs["system_prompt"]
+    assert "Andy" in kwargs["system_prompt"]
+
+
+@pytest.mark.django_db
+@patch("apps.interviews.tasks.DeepSeekLLM")
+@patch("apps.interviews.tasks.publish_result")
+def test_ask_llm_task_includes_cv_screening_summary_when_available(mock_publish, mock_llm_class):
+    # Fase 10.18: reusa Postulacion.resultado_filtro (ya generado por el filtro de CV, Fase 9.3)
+    # para personalizar las preguntas, en vez de volver a extraer o guardar el texto del CV.
+    mock_llm_class.return_value.ask.return_value = "respuesta"
+
+    reclutador = User.objects.create_user("reclutador1", password="testpass123")
+    reclutador.groups.add(Group.objects.get(name="Reclutador"))
+    puesto = Puesto.objects.create(
+        titulo="Dev Backend", descripcion="...", requisitos="...", creado_por=reclutador
+    )
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+        resultado_filtro="Cinco años de experiencia en Django y PostgreSQL.",
+    )
+    interview = Interview.objects.create(postulacion=postulacion)
+    question = Question.objects.create(interview=interview, text="Hola")
+
+    ask_llm_task(question.id)
+
+    _, kwargs = mock_llm_class.return_value.ask.call_args
+    assert "Cinco años de experiencia en Django y PostgreSQL." in kwargs["system_prompt"]
+    # El candidato nunca debe enterarse del resultado del filtro de CV (mismo criterio de
+    # DECISIONS.md, Fase P.4) -- Gaby lo usa para preguntar mejor, no para comunicarlo.
+    assert "REGLA ESTRICTA DE CONFIDENCIALIDAD" in kwargs["system_prompt"]

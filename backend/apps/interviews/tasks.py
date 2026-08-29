@@ -38,7 +38,7 @@ def ask_llm_task(self, question_id):
             history.append({"role": "assistant", "content": previous_question.answer.text})
 
     postulacion = question.interview.postulacion
-    system_prompt = build_system_prompt_for_puesto(postulacion.puesto) if postulacion else None
+    system_prompt = build_system_prompt_for_puesto(postulacion.puesto, postulacion) if postulacion else None
 
     answer_text = DeepSeekLLM().ask(question.text, history=history, system_prompt=system_prompt)
     Answer.objects.create(question=question, text=answer_text)
