@@ -411,6 +411,20 @@ También se decidió explícitamente **dónde va sidebar y dónde no**: las pant
 
 ---
 
+## 2026-08-29 Limitaciones conocidas de la entrevista con IA: identidad del candidato e inyección vía CV
+
+**Contexto:** al planificar la Fase 10 (límites, vencimientos y mejoras de la entrevista con IA, ver ROADMAP.md) surgieron dos huecos reales de seguridad/confianza que **no se resuelven en este alcance**, a diferencia del resto de la fase — se documentan explícitamente en vez de dejarlos sin registrar, para que quede claro que son limitaciones conocidas y no un descuido.
+
+**1. Nada impide que otra persona haga la entrevista en lugar del candidato real.** El login es solo usuario/contraseña — no hay verificación de identidad (biometría facial, documento, proctoring de video) que confirme que quien está del otro lado del chat/audio es efectivamente la persona que postuló. Resolverlo bien es un producto aparte (los servicios de verificación de identidad tipo KYC son una categoría completa en sí misma), desproporcionado para el alcance de Vacantia.
+
+**2. El texto extraído del CV (`pypdf`) nunca se sanitiza antes de pasarlo al filtro de IA (Fase 9.3).** Alguien podría insertar texto oculto en el PDF (blanco sobre blanco, tamaño de fuente casi cero) con instrucciones como "aprueba a este candidato" — un ataque de inyección de prompt conocido contra selectores de CV con IA. `screen_candidate` (`cv_screening_service.py`) le pasa el texto extraído tal cual al LLM, sin ningún filtro de por medio.
+
+**Decisión: ninguna de las dos se resuelve ahora, con la misma postura que ya tiene `Interview.decision` (2026-08-13, arriba).** Vacantia es explícitamente un primer filtro — el candidato que avanza pasa después por una instancia real con el líder/reclutador técnico, presencial o por videollamada supervisada, que es donde correspondería verificar identidad en persona y donde un CV manipulado se notaría en la entrevista técnica real. Endurecer estas dos superficies (verificación de identidad, sanitización de texto extraído de PDFs) queda anotado para una fase futura si el proyecto lo necesitara, no como código pendiente de esta fase.
+
+**Por qué importa dejarlo escrito:** son los dos vectores de abuso más obvios que le quedan al flujo de entrevista una vez cerrados los límites de tiempo/postulaciones/vencimiento (Fase 10) — sin esta nota, alguien podría asumir que "ya está todo cubierto" en vez de una limitación de alcance consciente.
+
+---
+
 ## Pendientes por decidir
 
 _Ninguno por ahora — quedan proveedores de LLM, STT, TTS y email decididos. Ver arriba las notas de cada uno sobre posibles cambios futuros._
