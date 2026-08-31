@@ -257,6 +257,7 @@ PUESTOS = [
         "categoria": "Administración / Oficina",
         "modalidad": Puesto.Modalidad.PRESENCIAL,
         "vacantes": 1,
+        "cerrado": True,
         "descripcion": (
             "🗂️ Buscamos un/a practicante de Administración para apoyar en tareas de "
             "oficina y gestión documentaria, en un ambiente donde podrá aprender de "
@@ -707,6 +708,7 @@ PUESTOS = [
         "categoria": "Marketing",
         "modalidad": Puesto.Modalidad.REMOTO,
         "vacantes": 1,
+        "cerrado": True,
         "descripcion": (
             "📱 Buscamos un/a Community Manager Junior, creativo/a y al día con las "
             "tendencias digitales, para gestionar nuestras redes sociales del día a día."
@@ -776,6 +778,19 @@ PUESTOS = [
 ]
 
 
+def _limite_postulaciones(titulo: str) -> int:
+    """Deriva un límite realista a partir de la seniority ya presente en el título.
+
+    Roles masivos ("Sin Experiencia") reciben más cupo; roles senior/nicho, menos;
+    el resto usa el mismo default (50) que trae el modelo.
+    """
+    if "Sin Experiencia" in titulo:
+        return 100
+    if titulo.endswith("Senior") and not titulo.endswith("Semi-Senior"):
+        return 15
+    return 50
+
+
 class Command(BaseCommand):
     help = "Siembra puestos de ejemplo (demo) para mostrar el catálogo público con contenido real."
 
@@ -810,6 +825,8 @@ class Command(BaseCommand):
                     "vacantes": data["vacantes"],
                     "categoria": categoria,
                     "creado_por": reclutador,
+                    "limite_postulaciones": _limite_postulaciones(data["titulo"]),
+                    "estado": Puesto.Estado.CERRADO if data.get("cerrado") else Puesto.Estado.ABIERTO,
                 },
             )
             if created:

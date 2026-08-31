@@ -159,6 +159,36 @@ docker compose up -d <servicio>                         # reiniciar un servicio 
 
 Todos los servicios tienen `restart: unless-stopped` en `docker-compose.yml`, así que si un contenedor se cae por un error transitorio (ej. un corte breve de conexión a Redis), Docker lo reinicia solo — no debería hacer falta intervención manual salvo que el problema sea persistente.
 
+### Datos de demo y reset completo
+
+El comando `seed_puestos` siembra 31 puestos de ejemplo con contenido realista (distintas categorías, modalidades y niveles de seniority), pensado para que el catálogo público no se vea vacío ni con datos de prueba. Es idempotente (usa el título como clave, no duplica si ya corrió antes) y sirve tanto en local como en producción:
+
+```bash
+docker compose exec backend python manage.py seed_puestos --reclutador=<username-o-email-del-reclutador>
+```
+
+Cada puesto sembrado recibe un `límite_postulaciones` derivado de su propio título: los roles "— Sin Experiencia" (alta rotación) quedan en 100, los "— Senior" (nicho, especializados) en 15, y el resto en 50 (el default del modelo). Dos puestos (`Asistente Administrativo/a — Practicante` y `Community Manager — Junior`) se siembran ya con `estado="cerrado"`, para que el badge de "cerrado" del catálogo se vea sin tener que cerrar nada a mano.
+
+Para empezar de cero por completo (borra toda la base de datos — usar con cuidado, sobre todo en producción):
+
+```bash
+docker compose down -v                                  # borra contenedores Y volúmenes (datos incluidos)
+docker compose up -d --build                             # levanta todo de nuevo
+docker compose exec backend python manage.py migrate     # crea el esquema en la base vacía
+
+docker compose exec backend python manage.py createsuperuser
+# usuario Administrador, para entrar a /admin/
+
+docker compose exec backend python manage.py shell -c "
+from django.contrib.auth.models import User, Group
+u = User.objects.create_user('reclutador', email='reclutador@ejemplo.com', password='CAMBIE-ESTA-PASSWORD')
+u.groups.add(Group.objects.get(name='Reclutador'))
+"
+# cuenta Reclutador, para publicar/gestionar puestos
+
+docker compose exec backend python manage.py seed_puestos --reclutador=reclutador@ejemplo.com
+```
+
 ## Documentación
 
 - [Arquitectura](docs/ARCHITECTURE.md)
