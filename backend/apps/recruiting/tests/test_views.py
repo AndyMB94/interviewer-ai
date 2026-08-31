@@ -1,8 +1,10 @@
 import uuid
+from datetime import timedelta
 
 import pytest
 from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.interviews.models import Interview
@@ -232,6 +234,146 @@ def test_mi_postulacion_returns_more_than_one_when_pending(puesto):
 
     assert response.status_code == 200
     assert len(response.json()) == 2
+
+
+@pytest.mark.django_db
+def test_mis_postulaciones_requires_authentication():
+    client = APIClient()
+    response = client.get("/api/postulaciones/mias/")
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_mis_postulaciones_includes_every_estado(puesto):
+    postulante = User.objects.create_user(
+        "andy@example.com", email="andy@example.com", password="testpass123"
+    )
+    postulante.groups.add(Group.objects.get(name="Postulante"))
+    otro_puesto = Puesto.objects.create(
+        titulo="Otro puesto", descripcion="...", requisitos="...", creado_por=puesto.creado_por
+    )
+    tercer_puesto = Puesto.objects.create(
+        titulo="Tercer puesto", descripcion="...", requisitos="...", creado_por=puesto.creado_por
+    )
+    Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.PENDIENTE,
+    )
+    Postulacion.objects.create(
+        puesto=otro_puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.RECHAZADO,
+    )
+    Postulacion.objects.create(
+        puesto=tercer_puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+        fecha_limite_entrevista=timezone.now() + timedelta(days=2),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=postulante)
+    response = client.get("/api/postulaciones/mias/")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 3
+    estados = {item["puesto"]["titulo"]: item["estado"] for item in data}
+    assert estados == {
+        puesto.titulo: Postulacion.Estado.PENDIENTE,
+        "Otro puesto": Postulacion.Estado.RECHAZADO,
+        "Tercer puesto": Postulacion.Estado.APROBADO,
+    }
+    aprobada = next(item for item in data if item["puesto"]["titulo"] == "Tercer puesto")
+    assert aprobada["fecha_limite_entrevista"] is not None
+    assert aprobada["entrevista_vencida"] is False
+    assert aprobada["tiene_entrevista"] is False
+    assert aprobada["entrevista_finalizada"] is False
+
+
+@pytest.mark.django_db
+def test_mis_postulaciones_never_exposes_resultado_filtro_or_decision(puesto):
+    postulante = User.objects.create_user(
+        "andy@example.com", email="andy@example.com", password="testpass123"
+    )
+    postulante.groups.add(Group.objects.get(name="Postulante"))
+    postulacion = Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.RECHAZADO,
+        resultado_filtro="No cumple los requisitos técnicos del puesto.",
+    )
+    interview = Interview.objects.create(postulacion=postulacion, status=Interview.Status.FINISHED)
+    interview.decision = Interview.Decision.NO_AVANZA
+    interview.save(update_fields=["decision"])
+
+    client = APIClient()
+    client.force_authenticate(user=postulante)
+    response = client.get("/api/postulaciones/mias/")
+
+    assert response.status_code == 200
+    raw_body = response.content.decode()
+    assert "resultado_filtro" not in raw_body
+    assert "No cumple los requisitos" not in raw_body
+    assert "decision" not in raw_body
+    assert "no_avanza" not in raw_body
+    data = response.json()
+    assert data[0]["tiene_entrevista"] is True
+    assert data[0]["entrevista_finalizada"] is True
+
+
+@pytest.mark.django_db
+def test_mis_postulaciones_marks_expired_deadline(puesto):
+    postulante = User.objects.create_user(
+        "andy@example.com", email="andy@example.com", password="testpass123"
+    )
+    postulante.groups.add(Group.objects.get(name="Postulante"))
+    Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Andy",
+        email="andy@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+        estado=Postulacion.Estado.APROBADO,
+        fecha_limite_entrevista=timezone.now() - timedelta(days=1),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=postulante)
+    response = client.get("/api/postulaciones/mias/")
+
+    assert response.status_code == 200
+    assert response.json()[0]["entrevista_vencida"] is True
+
+
+@pytest.mark.django_db
+def test_mis_postulaciones_only_returns_the_authenticated_users_own(puesto):
+    postulante = User.objects.create_user(
+        "andy@example.com", email="andy@example.com", password="testpass123"
+    )
+    postulante.groups.add(Group.objects.get(name="Postulante"))
+    Postulacion.objects.create(
+        puesto=puesto,
+        nombre="Carla",
+        email="carla@example.com",
+        cv=SimpleUploadedFile("cv.pdf", b"contenido", content_type="application/pdf"),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=postulante)
+    response = client.get("/api/postulaciones/mias/")
+
+    assert response.status_code == 200
+    assert response.json() == []
 
 
 @pytest.mark.django_db

@@ -100,3 +100,38 @@ def mi_postulacion(request):
             for postulacion in postulaciones
         ]
     )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def mis_postulaciones(request):
+    """Fase 12.1: a diferencia de `mi_postulacion` (solo aprobadas y sin entrevistar, pensado
+    para el selector de puesto), esto trae TODAS las postulaciones del candidato para el panel
+    de "mis postulaciones" -- pendientes, rechazadas, aprobadas, ya entrevistadas o no. Diccionario
+    propio, igual que el de arriba: nunca expone `resultado_filtro` ni `Interview.decision`, el
+    candidato no debe verlos (Fase 9.10/P.4, docs/DECISIONS.md)."""
+    postulaciones = (
+        Postulacion.objects.filter(email=request.user.email)
+        .select_related("puesto")
+        .prefetch_related("interviews")
+        .order_by("-created_at")
+    )
+
+    data = []
+    for postulacion in postulaciones:
+        interview = postulacion.interviews.first()
+        data.append(
+            {
+                "id": postulacion.id,
+                "puesto": {"id": postulacion.puesto.id, "titulo": postulacion.puesto.titulo},
+                "estado": postulacion.estado,
+                "created_at": postulacion.created_at,
+                "fecha_limite_entrevista": postulacion.fecha_limite_entrevista,
+                "entrevista_vencida": postulacion.entrevista_vencida,
+                "tiene_entrevista": interview is not None,
+                "entrevista_finalizada": interview is not None
+                and interview.status == Interview.Status.FINISHED,
+            }
+        )
+
+    return Response(data)
