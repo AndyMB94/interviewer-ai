@@ -1,4 +1,4 @@
-import { LogOut, Mail, Moon, Sun, User } from "lucide-react";
+import { ClipboardList, LogOut, Mail, Moon, Sun, User } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -60,10 +60,16 @@ export function NavbarActions() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {roles.includes("Postulante") && (
-                <DropdownMenuItem render={<Link to="/perfil" />}>
-                  <User className="h-4 w-4" />
-                  Mi perfil
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem render={<Link to="/perfil" />}>
+                    <User className="h-4 w-4" />
+                    Mi perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem render={<Link to="/mis-postulaciones" />}>
+                    <ClipboardList className="h-4 w-4" />
+                    Mis postulaciones
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuItem variant="destructive" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />

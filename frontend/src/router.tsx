@@ -4,6 +4,7 @@ import { ApplyPage } from "./pages/ApplyPage";
 import { PuestoDetailPage } from "./pages/PuestoDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PerfilPage } from "./pages/PerfilPage";
+import { MisPostulacionesPage } from "./pages/MisPostulacionesPage";
 import { PuestosPage } from "./pages/dashboard/PuestosPage";
 import { PuestoFormPage } from "./pages/dashboard/PuestoFormPage";
 import { PostulacionesPage } from "./pages/dashboard/PostulacionesPage";
@@ -48,6 +49,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireRole role="Postulante">
             <PerfilPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: "/mis-postulaciones",
+        element: (
+          <RequireRole role="Postulante">
+            <MisPostulacionesPage />
           </RequireRole>
         ),
       },

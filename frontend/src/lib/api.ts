@@ -283,6 +283,30 @@ export async function fetchMisPostulacionesPendientes(token: string): Promise<Mi
   return response.json();
 }
 
+export interface MiPostulacionCompleta {
+  id: number;
+  puesto: { id: number; titulo: string };
+  estado: "pendiente" | "aprobado" | "rechazado";
+  created_at: string;
+  fecha_limite_entrevista: string | null;
+  entrevista_vencida: boolean;
+  tiene_entrevista: boolean;
+  entrevista_finalizada: boolean;
+}
+
+// Fase 12: a diferencia de fetchMisPostulacionesPendientes (solo aprobadas y sin entrevistar,
+// para el selector de puesto), esto trae TODAS las postulaciones para el panel "mis postulaciones".
+export async function fetchMisPostulacionesTodas(token: string): Promise<MiPostulacionCompleta[]> {
+  const response = await fetch(`${API_URL}/api/postulaciones/mias/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("No se pudo cargar el estado de sus postulaciones.");
+  }
+  return response.json();
+}
+
 export interface InterviewEnCurso {
   interview_id: number;
   postulacion_id: number | null;
